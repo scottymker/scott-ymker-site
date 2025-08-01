@@ -63,3 +63,41 @@ footer {
     font-size: 16px;
     line-height: 1.6;
 }
+
+.addons {
+    padding: 20px;
+    background: #ffffff;
+}
+
+.addons h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #000;
+}
+
+.addon-table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    width: 90%;
+    max-width: 600px;
+    background: #fff;
+    border: 1px solid #ccc;
+}
+
+.addon-table th,
+.addon-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.addon-table thead {
+    background-color: #e8f0f8;
+    font-weight: bold;
+}
+
+.addon-note {
+    font-size: 14px;
+    color: #555;
+    margin-top: 10px;
+}
