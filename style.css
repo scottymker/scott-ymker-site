@@ -38,3 +38,28 @@ footer {
     padding: 15px;
     font-size: 14px;
 }
+
+/* New styles for package section */
+.packages {
+    padding: 20px;
+    background: #ffffff;
+}
+.packages h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #000;
+}
+.packages img {
+    width: 350px;
+    max-width: 90%;
+    margin: 10px;
+    border: 2px solid #ddd;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    background: #fff;
+}
+.contact-info {
+    padding: 20px;
+    background: #f0f0f0;
+    font-size: 16px;
+    line-height: 1.6;
+}
