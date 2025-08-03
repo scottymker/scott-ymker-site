@@ -157,3 +157,36 @@ footer {
     padding: 20px;
     background: #ffffff;
 }
+
+.site-header {
+    background: #fff;
+    color: #000;
+    padding: 20px 0;
+}
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+.logo {
+    max-height: 60px;
+}
+.topnav {
+    display: flex;
+    gap: 20px;
+}
+.topnav a {
+    color: #000;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: background-color 0.3s, color 0.3s;
+}
+.topnav a:hover {
+    background-color: #000;
+    color: #fff;
+}
