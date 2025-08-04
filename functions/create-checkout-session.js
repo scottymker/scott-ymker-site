@@ -1,4 +1,3 @@
-
 export async function onRequestPost(context) {
   const { request, env } = context;
   const body = await request.json();
@@ -7,20 +6,28 @@ export async function onRequestPost(context) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.Stripe_Key}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
     },
-    body: new URLSearchParams({
+    body: JSON.stringify({
       mode: "payment",
       success_url: "https://schools.scottymkerphotos.com/success.html",
       cancel_url: "https://schools.scottymkerphotos.com/cancel.html",
-      line_items: JSON.stringify(body.line_items),
-      payment_method_types: "card",
-      metadata: JSON.stringify(body.metadata),
+      payment_method_types: ["card"],
+      line_items: body.line_items,
+      metadata: body.metadata,
     }),
   });
 
   const session = await stripeRes.json();
-  return new Response(JSON.stringify({ id: session.id }), {
+
+  if (!stripeRes.ok) {
+    return new Response(JSON.stringify({ error: session.error }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ url: session.url }), {
     headers: { "Content-Type": "application/json" },
   });
 }
