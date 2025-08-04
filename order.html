@@ -2,66 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Order Prints - Scott Ymker Photography</title>
+    <title>Order - Scott Ymker Photography</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="site-header">
-        <div class="header-content">
-            <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
-            <nav class="topnav">
-                <a href="index.html">Home</a>
-                <a href="order.html">Order Prints</a>
-            </nav>
-        </div>
-        <h1>Order Your School Photo Package</h1>
-    </header>
 
-    <section class="order-form">
-        <h2>Select a Package</h2>
-        <label for="package">Choose a Package:</label>
-        <select id="package">
-            <option value="A">Package A ($10)</option>
-            <option value="B">Package B ($20)</option>
-            <option value="C">Package C ($30)</option>
-            <option value="D">Package D ($40)</option>
-            <option value="E">Package E ($50)</option>
-        </select>
 
-        <h3>Optional Add-Ons</h3>
-        <div class="addons-list">
-            <label><input type="checkbox" value="F"> Add-On F ($5)</label><br>
-            <label><input type="checkbox" value="G"> Add-On G ($7)</label><br>
-            <label><input type="checkbox" value="H"> Add-On H ($8)</label><br>
-            <label><input type="checkbox" value="I"> Add-On I ($12)</label><br>
-            <label><input type="checkbox" value="J"> Add-On J ($6)</label><br>
-            <label><input type="checkbox" value="K"> Add-On K ($6)</label><br>
-            <label><input type="checkbox" value="L"> Add-On L ($7)</label><br>
-            <label><input type="checkbox" value="M"> Add-On M ($8)</label><br>
-            <label><input type="checkbox" value="N"> Add-On N ($15)</label><br>
-        </div>
+<header class="site-header">
+    <div class="header-content">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
+        <nav class="topnav">
+            <a href="index.html">Home</a>
+            <a href="order.html">Order Prints</a>
+        </nav>
+    </div>
 
-        <button id="checkout-button" class="start-order-button">Proceed to Checkout</button>
-    </section>
+    <h1>Order Your School Photo Package</h1>
+</header>
+<section class="order-form">
+    <h2>Select a Package</h2>
+    <select id="package">
+        <option value="A">Package A ($10)</option>
+        <option value="B">Package B ($20)</option>
+    </select>
+    <button id="checkout-button">Checkout</button>
+</section>
 
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        const stripe = Stripe("pk_test_XXXXXXXXXXXXXXXXXXXX"); // Replace with your real publishable key
-
-        document.getElementById("checkout-button").addEventListener("click", async () => {
-            const selectedPackage = document.getElementById("package").value;
-            const selectedAddOns = Array.from(document.querySelectorAll('input[type=checkbox]:checked'))
-                .map(cb => cb.value);
-
-            const response = await fetch("/functions/create-checkout-session", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ selectedPackage, selectedAddOns })
-            });
-
-            const session = await response.json();
-            stripe.redirectToCheckout({ sessionId: session.id });
-        });
-    </script>
 </body>
 </html>
