@@ -7,9 +7,26 @@ body {
     text-align: center;
 }
 header {
-    background: #000;
-    color: #fff;
-    padding: 20px 0;
+    background: #fff;
+    color: #000;
+    padding: 20px;
+}
+.topnav {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    background-color: #000;
+    padding: 10px 0;
+}
+.topnav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 4px;
+}
+.topnav a:hover {
+    background-color: #444;
 }
 .logo {
     max-width: 150px;
@@ -33,160 +50,8 @@ h1 {
     background: #fff;
     padding: 5px;
 }
-.packages {
-    padding: 20px;
-    background: #ffffff;
-}
-.packages h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #000;
-}
-.packages img {
-    width: 350px;
-    max-width: 90%;
-    margin: 10px;
-    border: 2px solid #ddd;
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-    background: #fff;
-}
-.addons {
-    padding: 20px;
-    background: #ffffff;
-}
-.addons h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
-    color: #000;
-}
-.addon-table {
-    margin: 0 auto;
-    border-collapse: collapse;
-    width: 90%;
-    max-width: 600px;
-    background: #fff;
-    border: 1px solid #ccc;
-}
-.addon-table th,
-.addon-table td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    font-size: 16px;
-}
-.addon-table thead {
-    background-color: #e8f0f8;
-    font-weight: bold;
-}
-.addon-note {
-    font-size: 14px;
-    color: #555;
-    margin-top: 10px;
-}
-.composite-promo {
-    padding: 30px 20px;
-    background-color: #ffffff;
-}
-.promo-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-.promo-image img {
-    width: 300px;
-    max-width: 100%;
-    border: 2px solid #ccc;
-    background: #fff;
-    padding: 5px;
-    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
-}
-.promo-text {
-    max-width: 600px;
-    text-align: left;
-}
-.promo-text h2 {
-    font-size: 28px;
-    color: #000;
-    margin-bottom: 10px;
-}
-.promo-text p {
-    font-size: 16px;
-    color: #333;
-    line-height: 1.6;
-}
-.contact-info {
-    padding: 20px;
-    background: #f0f0f0;
-    font-size: 16px;
-    line-height: 1.6;
-}
 footer {
     background: #eee;
     padding: 15px;
     font-size: 14px;
-}
-
-/* Navigation menu styles */
-.topnav {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    background-color: #000;
-    padding: 12px 0;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.topnav a {
-    color: #fff;
-    text-decoration: none;
-    font-weight: bold;
-    padding: 10px 20px;
-    border: 2px solid transparent;
-    border-radius: 6px;
-    transition: all 0.3s ease-in-out;
-}
-.topnav a:hover {
-    background-color: #fff;
-    color: #000;
-    border-color: #000;
-}
- {
-    text-align: center;
-    padding: 20px;
-    background: #ffffff;
-}
-
-.site-header {
-    background: #fff;
-    color: #000;
-    padding: 20px 0;
-}
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-.logo {
-    max-height: 60px;
-}
-.topnav {
-    display: flex;
-    gap: 20px;
-}
-.topnav a {
-    color: #000;
-    text-decoration: none;
-    font-weight: bold;
-    padding: 8px 16px;
-    border-radius: 6px;
-    transition: background-color 0.3s, color 0.3s;
-}
-.topnav a:hover {
-    background-color: #000;
-    color: #fff;
 }
