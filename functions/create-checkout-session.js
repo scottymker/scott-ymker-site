@@ -26,3 +26,8 @@ export async function onRequestPost(context) {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  return new Response(JSON.stringify({ url: session.url }), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
