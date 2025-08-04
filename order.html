@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +6,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <header class="site-header">
     <div class="header-content">
         <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
@@ -18,72 +18,79 @@
     <h1>Order Your School Photo Package</h1>
 </header>
 
-<main class="order-container">
-    <section class="package-selection">
-        <h2>Photo Packages</h2>
-        <p>Select one of the following packages:</p>
-        <select id="package-select" required>
-            <option value="">-- Select a Package --</option>
-            <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
-            <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
-            <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
-            <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
-            <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
-            <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
-            <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
-            <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
-            <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
-            <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
-        </select>
-    </section>
+<main class="order-form">
+    <form id="orderForm">
+        <section>
+            <h2>Select a Package</h2>
+            <select name="package" required>
+                <option value="">-- Select a Package --</option>
+                <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
+                <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
+                <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
+                <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
+                <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
+                <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
+                <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
+                <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
+                <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
+                <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
+            </select>
+        </section>
 
-    <section class="addons">
-        <h2>Add-On Items</h2>
-        <p>Available only with a package:</p>
-        <label><input type="checkbox" name="addons" value="F"> Package F – $6 (1 8x10)</label><br>
-        <label><input type="checkbox" name="addons" value="G"> Package G – $6 (2 5x7)</label><br>
-        <label><input type="checkbox" name="addons" value="H"> Package H – $6 (4 3.5x5)</label><br>
-        <label><input type="checkbox" name="addons" value="I"> Package I – $18 (24 Wallets)</label><br>
-        <label><input type="checkbox" name="addons" value="J"> Package J – $6 (8 Wallets)</label><br>
-        <label><input type="checkbox" name="addons" value="K"> Package K – $6 (16 Mini Wallets)</label><br>
-        <label><input type="checkbox" name="addons" value="L"> Package L – $7 (Retouching)</label><br>
-        <label><input type="checkbox" name="addons" value="M"> Package M – $8 (8x10 Class Composite)</label><br>
-        <label><input type="checkbox" name="addons" value="N"> Package N – $15 (Digital File)</label>
-    </section>
+        <section>
+            <h2>Select a Background</h2>
+            <select name="background">
+                <option value="F1" selected>F1 (Default)</option>
+                <option value="F2">F2</option>
+                <option value="F3">F3</option>
+                <option value="F4">F4</option>
+                <option value="F5">F5</option>
+                <option value="F6">F6</option>
+            </select>
+        </section>
 
-    <section class="background-selection">
-        <h2>Background Selection</h2>
-        <p>Select your preferred background (defaults to F1):</p>
-        <select id="background-select">
-            <option value="F1" selected>F1 (Default)</option>
-            <option value="F2">F2</option>
-            <option value="F3">F3</option>
-            <option value="F4">F4</option>
-            <option value="F5">F5</option>
-            <option value="F6">F6</option>
-        </select>
-    </section>
+        <section>
+            <h2>Student Information</h2>
+            <input type="text" name="studentFirstName" placeholder="First Name" required>
+            <input type="text" name="studentLastName" placeholder="Last Name" required>
+            <input type="text" name="teacher" placeholder="Teacher" required>
+            <input type="text" name="grade" placeholder="Grade" required>
+            <input type="text" name="school" placeholder="School" required>
+        </section>
 
-    <section class="student-info">
-        <h2>Student Information</h2>
-        <input type="text" placeholder="First Name" required><br>
-        <input type="text" placeholder="Last Name" required><br>
-        <input type="text" placeholder="Teacher" required><br>
-        <input type="text" placeholder="Grade" required><br>
-        <input type="text" placeholder="School" required>
-    </section>
+        <section>
+            <h2>Parent Information</h2>
+            <input type="text" name="parentName" placeholder="Parent Name" required>
+            <input type="tel" name="phone" placeholder="Phone" required>
+            <input type="email" name="email" placeholder="Email" required>
+        </section>
 
-    <section class="parent-info">
-        <h2>Parent Information</h2>
-        <input type="text" placeholder="Parent Name" required><br>
-        <input type="tel" placeholder="Phone" required><br>
-        <input type="email" placeholder="Email" required>
-    </section>
-
-    <section class="checkout">
-        <button id="checkout-button">Checkout</button>
-    </section>
+        <button type="submit" id="checkout-button">Proceed to Checkout</button>
+    </form>
 </main>
+
+<script>
+    document.getElementById("orderForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const data = {};
+        formData.forEach((value, key) => data[key] = value);
+
+        const response = await fetch("/functions/create-checkout-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (result.url) {
+            window.location.href = result.url;
+        } else {
+            alert("Checkout session could not be created.");
+        }
+    });
+</script>
 
 </body>
 </html>
