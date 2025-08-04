@@ -1,6 +1,12 @@
 export async function onRequestPost(context) {
-  const { request, env } = context;
-  const body = await request.json();
+  return new Response(JSON.stringify({ status: "POST handler reached" }), {
+    headers: { "Content-Type": "application/json" }
+  });
+}
+
+export async function onRequest(context) {
+  return new Response("Default handler – method not allowed", { status: 405 });
+}
 
   const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
