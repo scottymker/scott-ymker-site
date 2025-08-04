@@ -86,33 +86,110 @@
 </main>
 
 <script>
-    document.getElementById("orderForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const data = {};
-        formData.forEach((value, key) => {
-            if (key === "addons") {
-                if (!data[key]) data[key] = [];
-                data[key].push(value);
-            } else {
-                data[key] = value;
-            }
-        });
+  document.getElementById("orderForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-        const response = await fetch("/functions/create-checkout-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-        if (result.url) {
-            window.location.href = result.url;
-        } else {
-            alert("Checkout session could not be created.");
+    const formData = new FormData(this);
+    const data = {};
+    formData.forEach((value, key) => {
+      if (data[key]) {
+        if (!Array.isArray(data[key])) {
+          data[key] = [data[key]];
         }
+        data[key].push(value);
+      } else {
+        data[key] = value;
+      }
     });
+
+    // Build the line_items array and metadata
+    const line_items = [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Package ${data.package}`
+          },
+          unit_amount: getPackagePrice(data.package),
+        },
+        quantity: 1
+      }
+    ];
+
+    if (data.addons && Array.isArray(data.addons)) {
+      data.addons.forEach(addon => {
+        const addonDetails = getAddonDetails(addon);
+        if (addonDetails) {
+          line_items.push({
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: addonDetails.name
+              },
+              unit_amount: addonDetails.amount,
+            },
+            quantity: 1
+          });
+        }
+      });
+    }
+
+    const metadata = {
+      studentFirstName: data.studentFirstName,
+      studentLastName: data.studentLastName,
+      teacher: data.teacher,
+      grade: data.grade,
+      school: data.school,
+      parentName: data.parentName,
+      phone: data.phone,
+      email: data.email,
+      background: data.background
+    };
+
+    try {
+      const response = await fetch("/functions/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ line_items, metadata })
+      });
+
+      const result = await response.json();
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        alert("Error creating checkout session.");
+      }
+    } catch (err) {
+      alert("Something went wrong. Try again.");
+      console.error(err);
+    }
+
+    function getPackagePrice(code) {
+      const prices = {
+        A: 3200, A1: 4100, B: 2700, B1: 3200,
+        C: 2200, C1: 2700, D: 1800, D1: 2300,
+        E: 1200, E1: 1700
+      };
+      return prices[code] || 0;
+    }
+
+    function getAddonDetails(code) {
+      const addons = {
+        F: { name: "8x10 Print", amount: 600 },
+        G: { name: "2x 5x7 Prints", amount: 600 },
+        H: { name: "4x 3½x5 Prints", amount: 600 },
+        I: { name: "24 Wallets", amount: 1800 },
+        J: { name: "8 Wallets", amount: 600 },
+        K: { name: "16 Mini Wallets", amount: 600 },
+        L: { name: "Retouching", amount: 700 },
+        M: { name: "8x10 Class Composite", amount: 800 },
+        N: { name: "Digital File", amount: 1500 }
+      };
+      return addons[code];
+    }
+  });
 </script>
+
 
 </body>
 </html>
