@@ -15,7 +15,7 @@ header {
     display: flex;
     justify-content: center;
     gap: 20px;
-    background-color: #000;
+    background-color: #f8f8f8;
     padding: 10px 0;
 }
 .topnav a {
