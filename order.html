@@ -39,6 +39,21 @@
         </section>
 
         <section>
+            <h2>Select Add-Ons</h2>
+            <div class="addons">
+                <label><input type="checkbox" name="addons" value="F"> F - 8x10 Print ($6)</label><br>
+                <label><input type="checkbox" name="addons" value="G"> G - 2x 5x7 Prints ($6)</label><br>
+                <label><input type="checkbox" name="addons" value="H"> H - 4x 3½x5 Prints ($6)</label><br>
+                <label><input type="checkbox" name="addons" value="I"> I - 24 Wallets ($18)</label><br>
+                <label><input type="checkbox" name="addons" value="J"> J - 8 Wallets ($6)</label><br>
+                <label><input type="checkbox" name="addons" value="K"> K - 16 Mini Wallets ($6)</label><br>
+                <label><input type="checkbox" name="addons" value="L"> L - Retouching ($7)</label><br>
+                <label><input type="checkbox" name="addons" value="M"> M - 8x10 Class Composite ($8)</label><br>
+                <label><input type="checkbox" name="addons" value="N"> N - Digital File ($15)</label>
+            </div>
+        </section>
+
+        <section>
             <h2>Select a Background</h2>
             <select name="background">
                 <option value="F1" selected>F1 (Default)</option>
@@ -73,10 +88,16 @@
 <script>
     document.getElementById("orderForm").addEventListener("submit", async function (e) {
         e.preventDefault();
-
         const formData = new FormData(this);
         const data = {};
-        formData.forEach((value, key) => data[key] = value);
+        formData.forEach((value, key) => {
+            if (key === "addons") {
+                if (!data[key]) data[key] = [];
+                data[key].push(value);
+            } else {
+                data[key] = value;
+            }
+        });
 
         const response = await fetch("/functions/create-checkout-session", {
             method: "POST",
