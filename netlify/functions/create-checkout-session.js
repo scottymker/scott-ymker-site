@@ -4,7 +4,7 @@ exports.handler = async (event, context) => {
   try {
     const body = JSON.parse(event.body);
 
-    // Transform incoming form data into Stripe line_items and metadata
+    // Prices in cents
     const packagePrices = {
       A: 3200, A1: 4100,
       B: 2700, B1: 3200,
@@ -14,16 +14,18 @@ exports.handler = async (event, context) => {
     };
 
     const addonPrices = {
-      F: 600, G: 600, H: 600,
-      I: 1800, J: 600, K: 600,
-      L: 700, M: 800, N: 1500
+      F: 500, G: 800, H: 800,
+      I: 800, J: 800, K: 800,
+      L: 1000, M: 1500, N: 2000
     };
+
+    const selectedPackage = body.package;
+    const selectedAddons = body.addons || [];
+    const background = body.background;
 
     const line_items = [];
 
-    // Required: One main package
-    const selectedPackage = body.package;
-    if (packagePrices[selectedPackage]) {
+    if (selectedPackage && packagePrices[selectedPackage]) {
       line_items.push({
         price_data: {
           currency: "usd",
@@ -36,9 +38,7 @@ exports.handler = async (event, context) => {
       });
     }
 
-    // Optional: Add-ons (can be array or string)
-    const addons = Array.isArray(body.addons) ? body.addons : (body.addons ? [body.addons] : []);
-    for (const addon of addons) {
+    selectedAddons.forEach(addon => {
       if (addonPrices[addon]) {
         line_items.push({
           price_data: {
@@ -51,28 +51,26 @@ exports.handler = async (event, context) => {
           quantity: 1
         });
       }
-    }
+    });
 
-    // Optional metadata to help identify the order
     const metadata = {
-      studentFirstName: body.studentFirstName,
-      studentLastName: body.studentLastName,
+      student_first: body.student_first,
+      student_last: body.student_last,
       teacher: body.teacher,
       grade: body.grade,
       school: body.school,
-      parentName: body.parentName,
-      phone: body.phone,
-      email: body.email,
-      package: body.package,
-      background: body.background,
-      addons: addons.join(", ")
+      parent_name: body.parent_name,
+      parent_phone: body.parent_phone,
+      parent_email: body.parent_email,
+      background: background,
+      addons: selectedAddons.join(", ")
     };
 
     const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         mode: "payment",
@@ -81,27 +79,21 @@ exports.handler = async (event, context) => {
         payment_method_types: ["card"],
         line_items,
         metadata
-      }),
+      })
     });
 
     const session = await stripeRes.json();
 
-    if (!stripeRes.ok) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: session.error }),
-      };
-    }
-
     return {
       statusCode: 200,
-      body: JSON.stringify({ url: session.url }),
+      body: JSON.stringify({ id: session.id })
     };
-  } catch (error) {
+
+  } catch (err) {
+    console.error("Stripe Checkout Session Error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: "Failed to create checkout session" })
     };
   }
 };
-
