@@ -147,7 +147,7 @@
     };
 
     try {
-      const response = await fetch("/functions/create-checkout-session", {
+      const response = await fetch("/functions/create-checkout-session.post", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ line_items, metadata })
