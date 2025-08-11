@@ -1,49 +1,57 @@
-// No imports — use native fetch to call Stripe REST API
-
-exports.handler = async (event) => {
+// netlify/functions/get-session.js
+export async function handler(event) {
   try {
-    if (event.httpMethod !== "GET") {
-      return { statusCode: 405, body: "Method Not Allowed" };
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      return resp(500, { error: "Missing STRIPE_SECRET_KEY" });
     }
 
     const id = (event.queryStringParameters && event.queryStringParameters.id) || "";
-    if (!id) {
-      return { statusCode: 400, body: JSON.stringify({ error: "Missing session id" }) };
+    if (!id || !id.startsWith("cs_")) {
+      return resp(400, { error: "Missing or invalid session_id" });
     }
 
-    // Ask Stripe for the session and expand line_items in one call
+    // Ask Stripe for the Checkout Session and expand line items
     const url = `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(id)}?expand[]=line_items`;
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` }
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${key}`,
+      },
     });
-    const session = await res.json();
 
+    const session = await res.json();
     if (!res.ok) {
-      console.error("Stripe get-session error:", session);
-      return { statusCode: 400, body: JSON.stringify(session) };
+      return resp(res.status, { error: session.error?.message || "Stripe error" });
     }
 
-    // Normalize items
+    // Normalize the shape the success page expects
     const items = (session.line_items?.data || []).map((li) => ({
-      description: li.description || li.price?.product || "Item",
+      description: li.description || li.price?.nickname || "Item",
       quantity: li.quantity || 1,
-      amount_total: li.amount_total ?? (li.amount_subtotal ?? 0),
-      unit_amount: li.price?.unit_amount ?? null
+      amount_total: li.amount_total ?? li.amount_subtotal ?? 0,
+      currency: li.currency || session.currency || "usd",
     }));
 
-    const out = {
+    return resp(200, {
       id: session.id,
-      currency: session.currency,
-      amount_total: session.amount_total,
-      customer_email: session.customer_details?.email || session.customer_email,
+      payment_status: session.payment_status,
+      amount_total: session.amount_total ?? 0,
+      currency: session.currency || "usd",
+      customer_email: session.customer_details?.email || session.customer_email || null,
       customer_phone: session.customer_details?.phone || null,
       metadata: session.metadata || {},
-      items
-    };
-
-    return { statusCode: 200, body: JSON.stringify(out) };
+      items,
+    });
   } catch (err) {
-    console.error(err);
-    return { statusCode: 500, body: JSON.stringify({ error: "Server error" }) };
+    return resp(500, { error: "Server error", detail: String(err) });
   }
-};
+}
+
+function resp(status, body) {
+  return {
+    statusCode: status,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  };
+}
