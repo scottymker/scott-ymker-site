@@ -13,7 +13,6 @@ exports.handler = async (event) => {
   try {
     const { line_items, metadata } = JSON.parse(event.body || '{}');
 
-    // Basic validation
     if (!Array.isArray(line_items) || line_items.length === 0) {
       return {
         statusCode: 400,
@@ -32,6 +31,14 @@ exports.handler = async (event) => {
       };
     }
 
+    // Scrub metadata: only keep defined, non-empty values and stringify them
+    const scrubbedMeta = {};
+    Object.entries(metadata || {}).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && `${v}`.trim() !== '') {
+        scrubbedMeta[k] = String(v);
+      }
+    });
+
     // Build absolute success/cancel URLs from request headers
     const proto = event.headers['x-forwarded-proto'] || 'https';
     const host =
@@ -47,11 +54,18 @@ exports.handler = async (event) => {
       cancel_url: `${baseUrl}/cancel.html`,
       payment_method_types: ['card'],
 
-      // Prefill email on Checkout (still editable by the user)
-      customer_email: metadata && metadata.email ? metadata.email : undefined,
+      // Prefill the email field (still editable on the Checkout page)
+      customer_email: scrubbedMeta.email || undefined,
+
+      // Put metadata on the session…
+      metadata: scrubbedMeta,
+
+      // …and ALSO on the PaymentIntent so it appears in the Dashboard's Metadata box
+      payment_intent_data: {
+        metadata: scrubbedMeta,
+      },
 
       line_items,
-      metadata,
     };
 
     const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
