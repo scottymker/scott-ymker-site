@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact & Help • Scott Ymker Photography</title>
+
+  <!-- Inter font to match the rest of the site -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f6f7f9; --card:#fff; --ink:#121212; --muted:#68707a;
+      --accent:#0ea5e9; --accent-ink:#fff; --ok:#16a34a; --border:#e8ebef;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+
+    /* Header (same as other pages) */
+    .sitebar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 10px 12px;border-bottom:1px solid var(--border);
+      background:linear-gradient(#fbfbfc,#f6f7f9);
+      border-radius:12px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand img{height:36px;width:auto}
+    nav a{
+      text-decoration:none;color:#2d3640;margin-left:18px;font-weight:500;
+      padding:6px 8px;border-radius:8px
+    }
+    nav a[aria-current="page"]{background:#eef7ff;color:#0b77c5}
+    nav a:hover{background:#eff2f6}
+
+    /* Hero */
+    .hero{
+      margin-top:18px;background:var(--card);border:1px solid var(--border);
+      border-radius:16px;padding:22px 20px;display:flex;gap:14px;align-items:center
+    }
+    .check{
+      height:36px;width:36px;border-radius:50%;display:grid;place-items:center;
+      background:rgba(14,165,233,.12);color:#0ea5e9;font-weight:800
+    }
+    h1{margin:0 0 4px;font-size:24px}
+    .subtle{color:var(--muted)}
+
+    /* Layout */
+    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+    .card h2{font-size:16px;margin:0 0 12px}
+
+    /* Form */
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:720px){.row{grid-template-columns:1fr}}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input, textarea, select{
+      width:100%;padding:11px 12px;border:1px solid var(--border);
+      border-radius:10px;background:#fff;font:inherit
+    }
+    textarea{min-height:140px;resize:vertical}
+    .hint{color:var(--muted);font-size:12px;margin-top:6px}
+    .btn{
+      appearance:none;border:1px solid var(--border);background:#fff;color:var(--ink);
+      padding:11px 16px;border-radius:999px;cursor:pointer;font-weight:600
+    }
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+
+    .kv{display:grid;grid-template-columns:130px 1fr;column-gap:12px;row-gap:8px}
+    .label{color:var(--muted)}
+    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#eef7ff;color:#0b77c5;font-size:12px;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="sitebar">
+      <div class="brand">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography logo" />
+        <span>Scott Ymker Photography</span>
+      </div>
+      <nav aria-label="Main">
+        <a href="index.html">Home</a>
+        <a href="order.html">Order</a>
+        <a href="contact.html" aria-current="page">Contact</a>
+      </nav>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="check">💬</div>
+      <div>
+        <h1>Contact & Help</h1>
+        <div class="subtle">We usually respond within one business day. For urgent school-day issues, call or text.</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <!-- Contact Form -->
+      <div class="card">
+        <h2>Send us a message <span class="pill">Secure</span></h2>
+
+        <!-- Netlify Forms: no backend required -->
+        <form
+          name="contact"
+          method="POST"
+          data-netlify="true"
+          netlify-honeypot="bot-field"
+          action="/success.html#message-sent"
+        >
+          <!-- Honeypot -->
+          <input type="hidden" name="form-name" value="contact" />
+          <p style="display:none">
+            <label>Don’t fill this out: <input name="bot-field" /></label>
+          </p>
+
+          <div class="row">
+            <div>
+              <label for="name">Your name</label>
+              <input id="name" name="name" autocomplete="name" required />
+            </div>
+            <div>
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="phone">Phone (optional)</label>
+              <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g., 605-555-5555" />
+            </div>
+            <div>
+              <label for="topic">Topic</label>
+              <select id="topic" name="topic">
+                <option>General question</option>
+                <option>School orders</option>
+                <option>Billing/receipt</option>
+                <option>Reshoot/retouching</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" required placeholder="How can we help? Please include student name/school if relevant."></textarea>
+          </div>
+
+          <div class="hint">By submitting, you agree to receive a reply via email (and optional SMS if you provided a number).</div>
+
+          <div class="btn-row">
+            <button class="btn primary" type="submit">Send message</button>
+            <a class="btn" href="mailto:support@scottymkerphotos.com">Email instead</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Direct Contact Info -->
+      <div class="card">
+        <h2>Contact information</h2>
+        <div class="kv">
+          <div class="label">Email</div>
+          <div><a href="mailto:support@scottymkerphotos.com">support@scottymkerphotos.com</a></div>
+
+          <div class="label">Phone / SMS</div>
+          <div><a href="tel:+16055555555">+1 (605) 555-5555</a></div>
+
+          <div class="label">Address</div>
+          <div>
+            Scott Ymker Photography<br>
+            123 Main Street<br>
+            Yourtown, ST 12345<br>
+            <a href="https://maps.google.com/?q=Scott+Ymker+Photography,123+Main+Street+Yourtown+ST+12345" target="_blank" rel="noopener">View on Google Maps</a>
+          </div>
+
+          <div class="label">Hours</div>
+          <div>Mon–Fri 9am–5pm (CT). School day coverage as scheduled.</div>
+
+          <div class="label">FAQ</div>
+          <div>Common questions are answered on your order success email, or <a href="order.html">start an order</a> to see package details.</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
