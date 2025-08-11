@@ -1,8 +1,9 @@
 [build]
-publish = "."  # where your HTML lives
-functions = "functions"  # where your serverless functions live
+  publish = "."
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  functions = "netlify/functions"
