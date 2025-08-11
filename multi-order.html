@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Order - Scott Ymker Photography</title>
+  <title>Multi-Student Order – Scott Ymker Photography</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,21 +26,11 @@
     nav a[aria-current="page"]{font-weight:700}
     nav a:hover{background:#eef2f7}
 
-    /* hero merged with CTA */
+    /* hero */
     .hero{max-width:1100px;margin:16px auto 0;padding:0 16px}
-    .hero-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .hero-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;justify-content:space-between;gap:16px}
     .hero h1{margin:0 0 4px;font-size:20px}
     .hero p{margin:0;color:var(--muted)}
-    .hero__right{flex:0 0 340px;max-width:100%}
-    .hero__card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow)}
-    .hero__eyebrow{font-size:12px;color:var(--muted);margin-bottom:6px}
-    .btn{display:inline-block;border:1px solid var(--border);background:#fff;border-radius:999px;padding:10px 14px;font-weight:600}
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-    .hero__note{font-size:12px;color:var(--muted);margin-top:6px}
-    @media (max-width:800px){
-      .hero-wrap{flex-direction:column;align-items:stretch}
-      .hero__right{flex:0 0 auto}
-    }
 
     /* grid */
     .grid{max-width:1100px;margin:14px auto;padding:0 16px;display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
@@ -53,14 +43,24 @@
       width:100%;height:40px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font:inherit
     }
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .addon{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff}
-    .addon input{width:18px;height:18px}
     .muted{color:var(--muted)}
     .actions{margin-top:12px;display:flex;align-items:center;gap:12px}
-    button.primary{
-      appearance:none;border:none;background:var(--accent);color:#fff;padding:10px 14px;border-radius:999px;font-weight:600;cursor:pointer
-    }
-    button.primary[disabled]{opacity:.7;cursor:not-allowed}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:10px 14px;font-weight:600;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .btn.small{padding:8px 12px;font-weight:600}
+
+    /* student sections */
+    .student{border:1px solid var(--border);border-radius:12px;margin-top:12px}
+    .student summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .student summary::-webkit-details-marker{display:none}
+    .student .content{padding:12px 14px}
+    .student .row{margin-top:10px}
+    .student .topline{display:flex;gap:10px;align-items:center}
+    .student .rm{color:#ef4444;border-color:#ef4444}
+
+    /* add-ons list (single column like single-order page) */
+    .addon{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff}
+    .addon input{width:18px;height:18px}
 
     /* summary */
     table{width:100%;border-collapse:collapse}
@@ -82,112 +82,51 @@
       </a>
       <nav>
         <a href="index.html">Home</a>
-        <a href="order.html" aria-current="page">Order</a>
+        <a href="order.html">Order</a>
+        <a href="multi-order.html" aria-current="page">Multi-Student</a>
         <a href="contact.html">Contact</a>
       </nav>
     </div>
   </header>
 
-  <!-- hero (merged with multi-student CTA on right) -->
+  <!-- hero -->
   <section class="hero">
-    <div class="hero-wrap">
-      <div class="hero__left">
-        <h1>Order Your School Photo Package</h1>
-        <p>Choose a package, add-ons, and enter student &amp; parent details.</p>
+    <div class="hero-card">
+      <div>
+        <h1>Multi-Student Order</h1>
+        <p>Add each student below. Parent information is shared for one simple checkout.</p>
       </div>
-
-      <div class="hero__right">
-        <div class="hero__card">
-          <div class="hero__eyebrow">Ordering for more than one student?</div>
-          <a class="btn primary" href="multi-order.html">Use the Multi-Student Order</a>
-          <div class="hero__note">One checkout • up to 6 students</div>
-        </div>
+      <div>
+        <button id="addStudent" class="btn primary">+ Add another student</button>
       </div>
     </div>
   </section>
 
-  <!-- form + summary -->
+  <!-- grid: form + summary -->
   <main class="grid">
-    <form id="orderForm" class="card" novalidate>
-      <!-- Package -->
+    <form id="multiForm" class="card" novalidate>
+      <!-- Parent info -->
       <div>
-        <div class="section-title">Select a Package</div>
-        <select name="package" required>
-          <option value="">— Select a Package —</option>
-          <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
-          <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
-          <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
-          <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
-          <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
-          <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
-          <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
-          <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
-          <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
-          <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
-        </select>
-      </div>
-
-      <!-- Add-ons -->
-      <div>
-        <div class="section-title" style="margin-top:12px">Select Add-Ons</div>
-        <label class="addon"><input type="checkbox" name="addons" value="F"> F — 8x10 Print <span class="muted">($6)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="G"> G — 2× 5×7 Prints <span class="muted">($6)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="H"> H — 4× 3½×5 Prints <span class="muted">($6)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="I"> I — 24 Wallets <span class="muted">($18)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="J"> J — 8 Wallets <span class="muted">($6)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="K"> K — 16 Mini Wallets <span class="muted">($6)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="L"> L — Retouching <span class="muted">($7)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="M"> M — 8×10 Class Composite <span class="muted">($8)</span></label>
-        <label class="addon"><input type="checkbox" name="addons" value="N"> N — Digital File <span class="muted">($15)</span></label>
-      </div>
-
-      <!-- Background -->
-      <div>
-        <div class="section-title" style="margin-top:12px">Select a Background</div>
-        <select name="background" required>
-          <option value="F1" selected>F1 (Default)</option>
-          <option value="F2">F2</option>
-          <option value="F3">F3</option>
-          <option value="F4">F4</option>
-          <option value="F5">F5</option>
-          <option value="F6">F6</option>
-        </select>
-      </div>
-
-      <!-- Student -->
-      <div style="margin-top:12px">
-        <div class="section-title">Student Information</div>
-        <div class="row">
-          <input type="text" name="student_first" placeholder="First name" required>
-          <input type="text" name="student_last" placeholder="Last name" required>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <input type="text" name="teacher" placeholder="Teacher" required>
-          <input type="text" name="grade" placeholder="Grade" required>
-        </div>
-        <div style="margin-top:10px">
-          <input type="text" name="school" placeholder="School" required>
-        </div>
-      </div>
-
-      <!-- Parent -->
-      <div style="margin-top:12px">
-        <div class="section-title">Parent Information</div>
-        <input type="text" name="parent_name" placeholder="Parent Name" required style="margin-bottom:10px">
+        <div class="section-title">Parent / Guardian</div>
+        <input type="text" name="parent_name" placeholder="Parent name" required style="margin-bottom:10px">
         <div class="row">
           <input type="tel" name="parent_phone" placeholder="Phone" required>
           <input type="email" name="parent_email" placeholder="Email" required>
         </div>
       </div>
 
+      <!-- Students container -->
+      <div id="students"></div>
+
+      <!-- Actions -->
       <div class="actions">
-        <button type="submit" id="checkout-button" class="primary">Proceed to Checkout</button>
+        <button type="submit" id="checkout" class="btn primary">Proceed to Checkout</button>
         <span class="muted">You’ll review &amp; pay securely on Stripe.</span>
       </div>
     </form>
 
     <!-- Summary -->
-    <aside class="card" id="summaryCard">
+    <aside class="card">
       <div class="section-title">Order summary</div>
       <table aria-live="polite">
         <thead>
@@ -200,26 +139,275 @@
       </table>
 
       <div class="kv" style="margin-top:12px">
-        <div class="k">Background</div><div id="kvBg">—</div>
-        <div class="k">Student</div><div id="kvStudent">—</div>
-        <div class="k">Teacher / Grade</div><div id="kvTG">—</div>
-        <div class="k">School</div><div id="kvSchool">—</div>
         <div class="k">Parent</div><div id="kvParent">—</div>
+        <div class="k">Email</div><div id="kvEmail">—</div>
+        <div class="k">Phone</div><div id="kvPhone">—</div>
       </div>
     </aside>
   </main>
 
   <script>
-    // ---- price tables (cents) ----
+    // ---------- price tables (cents) ----------
     const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
     const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
     const ADDON_NAMES    = {
       F:"8x10 Print", G:"2x 5x7 Prints", H:"4x 3½x5 Prints", I:"24 Wallets",
       J:"8 Wallets", K:"16 Mini Wallets", L:"Retouching", M:"8x10 Class Composite", N:"Digital File"
     };
+    const MAX_STUDENTS = 6;
 
-    // ---- helpers ----
+    // ---------- helpers ----------
     const $  = (s)=>document.querySelector(s);
     const $$ = (s)=>Array.from(document.querySelectorAll(s));
-    const v  = (sel)=>{ const el=$(sel); return el? el.value.trim() : ""; };
-    const fmt= (c)=> (c/100).
+    const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
+
+    const studentsEl = $('#students');
+    const addBtn = $('#addStudent');
+
+    function studentTemplate(i){
+      // i is 1-based
+      return `
+      <details class="student" data-i="${i}" ${i<=2?'open':''}>
+        <summary>
+          <span>Student ${i}</span>
+          <span class="muted">Click to expand</span>
+        </summary>
+        <div class="content">
+          <div class="section-title">Student information</div>
+          <div class="row">
+            <input type="text" name="s${i}_first" placeholder="First name" required>
+            <input type="text" name="s${i}_last" placeholder="Last name" required>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <input type="text" name="s${i}_teacher" placeholder="Teacher" required>
+            <input type="text" name="s${i}_grade" placeholder="Grade" required>
+          </div>
+
+          <div class="section-title" style="margin-top:14px">Package</div>
+          <select name="s${i}_package">
+            <option value="">— Select a Package —</option>
+            <option value="A">Package A – $32</option>
+            <option value="A1">Package A1 – $41</option>
+            <option value="B">Package B – $27</option>
+            <option value="B1">Package B1 – $32</option>
+            <option value="C">Package C – $22</option>
+            <option value="C1">Package C1 – $27</option>
+            <option value="D">Package D – $18</option>
+            <option value="D1">Package D1 – $23</option>
+            <option value="E">Package E – $12</option>
+            <option value="E1">Package E1 – $17</option>
+          </select>
+
+          <div class="section-title" style="margin-top:14px">Add-ons (optional)</div>
+          <div>
+            ${Object.entries(ADDON_NAMES).map(([code, name])=>(
+              `<label class="addon">
+                 <input type="checkbox" name="s${i}_addons" value="${code}">
+                 ${code} — ${name} <span class="muted">($${(ADDON_PRICES[code]/100).toFixed(2)})</span>
+               </label>`
+            )).join('')}
+          </div>
+
+          <div class="section-title" style="margin-top:14px">Background</div>
+          <select name="s${i}_background">
+            <option value="F1" selected>F1 (Default)</option>
+            <option value="F2">F2</option>
+            <option value="F3">F3</option>
+            <option value="F4">F4</option>
+            <option value="F5">F5</option>
+            <option value="F6">F6</option>
+          </select>
+
+          <div class="actions" style="justify-content:flex-end;margin-top:14px">
+            <button type="button" class="btn small rm" data-remove="${i}">Remove student</button>
+          </div>
+        </div>
+      </details>`;
+    }
+
+    function renumberStudents(){
+      // Keep displayed indices consecutive
+      [...studentsEl.children].forEach((det, idx)=>{
+        const i = idx+1;
+        det.dataset.i = i;
+        det.querySelector('summary span').textContent = `Student ${i}`;
+        det.querySelectorAll('[name]').forEach(inp=>{
+          inp.name = inp.name.replace(/s\d+_/,'s'+i+'_');
+        });
+        const rm = det.querySelector('[data-remove]');
+        if (rm) rm.dataset.remove = i;
+      });
+    }
+
+    function addStudent(){
+      const count = studentsEl.children.length;
+      if (count>=MAX_STUDENTS) { alert(`Limit ${MAX_STUDENTS} students per order.`); return; }
+      const i = count+1;
+      studentsEl.insertAdjacentHTML('beforeend', studentTemplate(i));
+      renderSummary();
+    }
+
+    function removeStudent(i){
+      const el = studentsEl.querySelector(`details[data-i="${i}"]`);
+      if (el){ el.remove(); renumberStudents(); renderSummary(); }
+    }
+
+    addBtn.addEventListener('click', (e)=>{ e.preventDefault(); addStudent(); });
+    studentsEl.addEventListener('click',(e)=>{
+      const rm = e.target.closest('[data-remove]');
+      if (rm){ e.preventDefault(); removeStudent(+rm.dataset.remove); }
+    });
+
+    // seed with 2 students by default
+    addStudent(); addStudent();
+
+    // -------- Summary ----------
+    function fmtMoney(c){ return fmt(c); }
+
+    function collect(){
+      const parent = {
+        name: $('[name="parent_name"]')?.value.trim() || '',
+        phone: $('[name="parent_phone"]')?.value.trim() || '',
+        email: $('[name="parent_email"]')?.value.trim() || ''
+      };
+
+      const students = [...studentsEl.querySelectorAll('details')].map((det, idx)=>{
+        const i = idx+1;
+        const get = (sel)=> det.querySelector(`[name="s${i}_${sel}"]`);
+        const getAll = (sel)=> [...det.querySelectorAll(`[name="s${i}_${sel}"]:checked`)];
+
+        return {
+          i,
+          first:  get('first')?.value.trim() || '',
+          last:   get('last')?.value.trim() || '',
+          teacher:get('teacher')?.value.trim() || '',
+          grade:  get('grade')?.value.trim() || '',
+          pkg:    get('package')?.value || '',
+          bg:     get('background')?.value || 'F1',
+          addons: getAll('addons').map(x=>x.value)
+        };
+      });
+
+      return { parent, students };
+    }
+
+    function renderSummary(){
+      const { parent, students } = collect();
+      $('#kvParent').textContent = parent.name || '—';
+      $('#kvEmail').textContent  = parent.email || '—';
+      $('#kvPhone').textContent  = parent.phone || '—';
+
+      const body = $('#sumItems'); body.innerHTML='';
+      let total = 0;
+
+      students.forEach(s=>{
+        if (s.pkg && PACKAGE_PRICES[s.pkg]){
+          total += PACKAGE_PRICES[s.pkg];
+          body.insertAdjacentHTML('beforeend',
+            `<tr><td>S${s.i} — Package ${s.pkg}</td><td>1</td><td>${fmtMoney(PACKAGE_PRICES[s.pkg])}</td></tr>`);
+        }
+        s.addons.forEach(code=>{
+          const amt = ADDON_PRICES[code]; if (!amt) return;
+          total += amt;
+          body.insertAdjacentHTML('beforeend',
+            `<tr><td>S${s.i} — Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
+        });
+      });
+
+      $('#sumTotal').textContent = fmtMoney(total);
+    }
+
+    document.addEventListener('input', (e)=>{
+      if (e.target.closest('#multiForm')) renderSummary();
+    });
+
+    // initial render
+    renderSummary();
+
+    // -------- Submit ----------
+    $('#multiForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const { parent, students } = collect();
+
+      if (!parent.name || !parent.phone || !parent.email){
+        alert('Please complete parent name, phone, and email.'); return;
+      }
+      if (!students.length){ alert('Please add at least one student.'); return; }
+      if (!students.some(s=>s.pkg)){ alert('Pick a package for at least one student.'); return; }
+
+      // Build Stripe line_items (aggregate)
+      const line_items = [];
+      students.forEach(s=>{
+        if (s.pkg && PACKAGE_PRICES[s.pkg]){
+          line_items.push({
+            price_data: {
+              currency: "usd",
+              product_data: { name: `Student ${s.i} — Package ${s.pkg}` },
+              unit_amount: PACKAGE_PRICES[s.pkg]
+            },
+            quantity: 1
+          });
+        }
+        s.addons.forEach(code=>{
+          const amt = ADDON_PRICES[code]; if (!amt) return;
+          line_items.push({
+            price_data: {
+              currency: "usd",
+              product_data: { name: `Student ${s.i} — Add-on ${code} — ${ADDON_NAMES[code]||''}` },
+              unit_amount: amt
+            },
+            quantity: 1
+          });
+        });
+      });
+
+      // Metadata (compact to stay within Stripe metadata limits)
+      const metadata = {
+        parent_name: parent.name,
+        parent_phone: parent.phone,
+        parent_email: parent.email,
+        students_count: String(students.length)
+      };
+      students.forEach((s, idx)=>{
+        const k = idx+1;
+        metadata[`s${k}_name`] = `${s.first} ${s.last}`.trim();
+        metadata[`s${k}_teacher`] = s.teacher;
+        metadata[`s${k}_grade`] = s.grade;
+        metadata[`s${k}_bg`] = s.bg;
+        metadata[`s${k}_pkg`] = s.pkg || '';
+        metadata[`s${k}_addons`] = s.addons.join(', ');
+      });
+
+      const email = parent.email; // prefill on Stripe
+      const btn = $('#checkout'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Processing…';
+
+      try{
+        const res = await fetch('/.netlify/functions/create-checkout-session', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          // Include both formats (line_items + raw package lists) for compatibility
+          body: JSON.stringify({
+            line_items,
+            email,
+            metadata,
+            // fallback/plain for older handlers:
+            students: students.map(s=>({package:s.pkg, addons:s.addons}))
+          })
+        });
+        const json = await res.json();
+        if(!res.ok){
+          console.error(json);
+          alert(json?.details?.error?.message || json?.error || 'Stripe error');
+          btn.disabled=false; btn.textContent=orig; return;
+        }
+        if(json.url){ window.location.href=json.url; }
+        else{ alert('No checkout URL returned.'); btn.disabled=false; btn.textContent=orig; }
+      }catch(err){
+        console.error(err);
+        alert('Network error. Please try again.');
+        btn.disabled=false; btn.textContent=orig;
+      }
+    });
+  </script>
+</body>
+</html>
