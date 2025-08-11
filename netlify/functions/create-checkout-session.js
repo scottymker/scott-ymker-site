@@ -1,5 +1,4 @@
 // netlify/functions/create-checkout-session.js
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
@@ -12,7 +11,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
 
-  // --- Pricing tables (amounts are cents) ---
+  // --- Price tables (cents) ---
   const packagePrices = {
     A: 3200, A1: 4100,
     B: 2700, B1: 3200,
@@ -22,25 +21,17 @@ exports.handler = async (event) => {
   };
 
   const addonPrices = {
-    F: 600,  // 8x10 Print ($6)
-    G: 600,  // 2x 5x7 Prints ($6)
-    H: 600,  // 4x 3½x5 Prints ($6)
-    I: 1800, // 24 Wallets ($18)
-    J: 600,  // 8 Wallets ($6)
-    K: 600,  // 16 Mini Wallets ($6)
-    L: 700,  // Retouching ($7)
-    M: 800,  // 8x10 Class Composite ($8)
-    N: 1500, // Digital File ($15)
+    F: 600, G: 600, H: 600,
+    I: 1800, J: 600, K: 600,
+    L: 700,  M: 800, N: 1500,
   };
 
-  // Build line_items in a flexible way: use provided line_items OR compute from package/addons
+  // Accept prebuilt line_items OR compute from package/addons
   let line_items = Array.isArray(body.line_items) && body.line_items.length ? body.line_items : null;
 
   if (!line_items) {
     const pkg = body.package;
-    const addons = Array.isArray(body.addons)
-      ? body.addons
-      : body.addons ? [body.addons] : [];
+    const addons = Array.isArray(body.addons) ? body.addons : (body.addons ? [body.addons] : []);
 
     if (!pkg || !packagePrices[pkg]) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing or invalid package' }) };
@@ -69,11 +60,11 @@ exports.handler = async (event) => {
     }
   }
 
-  if (!Array.isArray(line_items) || line_items.length === 0) {
+  if (!Array.isArray(line_items) || !line_items.length) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Missing or invalid line_items' }) };
   }
 
-  // Merge metadata from the body + top-level fields
+  // Merge metadata (top-level fields win if present)
   const mergedMetadata = {
     ...(body.metadata || {}),
     background:    body.background    ?? (body.metadata || {}).background,
@@ -85,45 +76,54 @@ exports.handler = async (event) => {
     parent_name:   body.parent_name   ?? (body.metadata || {}).parent_name,
     parent_phone:  body.parent_phone  ?? (body.metadata || {}).parent_phone,
     parent_email:  body.parent_email  ?? (body.metadata || {}).parent_email ?? body.email,
-    // if addons were sent as codes, join them for easy reading in Stripe
     addons: Array.isArray(body.addons) ? body.addons.join(', ') : (body.metadata || {}).addons,
   };
 
-  // Stripe Checkout session payload
-  const stripePayload = {
-    mode: 'payment',
-    payment_method_types: ['card'],
-    success_url: 'https://schools.scottymkerphotos.com/success.html',
-    cancel_url:  'https://schools.scottymkerphotos.com/cancel.html',
-    phone_number_collection: { enabled: true },
-    customer_email: body.email || body.parent_email || undefined,
-    line_items,
-    metadata: mergedMetadata,
-  };
+  // Build form-encoded body for Stripe
+  const params = new URLSearchParams();
+  params.append('mode', 'payment');
+  params.append('success_url', 'https://schools.scottymkerphotos.com/success.html');
+  params.append('cancel_url',  'https://schools.scottymkerphotos.com/cancel.html');
+  params.append('phone_number_collection[enabled]', 'true');
+
+  const email = body.email || body.parent_email;
+  if (email) params.append('customer_email', email);
+
+  line_items.forEach((item, i) => {
+    const q = item.quantity || 1;
+    const { currency, unit_amount, product_data } = item.price_data || {};
+    params.append(`line_items[${i}][quantity]`, String(q));
+    params.append(`line_items[${i}][price_data][currency]`, String(currency || 'usd'));
+    params.append(`line_items[${i}][price_data][unit_amount]`, String(unit_amount || 0));
+    params.append(`line_items[${i}][price_data][product_data][name]`, String(product_data?.name || 'Item'));
+  });
+
+  Object.entries(mergedMetadata).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && String(v).trim() !== '') {
+      params.append(`metadata[${k}]`, String(v));
+    }
+  });
 
   try {
-    // Use native fetch on Netlify’s Node runtime
     const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify(stripePayload),
+      body: params,
     });
 
-    const text = await res.text();
+    const text = await res.text(); // keep raw for debugging
     if (!res.ok) {
+      // Bubble up Stripe’s error message so we can see it in the Network > Response tab
       return { statusCode: res.status, body: JSON.stringify({ error: 'Stripe error', details: text }) };
     }
 
     const session = JSON.parse(text);
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ id: session.id, url: session.url }),
-    };
+    return { statusCode: 200, body: JSON.stringify({ id: session.id, url: session.url }) };
   } catch (err) {
     console.error('Stripe Checkout Session Error:', err);
     return { statusCode: 500, body: JSON.stringify({ error: 'Failed to create checkout session' }) };
-    }
+  }
 };
