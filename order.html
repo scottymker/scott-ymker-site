@@ -90,26 +90,89 @@
   </form>
 </main>
 
-<!-- Page Script: collects values and posts to Netlify function -->
 <script>
-  // small helpers
+  // ---------- price tables (cents) ----------
+  const PACKAGE_PRICES = {
+    A: 3200, A1: 4100,
+    B: 2700, B1: 3200,
+    C: 2200, C1: 2700,
+    D: 1800, D1: 2300,
+    E: 1200, E1: 1700
+  };
+
+  const ADDON_PRICES = {
+    F: 600,   // 8x10 Print
+    G: 600,   // 2x 5x7 Prints
+    H: 600,   // 4x 3.5x5 Prints
+    I: 1800,  // 24 Wallets
+    J: 600,   // 8 Wallets
+    K: 600,   // 16 Mini Wallets
+    L: 700,   // Retouching
+    M: 800,   // 8x10 Class Composite
+    N: 1500   // Digital File
+  };
+
+  // ---------- helpers ----------
   const $ = (sel) => document.querySelector(sel);
   const getVal = (sel) => { const el = $(sel); return el ? el.value.trim() : ""; };
   const getAddons = () =>
     Array.from(document.querySelectorAll('input[name="addons"]:checked')).map(cb => cb.value);
 
+  // ---------- submit handler ----------
   $('#orderForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // basic required check for package (browser should catch, but belt & suspenders)
-    if (!getVal('select[name="package"]')) {
+    const pkg = getVal('select[name="package"]');
+    if (!pkg) {
       alert('Please select a package.');
       return;
     }
 
-    const payload = {
-      package:       getVal('select[name="package"]'),
-      addons:        getAddons(),
+    const addons = getAddons();
+
+    // Build Stripe line_items
+    const line_items = [];
+
+    // Package as first item
+    if (PACKAGE_PRICES[pkg]) {
+      line_items.push({
+        price_data: {
+          currency: "usd",
+          product_data: { name: `Package ${pkg}` },
+          unit_amount: PACKAGE_PRICES[pkg]
+        },
+        quantity: 1
+      });
+    }
+
+    // Each add-on as its own line item
+    addons.forEach(code => {
+      const amt = ADDON_PRICES[code];
+      if (amt) {
+        const names = {
+          F: "8x10 Print",
+          G: "2x 5x7 Prints",
+          H: "4x 3½x5 Prints",
+          I: "24 Wallets",
+          J: "8 Wallets",
+          K: "16 Mini Wallets",
+          L: "Retouching",
+          M: "8x10 Class Composite",
+          N: "Digital File"
+        };
+        line_items.push({
+          price_data: {
+            currency: "usd",
+            product_data: { name: `Add-on ${code} — ${names[code] || ""}`.trim() },
+            unit_amount: amt
+          },
+          quantity: 1
+        });
+      }
+    });
+
+    // Metadata for Stripe (must be strings)
+    const metadata = {
       background:    getVal('select[name="background"]'),
       student_first: getVal('input[name="student_first"]'),
       student_last:  getVal('input[name="student_last"]'),
@@ -118,8 +181,12 @@
       school:        getVal('input[name="school"]'),
       parent_name:   getVal('input[name="parent_name"]'),
       parent_phone:  getVal('input[name="parent_phone"]'),
-      parent_email:  getVal('input[name="parent_email"]')
+      parent_email:  getVal('input[name="parent_email"]'),
+      addons:        addons.join(", ")
     };
+
+    // top-level email for Stripe Checkout prefill
+    const email = metadata.parent_email;
 
     const btn = $('#checkout-button');
     const originalText = btn.textContent;
@@ -130,21 +197,25 @@
       const res = await fetch('/.netlify/functions/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ line_items, metadata, email })
       });
 
-      const data = await res.json();
+      const json = await res.json();
 
       if (!res.ok) {
-        console.error('Checkout session error:', data);
-        alert(data?.error || 'Something went wrong creating the checkout session.');
+        console.error('Stripe error:', json);
+        const msg =
+          json?.details?.error?.message ||
+          json?.error ||
+          'Stripe error';
+        alert(msg);
         btn.disabled = false;
         btn.textContent = originalText;
         return;
       }
 
-      if (data.url) {
-        window.location.href = data.url; // Stripe Checkout
+      if (json.url) {
+        window.location.href = json.url; // redirect to Stripe Checkout
       } else {
         alert('No checkout URL returned.');
         btn.disabled = false;
