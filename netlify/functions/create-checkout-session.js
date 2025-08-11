@@ -1,146 +1,147 @@
-// netlify/functions/create-checkout-session.js
-// Node 18+ (native fetch). Form-encodes for Stripe.
+/* netlify/functions/create-checkout-session.js */
+const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
-  const SECRET = process.env.STRIPE_SECRET_KEY;
-  if (!SECRET) {
-    return { statusCode: 500, body: JSON.stringify({ error: "Missing STRIPE_SECRET_KEY env var" }) };
-  }
-
-  // -------- Parse body --------
-  let body = {};
-  try { body = JSON.parse(event.body || "{}"); }
-  catch { return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) }; }
-
-  // -------- Price tables (cents) --------
-  const packagePrices = {
-    A: 3200, A1: 4100,
-    B: 2700, B1: 3200,
-    C: 2200, C1: 2700,
-    D: 1800, D1: 2300,
-    E: 1200, E1: 1700,
-  };
-  const addonNames = {
-    F: "8x10 Print", G: "2x 5x7 Prints", H: "4x 3½x5 Prints",
-    I: "24 Wallets", J: "8 Wallets", K: "16 Mini Wallets",
-    L: "Retouching", M: "8x10 Class Composite", N: "Digital File",
-  };
-  const addonPrices = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
-
-  // -------- Build line_items (two paths) --------
-  let lineItems = [];
-
-  // Path 1: server-calculated from package + addons (preferred)
-  const selectedPackage = (body.package || "").trim();
-  const selectedAddons = Array.isArray(body.addons) ? body.addons : [];
-
-  if (selectedPackage) {
-    const amt = packagePrices[selectedPackage];
-    if (!amt) {
-      return { statusCode: 400, body: JSON.stringify({ error: "Missing or invalid package" }) };
+  try {
+    if (event.httpMethod !== 'POST') {
+      return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
-    lineItems.push({ name: `Package ${selectedPackage}`, amount: amt, quantity: 1 });
 
-    selectedAddons.forEach((code) => {
-      const price = addonPrices[code];
-      if (price) lineItems.push({
-        name: `Add-on ${code} — ${addonNames[code]}`,
-        amount: price,
+    const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+    if (!STRIPE_SECRET_KEY) {
+      return { statusCode: 500, body: JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }) };
+    }
+
+    const body = JSON.parse(event.body || '{}');
+
+    // --- Helpers ------------------------------------------------------------
+    const pkgPrice = {
+      A: 3200, A1: 4100, B: 2700, B1: 3200,
+      C: 2200, C1: 2700, D: 1800, D1: 2300,
+      E: 1200, E1: 1700
+    };
+    const addonPrice = {
+      F: 600, G: 600, H: 600, I: 1800, J: 600,
+      K: 600, L: 700, M: 800, N: 1500
+    };
+
+    const ensureArray = (x) => Array.isArray(x) ? x : (x ? [x] : []);
+    const selectedAddons = ensureArray(body.addons);
+    const selectedPackage = body.package;
+
+    // Accept either prebuilt line_items (from client) or build them here
+    let lineItems = [];
+    if (Array.isArray(body.line_items) && body.line_items.length) {
+      lineItems = body.line_items; // trust prebuilt structure
+    } else {
+      if (!selectedPackage || !pkgPrice[selectedPackage]) {
+        return { statusCode: 400, body: JSON.stringify({ error: 'Missing or invalid package' }) };
+      }
+      // Package
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: { name: `Package ${selectedPackage}` },
+          unit_amount: pkgPrice[selectedPackage]
+        },
         quantity: 1
       });
-    });
-  }
-
-  // Path 2: if client sent prebuilt line_items, use them instead
-  if (Array.isArray(body.line_items) && body.line_items.length > 0) {
-    const fromClient = [];
-    for (const it of body.line_items) {
-      const name = it?.price_data?.product_data?.name || it?.name;
-      const amount = it?.price_data?.unit_amount ?? it?.amount;
-      const quantity = Number(it?.quantity || 1);
-      if (typeof name === "string" && Number.isInteger(amount) && amount > 0 && quantity > 0) {
-        fromClient.push({ name, amount, quantity });
-      }
+      // Addons
+      selectedAddons.forEach(code => {
+        const amount = addonPrice[code];
+        if (amount) {
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: { name: `Add-on ${code}` },
+              unit_amount: amount
+            },
+            quantity: 1
+          });
+        }
+      });
     }
-    if (fromClient.length > 0) lineItems = fromClient; // override with client items
-  }
 
-  if (lineItems.length === 0) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Missing or invalid line_items" }) };
-  }
+    // Metadata (what you want to see later in Stripe + webhooks)
+    const metadata = {
+      student_first: body.student_first || '',
+      student_last:  body.student_last  || '',
+      teacher:       body.teacher       || '',
+      grade:         body.grade         || '',
+      school:        body.school        || '',
+      parent_name:   body.parent_name   || '',
+      parent_phone:  body.parent_phone  || '',
+      parent_email:  body.parent_email  || '',
+      background:    body.background    || '',
+      addons:        ensureArray(body.addons).join(', ')
+    };
 
-  // -------- Metadata (merge derived + client) --------
-  const derivedMeta = {
-    addons: selectedAddons.join(", "),
-    background: body.background || "",
-    student_first: body.student_first || "",
-    student_last: body.student_last || "",
-    teacher: body.teacher || "",
-    grade: body.grade || "",
-    school: body.school || "",
-    parent_name: body.parent_name || "",
-    parent_phone: body.parent_phone || "",
-    parent_email: body.parent_email || "",
-  };
-  const clientMeta = (body.metadata && typeof body.metadata === "object") ? body.metadata : {};
-  const mergedMetadata = { ...derivedMeta, ...clientMeta }; // client keys win
+    // Customer prefill: email (phone is collected by Checkout below)
+    const customerEmail =
+      (body.email && String(body.email).trim()) ||
+      (body.parent_email && String(body.parent_email).trim()) ||
+      '';
 
-  // -------- Build form-encoded params --------
-  try {
+    // Where to return after success/cancel — build origin so this works on
+    // both previews and your custom domain (Cloudflare over Netlify)
+    const origin =
+      (event.headers['x-forwarded-proto'] ? `${event.headers['x-forwarded-proto']}://` : 'https://') +
+      (event.headers['x-forwarded-host'] || event.headers.host || 'schools.scottymkerphotos.com');
+
+    const success_url = `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel_url  = `${origin}/cancel.html`;
+
+    // Build application/x-www-form-urlencoded payload
     const params = new URLSearchParams();
-    params.append("mode", "payment");
-    params.append("payment_method_types[]", "card");
+    params.append('mode', 'payment');
+    params.append('success_url', success_url);
+    params.append('cancel_url', cancel_url);
+    if (customerEmail) params.append('customer_email', customerEmail);
+    params.append('phone_number_collection[enabled]', 'true');
 
-    params.append(
-      "success_url",
-      "https://schools.scottymkerphotos.com/success.html?session_id={CHECKOUT_SESSION_ID}"
-    );
-    params.append(
-      "cancel_url",
-      "https://schools.scottymkerphotos.com/cancel.html"
-    );
-
-    const email = (body.parent_email || body.email || "").trim();
-    if (email) params.append("customer_email", email);
-    params.append("phone_number_collection[enabled]", "true");
-
-    lineItems.forEach((li, i) => {
-      params.append(`line_items[${i}][price_data][currency]`, "usd");
-      params.append(`line_items[${i}][price_data][product_data][name]`, li.name);
-      params.append(`line_items[${i}][price_data][unit_amount]`, String(li.amount));
-      params.append(`line_items[${i}][quantity]`, String(li.quantity));
-    });
-
-    Object.entries(mergedMetadata).forEach(([k, v]) => {
-      if (v != null && String(v).trim() !== "") {
+    // metadata
+    Object.entries(metadata).forEach(([k,v]) => {
+      if (v !== undefined && v !== null && String(v).length) {
         params.append(`metadata[${k}]`, String(v));
-        params.append(`payment_intent_data[metadata][${k}]`, String(v)); // mirror on payment
       }
     });
 
-    const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SECRET}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
+    // line_items[n][...]
+    lineItems.forEach((li, i) => {
+      const base = `line_items[${i}]`;
+      params.append(`${base}[quantity]`, String(li.quantity || 1));
+      const pd = li.price_data || {};
+      params.append(`${base}[price_data][currency]`, pd.currency || 'usd');
+      params.append(`${base}[price_data][unit_amount]`, String(pd.unit_amount || 0));
+      if (pd.product_data && pd.product_data.name) {
+        params.append(`${base}[price_data][product_data][name]`, pd.product_data.name);
+      }
     });
 
-    const text = await stripeRes.text();
-    let json; try { json = JSON.parse(text); } catch { /* ignore */ }
+    // Call Stripe
+    const resp = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    });
 
-    if (!stripeRes.ok) {
-      return { statusCode: stripeRes.status, body: typeof json === "object" ? JSON.stringify(json) : text };
+    const session = await resp.json();
+
+    if (!resp.ok || session.error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Stripe error', details: session.error || session })
+      };
     }
 
-    return { statusCode: 200, body: JSON.stringify({ url: json.url }) };
+    // Return the Stripe-hosted URL to the client
+    return { statusCode: 200, body: JSON.stringify({ url: session.url }) };
+
   } catch (err) {
-    console.error("Stripe error:", err);
-    return { statusCode: 500, body: JSON.stringify({ error: "Stripe error" }) };
+    console.error('Checkout error', err);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Server error' }) };
   }
 };
