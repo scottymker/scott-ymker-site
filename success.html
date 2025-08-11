@@ -98,77 +98,83 @@
   </div>
 
   <script>
-    document.getElementById('yr').textContent = new Date().getFullYear();
+  // Year in footer
+  document.getElementById('yr').textContent = new Date().getFullYear();
 
-    const money = (cents, currency='usd') =>
-      (Number(cents||0)/100).toLocaleString(undefined,{style:'currency',currency:(currency||'USD').toUpperCase()});
+  // Money formatter
+  const fmtMoney = (cents, currency='usd') =>
+    (Number(cents || 0)/100).toLocaleString(undefined, {
+      style:'currency', currency:(currency||'USD').toUpperCase()
+    });
 
-    const qs = new URLSearchParams(location.search);
-    const sessionId = qs.get('session_id') || qs.get('id'); // accept either
+  // Robust session_id extraction: ?session_id=... OR ?id=... OR #session_id=...
+  function getSessionId() {
+    const url = new URL(window.location.href);
+    const qp = url.searchParams;
+    let sid = qp.get('session_id') || qp.get('id');
+    if (!sid && url.hash) {
+      const m = url.hash.match(/(?:^|[&#?])session_id=([^&]+)/);
+      if (m) sid = decodeURIComponent(m[1]);
+    }
+    return sid || '';
+  }
 
-    async function load() {
-      if (!sessionId) {
-        document.getElementById('orderSub').textContent = 'We could not load your receipt (no session id).';
-        return;
-      }
+  async function load() {
+    const sessionId = getSessionId();
 
-      try {
-        // Your Netlify function should return a single object with
-        // { id, amount_total, currency, payment_status, customer_email, customer_phone, metadata, items: [] }
-        const res = await fetch(`/.netlify/functions/get-session?session_id=${encodeURIComponent(sessionId)}`);
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data?.error || 'Request failed');
-
-        document.getElementById('orderSub').textContent =
-          `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
-
-        // Build table rows from items; fallback to Stripe shape if function returns raw session
-        const items = data.items
-          || (data.line_items && data.line_items.data
-              ? data.line_items.data.map(li => ({
-                  description: li.description || li.price?.product || li.price?.nickname || 'Item',
-                  quantity: li.quantity || 1,
-                  amount_total: li.amount_total ?? (li.amount_subtotal ?? (li.price?.unit_amount||0)*(li.quantity||1)),
-                  unit_amount: li.price?.unit_amount || 0
-                }))
-              : []);
-
-        const body = document.getElementById('itemsBody');
-        body.innerHTML = '';
-        items.forEach(it => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${it.description || 'Item'}</td>
-            <td>${it.quantity ?? 1}</td>
-            <td>${money(it.amount_total ?? (it.unit_amount||0)*(it.quantity||1), data.currency)}</td>`;
-          body.appendChild(tr);
-        });
-
-        const total = data.amount_total ?? items.reduce((s,i)=>s+(i.amount_total ?? (i.unit_amount||0)*(i.quantity||1)),0);
-        document.getElementById('totalCell').textContent = money(total, data.currency);
-
-        const md = data.metadata || {};
-        const v = x => (x && String(x).trim()) ? x : '—';
-        const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
-        const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
-
-        document.getElementById('kvOrder').textContent = data.id?.replace('cs_','CS-') || '—';
-        document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
-        document.getElementById('kvEmail').textContent = v(data.customer_email);
-        document.getElementById('kvPhone').textContent = v(data.customer_phone || md.parent_phone);
-        document.getElementById('kvStudent').textContent = student;
-        document.getElementById('kvTeacher').textContent = tg;
-        document.getElementById('kvSchool').textContent = v(md.school);
-        document.getElementById('kvBg').textContent = v(md.background);
-        document.getElementById('kvAddons').textContent = v(md.addons);
-      } catch (err) {
-        console.error(err);
-        document.getElementById('orderSub').textContent = 'We could not load your receipt.';
-      }
+    if (!sessionId) {
+      console.error('Missing session id');
+      // leave the page friendly; headline already shown
+      return;
     }
 
-    load();
-  </script>
+    // Call Netlify function (expects ?id=...)
+    const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('get-session error:', data);
+      // keep the friendly message showing
+      return;
+    }
+
+    // Update headline subtext
+    const sub = document.getElementById('orderSub');
+    sub.textContent = `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
+
+    // Build items table
+    const body = document.getElementById('itemsBody');
+    body.innerHTML = '';
+    (data.items || []).forEach(it => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${it.description || 'Item'}</td>
+        <td>${it.quantity ?? 1}</td>
+        <td>${fmtMoney(it.amount_total ?? it.unit_amount * (it.quantity ?? 1), it.currency || data.currency)}</td>`;
+      body.appendChild(tr);
+    });
+
+    document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
+
+    // Details / metadata
+    const md = data.metadata || {};
+    const v = (x)=> x && String(x).trim() ? x : '—';
+    const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
+    const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+
+    document.getElementById('kvOrder').textContent  = data.id?.replace('cs_', 'CS-') ?? '—';
+    document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
+    document.getElementById('kvEmail').textContent  = v(data.customer_email);
+    document.getElementById('kvPhone').textContent  = v(data.customer_phone || md.parent_phone);
+    document.getElementById('kvStudent').textContent= student;
+    document.getElementById('kvTeacher').textContent= tg;
+    document.getElementById('kvSchool').textContent = v(md.school);
+    document.getElementById('kvBg').textContent     = v(md.background);
+    document.getElementById('kvAddons').textContent = v(md.addons);
+  }
+
+  load();
+</script>
+
 </body>
 </html>
