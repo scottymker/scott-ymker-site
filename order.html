@@ -1,195 +1,163 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Order - Scott Ymker Photography</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Order - Scott Ymker Photography</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <header class="site-header">
-    <div class="header-content">
-        <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
-        <nav class="topnav">
-            <a href="index.html">Home</a>
-            <a href="order.html">Order Prints</a>
-        </nav>
-    </div>
-    <h1>Order Your School Photo Package</h1>
+  <div class="header-content">
+    <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo" />
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="order.html" aria-current="page">Order Prints</a>
+    </nav>
+  </div>
+  <h1>Order Your School Photo Package</h1>
 </header>
 
 <main class="order-form">
-    <form id="orderForm">
-        <section>
-            <h2>Select a Package</h2>
-            <select name="package" required>
-                <option value="">-- Select a Package --</option>
-                <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
-                <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
-                <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
-                <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
-                <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
-                <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
-                <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
-                <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
-                <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
-                <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
-            </select>
-        </section>
+  <form id="orderForm" novalidate>
+    <!-- Package -->
+    <section>
+      <h2>Select a Package</h2>
+      <select name="package" required>
+        <option value="">-- Select a Package --</option>
+        <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
+        <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
+        <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
+        <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
+        <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
+        <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
+        <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
+        <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
+        <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
+        <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
+      </select>
+    </section>
 
-        <section>
-            <h2>Select Add-Ons</h2>
-            <div class="addons">
-                <label><input type="checkbox" name="addons" value="F"> F - 8x10 Print ($6)</label><br>
-                <label><input type="checkbox" name="addons" value="G"> G - 2x 5x7 Prints ($6)</label><br>
-                <label><input type="checkbox" name="addons" value="H"> H - 4x 3½x5 Prints ($6)</label><br>
-                <label><input type="checkbox" name="addons" value="I"> I - 24 Wallets ($18)</label><br>
-                <label><input type="checkbox" name="addons" value="J"> J - 8 Wallets ($6)</label><br>
-                <label><input type="checkbox" name="addons" value="K"> K - 16 Mini Wallets ($6)</label><br>
-                <label><input type="checkbox" name="addons" value="L"> L - Retouching ($7)</label><br>
-                <label><input type="checkbox" name="addons" value="M"> M - 8x10 Class Composite ($8)</label><br>
-                <label><input type="checkbox" name="addons" value="N"> N - Digital File ($15)</label>
-            </div>
-        </section>
+    <!-- Add-ons -->
+    <section>
+      <h2>Select Add-Ons</h2>
+      <div class="addons">
+        <label><input type="checkbox" name="addons" value="F" /> F - 8x10 Print ($6)</label><br />
+        <label><input type="checkbox" name="addons" value="G" /> G - 2x 5x7 Prints ($6)</label><br />
+        <label><input type="checkbox" name="addons" value="H" /> H - 4x 3½x5 Prints ($6)</label><br />
+        <label><input type="checkbox" name="addons" value="I" /> I - 24 Wallets ($18)</label><br />
+        <label><input type="checkbox" name="addons" value="J" /> J - 8 Wallets ($6)</label><br />
+        <label><input type="checkbox" name="addons" value="K" /> K - 16 Mini Wallets ($6)</label><br />
+        <label><input type="checkbox" name="addons" value="L" /> L - Retouching ($7)</label><br />
+        <label><input type="checkbox" name="addons" value="M" /> M - 8x10 Class Composite ($8)</label><br />
+        <label><input type="checkbox" name="addons" value="N" /> N - Digital File ($15)</label>
+      </div>
+    </section>
 
-        <section>
-            <h2>Select a Background</h2>
-            <select name="background">
-                <option value="F1" selected>F1 (Default)</option>
-                <option value="F2">F2</option>
-                <option value="F3">F3</option>
-                <option value="F4">F4</option>
-                <option value="F5">F5</option>
-                <option value="F6">F6</option>
-            </select>
-        </section>
+    <!-- Background -->
+    <section>
+      <h2>Select a Background</h2>
+      <select name="background" required>
+        <option value="F1" selected>F1 (Default)</option>
+        <option value="F2">F2</option>
+        <option value="F3">F3</option>
+        <option value="F4">F4</option>
+        <option value="F5">F5</option>
+        <option value="F6">F6</option>
+      </select>
+    </section>
 
-        <section>
-            <h2>Student Information</h2>
-            <input type="text" name="studentFirstName" placeholder="First Name" required>
-            <input type="text" name="studentLastName" placeholder="Last Name" required>
-            <input type="text" name="teacher" placeholder="Teacher" required>
-            <input type="text" name="grade" placeholder="Grade" required>
-            <input type="text" name="school" placeholder="School" required>
-        </section>
+    <!-- Student -->
+    <section>
+      <h2>Student Information</h2>
+      <input type="text" name="student_first" placeholder="First Name" required />
+      <input type="text" name="student_last"  placeholder="Last Name" required />
+      <input type="text" name="teacher"       placeholder="Teacher" required />
+      <input type="text" name="grade"         placeholder="Grade" required />
+      <input type="text" name="school"        placeholder="School" required />
+    </section>
 
-        <section>
-            <h2>Parent Information</h2>
-            <input type="text" name="parentName" placeholder="Parent Name" required>
-            <input type="tel" name="phone" placeholder="Phone" required>
-            <input type="email" name="email" placeholder="Email" required>
-        </section>
+    <!-- Parent -->
+    <section>
+      <h2>Parent Information</h2>
+      <input type="text"  name="parent_name"  placeholder="Parent Name" required />
+      <input type="tel"   name="parent_phone" placeholder="Phone" required />
+      <input type="email" name="parent_email" placeholder="Email" required />
+    </section>
 
-        <button type="submit" id="checkout-button">Proceed to Checkout</button>
-    </form>
+    <button type="submit" id="checkout-button">Proceed to Checkout</button>
+  </form>
 </main>
 
+<!-- Page Script: collects values and posts to Netlify function -->
 <script>
-  document.getElementById("orderForm").addEventListener("submit", async function (e) {
+  // small helpers
+  const $ = (sel) => document.querySelector(sel);
+  const getVal = (sel) => { const el = $(sel); return el ? el.value.trim() : ""; };
+  const getAddons = () =>
+    Array.from(document.querySelectorAll('input[name="addons"]:checked')).map(cb => cb.value);
+
+  $('#orderForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(this);
-    const data = {};
-    formData.forEach((value, key) => {
-      if (data[key]) {
-        if (!Array.isArray(data[key])) {
-          data[key] = [data[key]];
-        }
-        data[key].push(value);
-      } else {
-        data[key] = value;
-      }
-    });
-
-    // Build the line_items array and metadata
-    const line_items = [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: `Package ${data.package}`
-          },
-          unit_amount: getPackagePrice(data.package),
-        },
-        quantity: 1
-      }
-    ];
-
-    if (data.addons && Array.isArray(data.addons)) {
-      data.addons.forEach(addon => {
-        const addonDetails = getAddonDetails(addon);
-        if (addonDetails) {
-          line_items.push({
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: addonDetails.name
-              },
-              unit_amount: addonDetails.amount,
-            },
-            quantity: 1
-          });
-        }
-      });
+    // basic required check for package (browser should catch, but belt & suspenders)
+    if (!getVal('select[name="package"]')) {
+      alert('Please select a package.');
+      return;
     }
 
-    const metadata = {
-      studentFirstName: data.studentFirstName,
-      studentLastName: data.studentLastName,
-      teacher: data.teacher,
-      grade: data.grade,
-      school: data.school,
-      parentName: data.parentName,
-      phone: data.phone,
-      email: data.email,
-      background: data.background
+    const payload = {
+      package:       getVal('select[name="package"]'),
+      addons:        getAddons(),
+      background:    getVal('select[name="background"]'),
+      student_first: getVal('input[name="student_first"]'),
+      student_last:  getVal('input[name="student_last"]'),
+      teacher:       getVal('input[name="teacher"]'),
+      grade:         getVal('input[name="grade"]'),
+      school:        getVal('input[name="school"]'),
+      parent_name:   getVal('input[name="parent_name"]'),
+      parent_phone:  getVal('input[name="parent_phone"]'),
+      parent_email:  getVal('input[name="parent_email"]')
     };
 
+    const btn = $('#checkout-button');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Processing…';
+
     try {
-      const response = await fetch("/.netlify/functions/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ line_items, metadata })
+      const res = await fetch('/.netlify/functions/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const result = await response.json();
-      if (result.url) {
-        window.location.href = result.url;
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('Checkout session error:', data);
+        alert(data?.error || 'Something went wrong creating the checkout session.');
+        btn.disabled = false;
+        btn.textContent = originalText;
+        return;
+      }
+
+      if (data.url) {
+        window.location.href = data.url; // Stripe Checkout
       } else {
-        alert("Error creating checkout session.");
+        alert('No checkout URL returned.');
+        btn.disabled = false;
+        btn.textContent = originalText;
       }
     } catch (err) {
-      alert("Something went wrong. Try again.");
       console.error(err);
-    }
-
-    function getPackagePrice(code) {
-      const prices = {
-        A: 3200, A1: 4100, B: 2700, B1: 3200,
-        C: 2200, C1: 2700, D: 1800, D1: 2300,
-        E: 1200, E1: 1700
-      };
-      return prices[code] || 0;
-    }
-
-    function getAddonDetails(code) {
-      const addons = {
-        F: { name: "8x10 Print", amount: 600 },
-        G: { name: "2x 5x7 Prints", amount: 600 },
-        H: { name: "4x 3½x5 Prints", amount: 600 },
-        I: { name: "24 Wallets", amount: 1800 },
-        J: { name: "8 Wallets", amount: 600 },
-        K: { name: "16 Mini Wallets", amount: 600 },
-        L: { name: "Retouching", amount: 700 },
-        M: { name: "8x10 Class Composite", amount: 800 },
-        N: { name: "Digital File", amount: 1500 }
-      };
-      return addons[code];
+      alert('Network error. Please try again.');
+      btn.disabled = false;
+      btn.textContent = originalText;
     }
   });
 </script>
-
 
 </body>
 </html>
