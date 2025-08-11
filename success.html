@@ -1,40 +1,159 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Thank you!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>body{font-family:system-ui;margin:2rem;max-width:720px}</style>
+  <title>Thank you • Scott Ymker Photography</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9;
+      --ok:#16a34a; --border:#e7e7e9;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:960px;margin:24px auto;padding:0 16px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+    header img{height:42px;width:auto}
+    header .brand{font-weight:700;letter-spacing:.2px}
+    .hero{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;display:flex;align-items:center;gap:16px}
+    .check{height:36px;width:36px;border-radius:50%;display:grid;place-items:center;background:rgba(22,163,74,.1);color:var(--ok);font-size:20px}
+    h1{margin:0;font-size:24px}
+    .subtle{color:var(--muted);margin-top:4px}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:18px}
+    @media (max-width:800px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+    .card h2{font-size:16px;margin:0 0 12px}
+    .keyvals{display:grid;grid-template-columns:180px 1fr;row-gap:8px;column-gap:12px}
+    .label{color:var(--muted)}
+    .total{font-weight:700;font-size:18px}
+    .items{width:100%;border-collapse:collapse;margin-top:6px}
+    .items th,.items td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:left}
+    .items th{color:var(--muted);font-weight:600;font-size:13px}
+    .actions{display:flex;gap:10px;margin-top:18px}
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    .muted{color:var(--muted)}
+    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+  </style>
 </head>
 <body>
-  <h1>Thank you!</h1>
-  <p>Your payment was successful. A receipt will be emailed shortly.</p>
-  <div id="summary">Loading order…</div>
+  <div class="wrap">
+    <header>
+      <img src="2020Logo_black.png" alt="Scott Ymker Photography">
+      <div class="brand">Scott Ymker Photography</div>
+    </header>
+
+    <section class="hero">
+      <div class="check">✓</div>
+      <div>
+        <h1>Thank you for your purchase!</h1>
+        <div class="subtle" id="orderSub">Your payment was successful.</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card" id="summary">
+        <h2>Order summary</h2>
+        <table class="items" id="itemsTable" aria-live="polite">
+          <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
+          <tbody id="itemsBody"></tbody>
+          <tfoot>
+            <tr><td colspan="2" class="label">Total</td><td class="total" id="totalCell">$0.00</td></tr>
+          </tfoot>
+        </table>
+
+        <div class="actions">
+          <button class="btn" onclick="window.print()">Print receipt</button>
+          <a class="btn primary" href="index.html">Back to Home</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Details</h2>
+        <div class="keyvals" id="detailsKV">
+          <div class="label">Order #</div><div id="kvOrder">—</div>
+          <div class="label">Status</div><div id="kvStatus">—</div>
+          <div class="label">Email</div><div id="kvEmail">—</div>
+          <div class="label">Phone</div><div id="kvPhone">—</div>
+          <div class="label">Student</div><div id="kvStudent">—</div>
+          <div class="label">Teacher / Grade</div><div id="kvTeacher">—</div>
+          <div class="label">School</div><div id="kvSchool">—</div>
+          <div class="label">Background</div><div id="kvBg">—</div>
+          <div class="label">Add-ons</div><div id="kvAddons">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <h2>Questions or changes?</h2>
+      <p class="muted">
+        If anything looks off, reply to your receipt email or contact us:
+        <br><strong>Email:</strong> <a href="mailto:support@scottymkerphotos.com">support@scottymkerphotos.com</a>
+      </p>
+    </section>
+
+    <footer>
+      © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+    </footer>
+  </div>
 
   <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    const fmtMoney = (cents, currency='usd') =>
+      (cents/100).toLocaleString(undefined, {style:'currency', currency: (currency||'USD').toUpperCase()});
+
     const qs = new URLSearchParams(location.search);
-    const sid = qs.get('session_id');
+    const sessionId = qs.get('session_id');
+
     async function load() {
-      if (!sid) { document.getElementById('summary').textContent = 'Missing session id.'; return; }
-      const res = await fetch('/.netlify/functions/get-session?sid=' + encodeURIComponent(sid));
+      if (!sessionId) return;
+      const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
       const data = await res.json();
 
-      // Render a tiny summary
-      const meta = data.metadata || {};
-      const email = data.customer_email || meta.parent_email || '(no email)';
-      const amount = (data.amount_total/100).toFixed(2);
+      if (!res.ok) {
+        document.getElementById('orderSub').textContent = 'We could not load your receipt.';
+        console.error(data);
+        return;
+      }
 
-      document.getElementById('summary').innerHTML = `
-        <h2>Order Summary</h2>
-        <p><strong>Total:</strong> $${amount}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Student:</strong> ${meta.student_first || ''} ${meta.student_last || ''}</p>
-        <p><strong>Teacher/Grade:</strong> ${meta.teacher || ''} / ${meta.grade || ''}</p>
-        <p><strong>School:</strong> ${meta.school || ''}</p>
-        <p><strong>Background:</strong> ${meta.background || ''}</p>
-        <p><strong>Add-ons:</strong> ${meta.addons || ''}</p>
-      `;
+      // Headline/total
+      document.getElementById('orderSub').textContent =
+        `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
+
+      // Table items
+      const body = document.getElementById('itemsBody');
+      body.innerHTML = '';
+      (data.items || []).forEach(it => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${it.description || 'Item'}</td>
+          <td>${it.quantity ?? 1}</td>
+          <td>${fmtMoney(it.amount_total ?? (it.unit_amount*it.quantity), data.currency)}</td>`;
+        body.appendChild(tr);
+      });
+      document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
+
+      // Details / metadata
+      const md = data.metadata || {};
+      const v = (x)=> x && String(x).trim() ? x : '—';
+      const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
+      const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+
+      document.getElementById('kvOrder').textContent = data.id?.replace('cs_', 'CS-') ?? '—';
+      document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
+      document.getElementById('kvEmail').textContent = v(data.customer_email);
+      document.getElementById('kvPhone').textContent = v(data.customer_phone || md.parent_phone);
+      document.getElementById('kvStudent').textContent = student;
+      document.getElementById('kvTeacher').textContent = tg;
+      document.getElementById('kvSchool').textContent = v(md.school);
+      document.getElementById('kvBg').textContent = v(md.background);
+      document.getElementById('kvAddons').textContent = v(md.addons);
     }
+
     load();
   </script>
 </body>
