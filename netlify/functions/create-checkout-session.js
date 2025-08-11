@@ -1,196 +1,94 @@
 // netlify/functions/create-checkout-session.js
-
 exports.handler = async (event) => {
-  if (event.httpMethod && event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: { Allow: 'POST', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Method Not Allowed' }),
-    };
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   try {
-    const body = JSON.parse(event.body || '{}');
+    const { line_items, metadata = {}, email } = JSON.parse(event.body || "{}");
 
-    // --- Prices in cents (authoritative on the server) ---
-    const packagePrices = {
-      A: 3200, A1: 4100,
-      B: 2700, B1: 3200,
-      C: 2200, C1: 2700,
-      D: 1800, D1: 2300,
-      E: 1200, E1: 1700,
-    };
-
-    const addonPrices = {
-      F: 500,   // 8x10 Print
-      G: 800,   // 2x 5x7 Prints
-      H: 800,   // 4x 3.5x5 Prints
-      I: 1800,  // 24 Wallets
-      J: 800,   // 8 Wallets
-      K: 800,   // 16 Mini Wallets
-      L: 1000,  // Retouching
-      M: 1500,  // 8x10 Class Composite
-      N: 2000,  // Digital File
-    };
-
-    // --- Build line_items ---
-    let line_items = Array.isArray(body.line_items) ? body.line_items : [];
-
-    // If the client didn't send line_items, build them here using codes
-    if (!Array.isArray(line_items) || line_items.length === 0) {
-      const selectedPackage = body.package;
-      const selectedAddons = Array.isArray(body.addons)
-        ? body.addons
-        : (typeof body.addons === 'string'
-            ? [body.addons]
-            : []);
-
-      const li = [];
-
-      if (selectedPackage && packagePrices[selectedPackage]) {
-        li.push({
-          price_data: {
-            currency: 'usd',
-            product_data: { name: `Package ${selectedPackage}` },
-            unit_amount: packagePrices[selectedPackage],
-          },
-          quantity: 1,
-        });
-      }
-
-      selectedAddons.forEach(code => {
-        if (addonPrices[code]) {
-          const names = {
-            F: '8x10 Print',
-            G: '2x 5x7 Prints',
-            H: '4x 3.5x5 Prints',
-            I: '24 Wallets',
-            J: '8 Wallets',
-            K: '16 Mini Wallets',
-            L: 'Retouching',
-            M: '8x10 Class Composite',
-            N: 'Digital File',
-          };
-          li.push({
-            price_data: {
-              currency: 'usd',
-              product_data: { name: `Add-on ${code}${names[code] ? ` — ${names[code]}` : ''}` },
-              unit_amount: addonPrices[code],
-            },
-            quantity: 1,
-          });
-        }
-      });
-
-      line_items = li;
-    }
-
+    // Validate line items
     if (!Array.isArray(line_items) || line_items.length === 0) {
       return {
         statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Missing or invalid line_items' }),
+        body: JSON.stringify({ error: "Missing or invalid line_items" }),
       };
     }
 
-    const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-    if (!STRIPE_SECRET_KEY) {
-      console.error('Missing STRIPE_SECRET_KEY env var');
-      return {
-        statusCode: 500,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Server not configured for Stripe' }),
-      };
+    // Stripe requires all metadata values to be strings
+    const stringMeta = {};
+    for (const [k, v] of Object.entries(metadata)) {
+      stringMeta[k] = v == null ? "" : String(v);
     }
 
-    // --- Metadata: accept either body.metadata or individual fields ---
-    const metaSource = body.metadata || body || {};
-    const metadataRaw = {
-      // map both camelCase and snake_case from the client
-      student_first: metaSource.student_first || metaSource.studentFirstName,
-      student_last:  metaSource.student_last  || metaSource.studentLastName,
-      teacher:       metaSource.teacher,
-      grade:         metaSource.grade,
-      school:        metaSource.school,
-      parent_name:   metaSource.parent_name   || metaSource.parentName,
-      parent_phone:  metaSource.parent_phone  || metaSource.phone,
-      parent_email:  metaSource.parent_email  || metaSource.email,
-      background:    metaSource.background,
-      // optional: what was ordered
-      package:       metaSource.package,
-      addons: Array.isArray(metaSource.addons)
-        ? metaSource.addons.join(', ')
-        : (typeof metaSource.addons === 'string' ? metaSource.addons : undefined),
-    };
+    // Build Stripe form-encoded payload
+    const params = new URLSearchParams();
+    params.append("mode", "payment");
+    params.append("success_url", "https://schools.scottymkerphotos.com/success.html");
+    params.append("cancel_url", "https://schools.scottymkerphotos.com/cancel.html");
+    params.append("payment_method_types[0]", "card");
 
-    // Scrub metadata (Stripe requires string values)
-    const scrubbedMeta = {};
-    Object.entries(metadataRaw).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && `${v}`.trim() !== '') {
-        scrubbedMeta[k] = String(v);
-      }
+    // Prefill email (user can still change it on the page)
+    if (email) {
+      params.append("customer_email", String(email));
+    }
+
+    // Ask Stripe Checkout to collect a phone number
+    params.append("phone_number_collection[enabled]", "true");
+
+    // Encode line_items for Stripe
+    line_items.forEach((item, i) => {
+      const qty = item.quantity ?? 1;
+      params.append(`line_items[${i}][quantity]`, String(qty));
+
+      const pd = item.price_data || {};
+      const cur = pd.currency || "usd";
+      const amt = pd.unit_amount; // must be integer cents
+      const name =
+        (pd.product_data && pd.product_data.name) || "Item";
+
+      params.append(`line_items[${i}][price_data][currency]`, cur);
+      params.append(`line_items[${i}][price_data][unit_amount]`, String(amt));
+      params.append(`line_items[${i}][price_data][product_data][name]`, name);
     });
 
-    // Build absolute URLs for success/cancel
-    const proto = event.headers['x-forwarded-proto'] || 'https';
-    const host =
-      event.headers['x-forwarded-host'] ||
-      event.headers.host ||
-      process.env.URL ||
-      '';
-    const baseUrl = host ? `${proto}://${host}` : (process.env.URL || '');
+    // Attach metadata
+    for (const [k, v] of Object.entries(stringMeta)) {
+      params.append(`metadata[${k}]`, v);
+    }
 
-    const payload = {
-      mode: 'payment',
-      success_url: `${baseUrl}/success.html`,
-      cancel_url: `${baseUrl}/cancel.html`,
-      payment_method_types: ['card'],
-
-      // Prefill email (still user-editable)
-      customer_email:
-        metaSource.customer_email ||
-        metaSource.email ||
-        scrubbedMeta.parent_email ||
-        undefined,
-
-      // Put metadata on BOTH the session and the PaymentIntent
-      metadata: scrubbedMeta,
-      payment_intent_data: { metadata: scrubbedMeta },
-
-      line_items,
-    };
-
-    const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
+    // Call Stripe
+    const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
       headers: {
-        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, // <- make sure this is set in Netlify
       },
-      body: JSON.stringify(payload),
+      body: params,
     });
 
-    const session = await stripeRes.json();
+    const data = await stripeRes.json();
 
     if (!stripeRes.ok) {
-      console.error('Stripe error:', session);
+      // Surface Stripe’s exact error to the client
       return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Stripe error', details: session }),
+        statusCode: stripeRes.status,
+        body: JSON.stringify({
+          error: "Stripe error",
+          details: data,
+        }),
       };
     }
 
+    // Success — give the client the URL to redirect to
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: session.url }),
+      body: JSON.stringify({ url: data.url }),
     };
   } catch (err) {
-    console.error('Checkout session error:', err);
+    console.error("Checkout function error:", err);
     return {
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Server error' }),
+      body: JSON.stringify({ error: "Server error", details: String(err) }),
     };
   }
 };
