@@ -1,44 +1,34 @@
-// netlify/functions/get-session.js
-const Stripe = require('stripe');
-
+// No Stripe SDK required – uses native fetch to hit Stripe's REST API
 exports.handler = async (event) => {
   try {
-    const id = event.queryStringParameters?.id;
+    const id = event.queryStringParameters?.session_id;
     if (!id) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing session id' }) };
+      return { statusCode: 400, body: JSON.stringify({ error: "Missing session_id" }) };
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+    const url = `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(id)}?expand[]=line_items`;
 
-    const session = await stripe.checkout.sessions.retrieve(id, {
-      expand: ['line_items.data.price.product']
+    const resp = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
     });
 
-    const items = (session.line_items?.data || []).map((li) => ({
-      description:
-        li.description ||
-        li.price?.product?.name ||
-        li.price?.nickname ||
-        'Item',
-      quantity: li.quantity || 1,
-      unit_amount: li.price?.unit_amount ?? li.amount_total,
-      amount_total: li.amount_total ?? (li.price?.unit_amount || 0) * (li.quantity || 1),
-    }));
+    const data = await resp.json();
 
-    const payload = {
-      id: session.id,
-      amount_total: session.amount_total,
-      currency: session.currency,
-      payment_status: session.payment_status,
-      customer_email: session.customer_details?.email || session.customer_email,
-      customer_phone: session.customer_details?.phone || null,
-      metadata: session.metadata || {},
-      items
+    if (!resp.ok) {
+      // bubble Stripe's error details
+      return { statusCode: resp.status, body: JSON.stringify({ error: data?.error || data }) };
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data)
     };
-
-    return { statusCode: 200, body: JSON.stringify(payload) };
   } catch (err) {
-    console.error('get-session error', err);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Failed to load session' }) };
+    console.error("get-session error:", err);
+    return { statusCode: 500, body: JSON.stringify({ error: "Server error" }) };
   }
 };
