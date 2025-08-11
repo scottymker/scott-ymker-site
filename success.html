@@ -8,10 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9;
-      --ok:#16a34a; --border:#e7e7e9;
-    }
+    :root{ --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9; --ok:#16a34a; --border:#e7e7e9; }
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
     .wrap{max-width:960px;margin:24px auto;padding:0 16px}
@@ -32,7 +29,7 @@
     .items{width:100%;border-collapse:collapse;margin-top:6px}
     .items th,.items td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:left}
     .items th{color:var(--muted);font-weight:600;font-size:13px}
-    .actions{display:flex;gap:10px;margin-top:18px}
+    .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
     .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;cursor:pointer}
     .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
     .muted{color:var(--muted)}
@@ -50,7 +47,7 @@
       <div class="check">✓</div>
       <div>
         <h1>Thank you for your purchase!</h1>
-        <div class="subtle" id="orderSub">Your payment was successful.</div>
+        <div class="subtle" id="orderSub">Loading your receipt…</div>
       </div>
     </section>
 
@@ -103,55 +100,72 @@
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
 
-    const fmtMoney = (cents, currency='usd') =>
-      (cents/100).toLocaleString(undefined, {style:'currency', currency: (currency||'USD').toUpperCase()});
+    const money = (cents, currency='usd') =>
+      (Number(cents||0)/100).toLocaleString(undefined,{style:'currency',currency:(currency||'USD').toUpperCase()});
 
     const qs = new URLSearchParams(location.search);
-    const sessionId = qs.get('session_id');
+    const sessionId = qs.get('session_id') || qs.get('id'); // accept either
 
     async function load() {
-      if (!sessionId) return;
-      const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
-      const data = await res.json();
-
-      if (!res.ok) {
-        document.getElementById('orderSub').textContent = 'We could not load your receipt.';
-        console.error(data);
+      if (!sessionId) {
+        document.getElementById('orderSub').textContent = 'We could not load your receipt (no session id).';
         return;
       }
 
-      // Headline/total
-      document.getElementById('orderSub').textContent =
-        `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
+      try {
+        // Your Netlify function should return a single object with
+        // { id, amount_total, currency, payment_status, customer_email, customer_phone, metadata, items: [] }
+        const res = await fetch(`/.netlify/functions/get-session?session_id=${encodeURIComponent(sessionId)}`);
+        const data = await res.json();
 
-      // Table items
-      const body = document.getElementById('itemsBody');
-      body.innerHTML = '';
-      (data.items || []).forEach(it => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${it.description || 'Item'}</td>
-          <td>${it.quantity ?? 1}</td>
-          <td>${fmtMoney(it.amount_total ?? (it.unit_amount*it.quantity), data.currency)}</td>`;
-        body.appendChild(tr);
-      });
-      document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
+        if (!res.ok) throw new Error(data?.error || 'Request failed');
 
-      // Details / metadata
-      const md = data.metadata || {};
-      const v = (x)=> x && String(x).trim() ? x : '—';
-      const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
-      const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+        document.getElementById('orderSub').textContent =
+          `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
 
-      document.getElementById('kvOrder').textContent = data.id?.replace('cs_', 'CS-') ?? '—';
-      document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
-      document.getElementById('kvEmail').textContent = v(data.customer_email);
-      document.getElementById('kvPhone').textContent = v(data.customer_phone || md.parent_phone);
-      document.getElementById('kvStudent').textContent = student;
-      document.getElementById('kvTeacher').textContent = tg;
-      document.getElementById('kvSchool').textContent = v(md.school);
-      document.getElementById('kvBg').textContent = v(md.background);
-      document.getElementById('kvAddons').textContent = v(md.addons);
+        // Build table rows from items; fallback to Stripe shape if function returns raw session
+        const items = data.items
+          || (data.line_items && data.line_items.data
+              ? data.line_items.data.map(li => ({
+                  description: li.description || li.price?.product || li.price?.nickname || 'Item',
+                  quantity: li.quantity || 1,
+                  amount_total: li.amount_total ?? (li.amount_subtotal ?? (li.price?.unit_amount||0)*(li.quantity||1)),
+                  unit_amount: li.price?.unit_amount || 0
+                }))
+              : []);
+
+        const body = document.getElementById('itemsBody');
+        body.innerHTML = '';
+        items.forEach(it => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${it.description || 'Item'}</td>
+            <td>${it.quantity ?? 1}</td>
+            <td>${money(it.amount_total ?? (it.unit_amount||0)*(it.quantity||1), data.currency)}</td>`;
+          body.appendChild(tr);
+        });
+
+        const total = data.amount_total ?? items.reduce((s,i)=>s+(i.amount_total ?? (i.unit_amount||0)*(i.quantity||1)),0);
+        document.getElementById('totalCell').textContent = money(total, data.currency);
+
+        const md = data.metadata || {};
+        const v = x => (x && String(x).trim()) ? x : '—';
+        const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
+        const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+
+        document.getElementById('kvOrder').textContent = data.id?.replace('cs_','CS-') || '—';
+        document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
+        document.getElementById('kvEmail').textContent = v(data.customer_email);
+        document.getElementById('kvPhone').textContent = v(data.customer_phone || md.parent_phone);
+        document.getElementById('kvStudent').textContent = student;
+        document.getElementById('kvTeacher').textContent = tg;
+        document.getElementById('kvSchool').textContent = v(md.school);
+        document.getElementById('kvBg').textContent = v(md.background);
+        document.getElementById('kvAddons').textContent = v(md.addons);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('orderSub').textContent = 'We could not load your receipt.';
+      }
     }
 
     load();
