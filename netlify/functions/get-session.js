@@ -1,57 +1,58 @@
 // netlify/functions/get-session.js
-export async function handler(event) {
+exports.handler = async (event) => {
   try {
-    const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) {
-      return resp(500, { error: "Missing STRIPE_SECRET_KEY" });
+    const id = event.queryStringParameters?.id || "";
+    if (!id) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Missing session id" }) };
     }
 
-    const id = (event.queryStringParameters && event.queryStringParameters.id) || "";
-    if (!id || !id.startsWith("cs_")) {
-      return resp(400, { error: "Missing or invalid session_id" });
-    }
+    const url = new URL(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(id)}`);
+    url.searchParams.append("expand[]", "line_items");
+    url.searchParams.append("expand[]", "payment_intent");
+    url.searchParams.append("expand[]", "customer_details");
 
-    // Ask Stripe for the Checkout Session and expand line items
-    const url = `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(id)}?expand[]=line_items`;
-    const res = await fetch(url, {
+    const resp = await fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${key}`,
-      },
+      headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
     });
 
-    const session = await res.json();
-    if (!res.ok) {
-      return resp(res.status, { error: session.error?.message || "Stripe error" });
+    const s = await resp.json();
+    if (!resp.ok) {
+      return { statusCode: resp.status, body: JSON.stringify(s) };
     }
 
-    // Normalize the shape the success page expects
-    const items = (session.line_items?.data || []).map((li) => ({
-      description: li.description || li.price?.nickname || "Item",
-      quantity: li.quantity || 1,
-      amount_total: li.amount_total ?? li.amount_subtotal ?? 0,
-      currency: li.currency || session.currency || "usd",
-    }));
+    // Build items array
+    const items = (s.line_items?.data || []).map((li) => {
+      const qty = li.quantity ?? 1;
+      const amount = li.amount_total != null
+        ? li.amount_total
+        : (li.price?.unit_amount || 0) * qty;
 
-    return resp(200, {
-      id: session.id,
-      payment_status: session.payment_status,
-      amount_total: session.amount_total ?? 0,
-      currency: session.currency || "usd",
-      customer_email: session.customer_details?.email || session.customer_email || null,
-      customer_phone: session.customer_details?.phone || null,
-      metadata: session.metadata || {},
-      items,
+      return {
+        description: li.description || li.price?.product || "Item",
+        quantity: qty,
+        amount_total: amount,
+        unit_amount: li.price?.unit_amount,
+        currency: li.currency || s.currency,
+      };
     });
-  } catch (err) {
-    return resp(500, { error: "Server error", detail: String(err) });
-  }
-}
 
-function resp(status, body) {
-  return {
-    statusCode: status,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  };
-}
+    // Merge metadata from BOTH places
+    const mergedMd = { ...(s.metadata || {}), ...(s.payment_intent?.metadata || {}) };
+
+    const out = {
+      id: s.id,
+      amount_total: s.amount_total,
+      currency: s.currency,
+      items,
+      customer_email: s.customer_details?.email || s.customer_email || null,
+      customer_phone: s.customer_details?.phone || null,
+      metadata: mergedMd,
+      payment_status: s.payment_status || s.status || "paid",
+    };
+
+    return { statusCode: 200, body: JSON.stringify(out) };
+  } catch (err) {
+    return { statusCode: 500, body: JSON.stringify({ error: "Server error", details: String(err) }) };
+  }
+};
