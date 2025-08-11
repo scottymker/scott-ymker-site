@@ -2,356 +2,322 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Order • Scott Ymker Photography</title>
+  <title>Order - Scott Ymker Photography</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#f7f7f8; --card:#fff; --ink:#111; --muted:#6b7280; --border:#e6e7ea;
-      --accent:#0ea5e9; --accent-ink:#fff; --shadow:0 1px 2px rgba(0,0,0,.06);
-      --radius:16px; --radius-sm:12px;
+      --bg:#f6f7f9; --card:#fff; --ink:#111; --muted:#6b7280; --accent:#0ea5e9; --border:#e5e7eb;
     }
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-
-    /* Header */
-    header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border)}
-    .nav{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px}
-    .nav img{height:28px}
-    .nav .spacer{flex:1}
-    .nav a{color:#111;text-decoration:none;padding:6px 10px;border-radius:10px}
-    .nav a[aria-current="page"]{font-weight:700}
-
-    /* Shell */
-    .wrap{max-width:1120px;margin:22px auto;padding:0 16px}
-    .hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-          padding:16px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
-    .hero h1{margin:0;font-size:20px}
-    .muted{color:var(--muted)}
-
-    .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-top:16px}
-    @media (max-width:980px){.grid{grid-template-columns:1fr}}
-
-    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-          padding:16px;box-shadow:var(--shadow)}
-    .section-title{font-weight:700;margin:4px 0 12px}
-
-    /* Form */
+    a{color:inherit;text-decoration:none}
+    /* header */
+    .topbar{background:#f8fafc;border-bottom:1px solid var(--border)}
+    .topbar .wrap{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand img{height:28px;width:auto}
+    .brand span{font-weight:700}
+    nav a{padding:8px 10px;border-radius:8px;color:#111}
+    nav a[aria-current="page"]{font-weight:700}
+    nav a:hover{background:#eef2f7}
+    /* hero */
+    .hero{max-width:1100px;margin:16px auto 0;padding:0 16px}
+    .hero-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 18px}
+    .hero h1{margin:0 0 4px;font-size:20px}
+    .hero p{margin:0;color:var(--muted)}
+    /* grid */
+    .grid{max-width:1100px;margin:14px auto;padding:0 16px;display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} }
+    /* card sections */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+    .section-title{font-weight:600;margin:10px 0 8px}
+    select,input[type="text"],input[type="tel"],input[type="email"]{
+      width:100%;height:40px;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font:inherit
+    }
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-    @media (max-width:720px){.row,.row-3{grid-template-columns:1fr}}
-    .field{display:flex;flex-direction:column;gap:6px}
-    .field label{font-size:12px;color:var(--muted)}
-    .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff}
-
-    /* Student card (collapsible) */
-    details.student{border:1px solid var(--border);border-radius:14px;margin-top:12px;overflow:hidden;background:#fff}
-    details.student > summary{
-      list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;
-      padding:12px 14px;font-weight:600;background:#fafafa;border-bottom:1px solid var(--border);
+    .addon{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff}
+    .addon input{width:18px;height:18px}
+    .muted{color:var(--muted)}
+    .actions{margin-top:12px;display:flex;align-items:center;gap:12px}
+    button.primary{
+      appearance:none;border:none;background:var(--accent);color:#fff;padding:10px 14px;border-radius:999px;font-weight:600;cursor:pointer
     }
-    details.student[open] > summary{background:#f4f7fb}
-    details.student > summary::-webkit-details-marker{display:none}
-    .student-body{padding:14px}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid var(--border);
-          border-radius:999px;font-size:12px;color:var(--muted);background:#fff}
-
-    .addons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-    @media (min-width:880px){.addons{grid-template-columns:repeat(3,1fr)}}
-    .addons label{font-size:13px;display:flex;gap:8px;align-items:center;border:1px solid var(--border);
-                  padding:10px 12px;border-radius:12px;background:#fff}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 12px;border-radius:12px;cursor:pointer}
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-    .btn.ghost{background:#fff}
-
-    /* Summary */
-    .sticky{position:sticky;top:78px}
+    button.primary[disabled]{opacity:.7;cursor:not-allowed}
+    /* summary */
     table{width:100%;border-collapse:collapse}
-    th,td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
-    th{font-size:12px;color:var(--muted)}
-    tfoot td{font-weight:700}
-
-    /* Helpers */
-    .small{font-size:12px;color:var(--muted)}
+    th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+    th{color:var(--muted);font-size:13px}
+    .total-row td{font-weight:700}
+    .kv{display:grid;grid-template-columns:140px 1fr;row-gap:6px;column-gap:8px;margin-top:10px}
+    .kv .k{color:var(--muted)}
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <nav class="nav">
-      <img src="2020Logo_black.png" alt="Scott Ymker Photography">
-      <div class="spacer"></div>
-      <a href="index.html">Home</a>
-      <a href="order.html" aria-current="page">Order</a>
-      <a href="contact.html">Contact</a>
-    </nav>
+
+  <!-- header / nav -->
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="2020Logo_black.png" alt="Scott Ymker logo">
+        <span>Scott Ymker Photography</span>
+      </a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="order.html" aria-current="page">Order</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
   </header>
 
-  <div class="wrap">
-    <section class="hero">
-      <h1>Order your school photo package</h1>
-      <div class="muted">One checkout • up to 6 students</div>
-    </section>
+  <!-- hero -->
+  <section class="hero">
+    <div class="hero-card">
+      <h1>Order Your School Photo Package</h1>
+      <p>Choose a package, add-ons, and enter student &amp; parent details.</p>
+    </div>
+  </section>
 
-    <div class="grid">
-      <!-- LEFT: Form -->
-      <div class="card">
-        <form id="orderForm" novalidate>
-          <div class="section-title">Parent & school</div>
-          <div class="row">
-            <div class="field">
-              <label>Parent name</label>
-              <input name="parent_name" placeholder="Jane Doe" required>
-            </div>
-            <div class="field">
-              <label>Phone</label>
-              <input name="parent_phone" placeholder="605-555-5555" required>
-            </div>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label>Email (prefilled on Stripe)</label>
-              <input type="email" name="parent_email" placeholder="jane@example.com" required>
-            </div>
-            <div class="field">
-              <label>School</label>
-              <input name="school" placeholder="NRCS" required>
-            </div>
-          </div>
-
-          <div id="students"></div>
-
-          <div class="controls">
-            <button type="button" class="btn ghost" id="addStudent">+ Add student</button>
-            <span class="small" id="limitMsg"></span>
-          </div>
-
-          <div class="controls" style="margin-top:12px">
-            <button type="submit" class="btn primary" id="checkoutBtn">Proceed to Checkout</button>
-          </div>
-        </form>
+  <!-- form + summary -->
+  <main class="grid">
+    <form id="orderForm" class="card" novalidate>
+      <!-- Package -->
+      <div>
+        <div class="section-title">Select a Package</div>
+        <select name="package" required>
+          <option value="">— Select a Package —</option>
+          <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
+          <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
+          <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
+          <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
+          <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
+          <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
+          <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
+          <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
+          <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
+          <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
+        </select>
       </div>
 
-      <!-- RIGHT: Summary -->
-      <aside class="card sticky">
-        <h3 style="margin:0 0 10px">Order summary</h3>
-        <table>
-          <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
-          <tbody id="summaryBody"></tbody>
-          <tfoot><tr><td colspan="2">Total</td><td id="summaryTotal">$0.00</td></tr></tfoot>
-        </table>
-      </aside>
-    </div>
-  </div>
+      <!-- Add-ons -->
+      <div>
+        <div class="section-title" style="margin-top:12px">Select Add-Ons</div>
+
+        <label class="addon"><input type="checkbox" name="addons" value="F"> F — 8x10 Print <span class="muted">($6)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="G"> G — 2× 5×7 Prints <span class="muted">($6)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="H"> H — 4× 3½×5 Prints <span class="muted">($6)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="I"> I — 24 Wallets <span class="muted">($18)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="J"> J — 8 Wallets <span class="muted">($6)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="K"> K — 16 Mini Wallets <span class="muted">($6)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="L"> L — Retouching <span class="muted">($7)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="M"> M — 8×10 Class Composite <span class="muted">($8)</span></label>
+        <label class="addon"><input type="checkbox" name="addons" value="N"> N — Digital File <span class="muted">($15)</span></label>
+      </div>
+
+      <!-- Background -->
+      <div>
+        <div class="section-title" style="margin-top:12px">Select a Background</div>
+        <select name="background" required>
+          <option value="F1" selected>F1 (Default)</option>
+          <option value="F2">F2</option>
+          <option value="F3">F3</option>
+          <option value="F4">F4</option>
+          <option value="F5">F5</option>
+          <option value="F6">F6</option>
+        </select>
+      </div>
+
+      <!-- Student -->
+      <div style="margin-top:12px">
+        <div class="section-title">Student Information</div>
+        <div class="row">
+          <input type="text" name="student_first" placeholder="First name" required>
+          <input type="text" name="student_last" placeholder="Last name" required>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" name="teacher" placeholder="Teacher" required>
+          <input type="text" name="grade" placeholder="Grade" required>
+        </div>
+        <div style="margin-top:10px">
+          <input type="text" name="school" placeholder="School" required>
+        </div>
+      </div>
+
+      <!-- Parent -->
+      <div style="margin-top:12px">
+        <div class="section-title">Parent Information</div>
+        <input type="text" name="parent_name" placeholder="Parent Name" required style="margin-bottom:10px">
+        <div class="row">
+          <input type="tel" name="parent_phone" placeholder="Phone" required>
+          <input type="email" name="parent_email" placeholder="Email" required>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="checkout-button" class="primary">Proceed to Checkout</button>
+        <span class="muted">You’ll review &amp; pay securely on Stripe.</span>
+      </div>
+    </form>
+
+    <!-- Summary -->
+    <aside class="card" id="summaryCard">
+      <div class="section-title">Order summary</div>
+      <table aria-live="polite">
+        <thead>
+          <tr><th>Description</th><th>Qty</th><th>Amount</th></tr>
+        </thead>
+        <tbody id="sumItems"></tbody>
+        <tfoot>
+          <tr class="total-row"><td>Total</td><td></td><td id="sumTotal">$0.00</td></tr>
+        </tfoot>
+      </table>
+
+      <div class="kv" style="margin-top:12px">
+        <div class="k">Background</div><div id="kvBg">—</div>
+        <div class="k">Student</div><div id="kvStudent">—</div>
+        <div class="k">Teacher / Grade</div><div id="kvTG">—</div>
+        <div class="k">School</div><div id="kvSchool">—</div>
+        <div class="k">Parent</div><div id="kvParent">—</div>
+      </div>
+    </aside>
+  </main>
 
   <script>
-    // ---- Pricing (cents)
-    const PKG = { A:3200,A1:4100,B:2700,B1:3200,C:2200,C1:2700,D:1800,D1:2300,E:1200,E1:1700 };
-    const ADD = {
-      F:{name:"8x10 Print",amt:600}, G:{name:"2x 5x7 Prints",amt:600}, H:{name:"4x 3½x5 Prints",amt:600},
-      I:{name:"24 Wallets",amt:1800}, J:{name:"8 Wallets",amt:600}, K:{name:"16 Mini Wallets",amt:600},
-      L:{name:"Retouching",amt:700},  M:{name:"8x10 Class Composite",amt:800}, N:{name:"Digital File",amt:1500}
+    // ---- price tables (cents) ----
+    const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
+    const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
+    const ADDON_NAMES    = {
+      F:"8x10 Print", G:"2x 5x7 Prints", H:"4x 3½x5 Prints", I:"24 Wallets",
+      J:"8 Wallets", K:"16 Mini Wallets", L:"Retouching", M:"8x10 Class Composite", N:"Digital File"
     };
-    const MAX_STUDENTS = 6;
 
-    // ---- Helpers
-    const $ = s => document.querySelector(s);
-    const $$ = s => Array.from(document.querySelectorAll(s));
-    const money = c => (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
+    // ---- helpers ----
+    const $ = (s)=>document.querySelector(s);
+    const $$ = (s)=>Array.from(document.querySelectorAll(s));
+    const v = (elSel)=>{ const el=$(elSel); return el? el.value.trim() : ""; };
+    const fmt = (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
 
-    // ---- Student UI
-    const studentsBox = $('#students');
-    const limitMsg = $('#limitMsg');
-
-    function studentCard(idx){
-      return `
-      <details class="student" data-idx="${idx}" open>
-        <summary>
-          <span>Student ${idx+1}</span>
-          <span class="pill" data-pill="${idx}">No details yet</span>
-        </summary>
-        <div class="student-body">
-          <div class="row">
-            <div class="field">
-              <label>Package</label>
-              <select name="package" required>
-                <option value="">— Select a Package —</option>
-                <option value="A">Package A — $32</option>
-                <option value="A1">Package A1 — $41</option>
-                <option value="B">Package B — $27</option>
-                <option value="B1">Package B1 — $32</option>
-                <option value="C">Package C — $22</option>
-                <option value="C1">Package C1 — $27</option>
-                <option value="D">Package D — $18</option>
-                <option value="D1">Package D1 — $23</option>
-                <option value="E">Package E — $12</option>
-                <option value="E1">Package E1 — $17</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Background</label>
-              <select name="background" required>
-                <option value="F1" selected>F1 (Default)</option>
-                <option value="F2">F2</option>
-                <option value="F3">F3</option>
-                <option value="F4">F4</option>
-                <option value="F5">F5</option>
-                <option value="F6">F6</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field" style="margin-top:8px">
-            <label>Add-ons (optional)</label>
-            <div class="addons">
-              ${Object.entries(ADD).map(([c,a])=>`
-                <label><input type="checkbox" name="addons" value="${c}"> ${c} — ${a.name} (${money(a.amt)})</label>
-              `).join('')}
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:8px">
-            <div class="field"><label>First name</label><input name="student_first" required></div>
-            <div class="field"><label>Last name</label><input name="student_last" required></div>
-          </div>
-          <div class="row">
-            <div class="field"><label>Teacher</label><input name="teacher" required></div>
-            <div class="field"><label>Grade</label><input name="grade" required></div>
-          </div>
-
-          <div class="controls">
-            <button type="button" class="btn ghost remove">Remove</button>
-          </div>
-        </div>
-      </details>`;
+    function currentSelections() {
+      const pkg = v('select[name="package"]');
+      const addons = $$('input[name="addons"]:checked').map(cb=>cb.value);
+      return { pkg, addons };
     }
 
-    function addStudent(){
-      const count = studentsBox.children.length;
-      if(count >= MAX_STUDENTS){ limitMsg.textContent = "Maximum of 6 students per order."; return; }
-      studentsBox.insertAdjacentHTML('beforeend', studentCard(count));
-      wireStudent(studentsBox.lastElementChild);
-      refreshNumbers();
-      updateSummary();
-      limitMsg.textContent = (count+1 >= MAX_STUDENTS) ? "Maximum of 6 students per order." : "";
-    }
-
-    function wireStudent(card){
-      card.addEventListener('input', ()=>{
-        updatePill(card);
-        updateSummary();
-      });
-      card.addEventListener('change', ()=>{
-        updatePill(card);
-        updateSummary();
-      });
-      card.querySelector('.remove').addEventListener('click', ()=>{
-        card.remove(); refreshNumbers(); updateSummary(); limitMsg.textContent="";
-      });
-      updatePill(card);
-    }
-
-    function refreshNumbers(){
-      [...studentsBox.children].forEach((el,i)=>{
-        el.dataset.idx = i;
-        el.querySelector('summary span').textContent = `Student ${i+1}`;
-        el.querySelector('[data-pill]').setAttribute('data-pill', i);
-      });
-    }
-
-    function updatePill(card){
-      const i = card.dataset.idx;
-      const f = card.querySelector('input[name="student_first"]').value.trim();
-      const l = card.querySelector('input[name="student_last"]').value.trim();
-      const pkg = card.querySelector('select[name="package"]').value;
-      const pill = card.querySelector(`[data-pill="${i}"]`);
-      const name = [f,l].filter(Boolean).join(' ');
-      let text = name || 'No name yet';
-      if(pkg) text += ` • Package ${pkg}`;
-      pill.textContent = text;
-    }
-
-    $('#addStudent').addEventListener('click', addStudent);
-    // start with one student
-    addStudent();
-
-    // ---- Collect & summary
-    function collect(){
-      const parent = {
-        parent_name: $('input[name="parent_name"]').value.trim(),
-        parent_phone: $('input[name="parent_phone"]').value.trim(),
-        parent_email: $('input[name="parent_email"]').value.trim(),
-        school: $('input[name="school"]').value.trim()
-      };
-      const students = [...studentsBox.children].map(card=>{
-        const sel = q => card.querySelector(q);
-        const addons = [...card.querySelectorAll('input[name="addons"]:checked')].map(i=>i.value);
-        return {
-          package: sel('select[name="package"]').value,
-          background: sel('select[name="background"]').value,
-          addons,
-          student_first: sel('input[name="student_first"]').value.trim(),
-          student_last:  sel('input[name="student_last"]').value.trim(),
-          teacher:       sel('input[name="teacher"]').value.trim(),
-          grade:         sel('input[name="grade"]').value.trim(),
-          school: parent.school
-        };
-      });
-      return { parent, students };
-    }
-
-    function updateSummary(){
-      const {students} = collect();
-      const body = $('#summaryBody'); body.innerHTML='';
+    // ---- summary render ----
+    function renderSummary() {
+      const { pkg, addons } = currentSelections();
+      const body = $('#sumItems'); body.innerHTML = '';
       let total = 0;
 
-      students.forEach(s=>{
-        if(s.package && PKG[s.package]){
-          total += PKG[s.package];
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>Package ${s.package} — ${s.student_first||''} ${s.student_last||''}</td><td>1</td><td>${money(PKG[s.package])}</td>`;
-          body.appendChild(tr);
-        }
-        (s.addons||[]).forEach(code=>{
-          if(ADD[code]){
-            total += ADD[code].amt;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>Add-on ${code} — ${ADD[code].name} — ${s.student_first||''} ${s.student_last||''}</td><td>1</td><td>${money(ADD[code].amt)}</td>`;
-            body.appendChild(tr);
-          }
-        });
+      if (pkg && PACKAGE_PRICES[pkg]) {
+        total += PACKAGE_PRICES[pkg];
+        body.insertAdjacentHTML('beforeend',
+          `<tr><td>Package ${pkg}</td><td>1</td><td>${fmt(PACKAGE_PRICES[pkg])}</td></tr>`);
+      }
+      addons.forEach(code=>{
+        const amt = ADDON_PRICES[code]; if(!amt) return;
+        total += amt;
+        body.insertAdjacentHTML('beforeend',
+          `<tr><td>Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td>1</td><td>${fmt(amt)}</td></tr>`);
       });
-      $('#summaryTotal').textContent = money(total);
+
+      $('#sumTotal').textContent = fmt(total);
+
+      const md = collectMetadata();
+      $('#kvBg').textContent = md.background || '—';
+      $('#kvStudent').textContent = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
+      $('#kvTG').textContent = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+      $('#kvSchool').textContent = md.school || '—';
+      $('#kvParent').textContent = md.parent_name || '—';
     }
 
-    $('#orderForm').addEventListener('input', updateSummary);
-    $('#orderForm').addEventListener('change', updateSummary);
+    function collectMetadata() {
+      return {
+        background: v('select[name="background"]'),
+        student_first: v('input[name="student_first"]'),
+        student_last:  v('input[name="student_last"]'),
+        teacher:       v('input[name="teacher"]'),
+        grade:         v('input[name="grade"]'),
+        school:        v('input[name="school"]'),
+        parent_name:   v('input[name="parent_name"]'),
+        parent_phone:  v('input[name="parent_phone"]'),
+        parent_email:  v('input[name="parent_email"]'),
+        addons:        $$('.addon input:checked').map(cb=>cb.value).join(', ')
+      };
+    }
 
-    // ---- Submit
+    // live summary updates
+    document.addEventListener('input', (e)=>{
+      if (e.target.closest('form')) renderSummary();
+    });
+    renderSummary();
+
+    // ---- submit handler ----
     $('#orderForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const payload = collect();
 
-      if(!payload.students.length){ alert('Add at least one student.'); return; }
-      if(!payload.students.every(s => s.package)){ alert('Please select a package for each student.'); return; }
+      const { pkg, addons } = currentSelections();
+      if (!pkg) { alert('Please select a package.'); return; }
 
-      const btn = $('#checkoutBtn'); const txt = btn.textContent;
+      // build line_items
+      const line_items = [];
+      if (PACKAGE_PRICES[pkg]) {
+        line_items.push({
+          price_data: {
+            currency: "usd",
+            product_data: { name: `Package ${pkg}` },
+            unit_amount: PACKAGE_PRICES[pkg]
+          },
+          quantity: 1
+        });
+      }
+      addons.forEach(code=>{
+        const amt = ADDON_PRICES[code]; if (!amt) return;
+        line_items.push({
+          price_data: {
+            currency: "usd",
+            product_data: { name: `Add-on ${code} — ${ADDON_NAMES[code]||''}` },
+            unit_amount: amt
+          },
+          quantity: 1
+        });
+      });
+
+      const metadata = collectMetadata();
+      const email = metadata.parent_email; // for Stripe prefill
+
+      const btn = $('#checkout-button');
+      const orig = btn.textContent;
       btn.disabled = true; btn.textContent = 'Processing…';
 
-      try{
+      try {
         const res = await fetch('/.netlify/functions/create-checkout-session', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(payload)
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          // Send BOTH styles so any function revision works
+          body: JSON.stringify({ line_items, metadata, email, package: pkg, addons })
         });
         const json = await res.json();
-        if(!res.ok || !json.url){ console.error(json); alert(json.error || 'Stripe error'); btn.disabled=false; btn.textContent=txt; return; }
-        location.href = json.url;
-      }catch(err){
-        console.error(err); alert('Network error. Please try again.');
-        btn.disabled=false; btn.textContent=txt;
+
+        if (!res.ok) {
+          console.error('Stripe error:', json);
+          alert(json?.details?.error?.message || json?.error || 'Stripe error');
+          btn.disabled = false; btn.textContent = orig;
+          return;
+        }
+        if (json.url) {
+          window.location.href = json.url;
+        } else {
+          alert('No checkout URL returned.');
+          btn.disabled = false; btn.textContent = orig;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Network error. Please try again.');
+        btn.disabled = false; btn.textContent = orig;
       }
     });
   </script>
