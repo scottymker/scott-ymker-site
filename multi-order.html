@@ -10,7 +10,7 @@
   <style>
     :root{
       --bg:#f6f7f9; --card:#fff; --ink:#111; --muted:#6b7280; --accent:#0ea5e9;
-      --border:#e5e7eb; --shadow:0 1px 2px rgba(0,0,0,.04);
+      --border:#e5e7eb;
     }
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
@@ -48,15 +48,16 @@
     .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:10px 14px;font-weight:600;cursor:pointer}
     .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
     .btn.small{padding:8px 12px;font-weight:600}
+    .btn.rm{color:#ef4444;border-color:#ef4444}
 
     /* student sections */
     .student{border:1px solid var(--border);border-radius:12px;margin-top:12px}
-    .student summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .student summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
     .student summary::-webkit-details-marker{display:none}
+    .summ-left{flex:0 0 auto}
+    .summ-right{flex:1 1 auto;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
     .student .content{padding:12px 14px}
     .student .row{margin-top:10px}
-    .student .topline{display:flex;gap:10px;align-items:center}
-    .student .rm{color:#ef4444;border-color:#ef4444}
 
     /* add-ons list (single column like single-order page) */
     .addon{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff}
@@ -110,7 +111,7 @@
         <div class="section-title">Parent / Guardian</div>
         <input type="text" name="parent_name" placeholder="Parent name" required style="margin-bottom:10px">
         <div class="row">
-          <input type="tel" name="parent_phone" placeholder="Phone" required>
+          <input type="tel"  name="parent_phone" placeholder="Phone" required>
           <input type="email" name="parent_email" placeholder="Email" required>
         </div>
       </div>
@@ -165,22 +166,21 @@
     const addBtn = $('#addStudent');
 
     function studentTemplate(i){
-      // i is 1-based
       return `
       <details class="student" data-i="${i}" ${i<=2?'open':''}>
         <summary>
-          <span>Student ${i}</span>
-          <span class="muted">Click to expand</span>
+          <span class="summ-left">Student ${i}</span>
+          <span class="summ-right muted" data-summ="${i}">Click to expand</span>
         </summary>
         <div class="content">
           <div class="section-title">Student information</div>
           <div class="row">
             <input type="text" name="s${i}_first" placeholder="First name" required>
-            <input type="text" name="s${i}_last" placeholder="Last name" required>
+            <input type="text" name="s${i}_last"  placeholder="Last name" required>
           </div>
           <div class="row" style="margin-top:10px">
             <input type="text" name="s${i}_teacher" placeholder="Teacher" required>
-            <input type="text" name="s${i}_grade" placeholder="Grade" required>
+            <input type="text" name="s${i}_grade"   placeholder="Grade" required>
           </div>
 
           <div class="section-title" style="margin-top:14px">Package</div>
@@ -226,17 +226,18 @@
     }
 
     function renumberStudents(){
-      // Keep displayed indices consecutive
       [...studentsEl.children].forEach((det, idx)=>{
         const i = idx+1;
         det.dataset.i = i;
-        det.querySelector('summary span').textContent = `Student ${i}`;
+        det.querySelector('.summ-left').textContent = `Student ${i}`;
         det.querySelectorAll('[name]').forEach(inp=>{
           inp.name = inp.name.replace(/s\d+_/,'s'+i+'_');
         });
         const rm = det.querySelector('[data-remove]');
         if (rm) rm.dataset.remove = i;
+        det.querySelector('[data-summ]').setAttribute('data-summ', i);
       });
+      updateSummaryHeaders();
     }
 
     function addStudent(){
@@ -244,6 +245,7 @@
       if (count>=MAX_STUDENTS) { alert(`Limit ${MAX_STUDENTS} students per order.`); return; }
       const i = count+1;
       studentsEl.insertAdjacentHTML('beforeend', studentTemplate(i));
+      updateSummaryHeaders();
       renderSummary();
     }
 
@@ -261,8 +263,42 @@
     // seed with 2 students by default
     addStudent(); addStudent();
 
-    // -------- Summary ----------
-    function fmtMoney(c){ return fmt(c); }
+    // -------- Name label helpers ----------
+    function studentName(det, idx){
+      const i = (idx ?? [...studentsEl.children].indexOf(det)) + 1;
+      const first = det.querySelector(`[name="s${i}_first"]`)?.value.trim() || '';
+      const last  = det.querySelector(`[name="s${i}_last"]`)?.value.trim() || '';
+      return (first || last) ? `${first} ${last}`.trim() : `Student ${i}`;
+    }
+    function studentSubLabel(det, idx){
+      const i = (idx ?? [...studentsEl.children].indexOf(det)) + 1;
+      const t = det.querySelector(`[name="s${i}_teacher"]`)?.value.trim() || '';
+      const g = det.querySelector(`[name="s${i}_grade"]`)?.value.trim() || '';
+      if (t && g) return `${t} / ${g}`;
+      if (t) return t;
+      if (g) return g;
+      return '';
+    }
+    function updateSummaryHeaders(){
+      [...studentsEl.children].forEach((det, idx)=>{
+        const name = studentName(det, idx);
+        const extra = studentSubLabel(det, idx);
+        const span = det.querySelector('[data-summ]');
+        if (extra){
+          span.textContent = `${name} — ${extra}`;
+          span.classList.remove('muted');
+        }else if (name && !/^Student \d+$/.test(name)){
+          span.textContent = name;
+          span.classList.remove('muted');
+        }else{
+          span.textContent = 'Click to expand';
+          span.classList.add('muted');
+        }
+      });
+    }
+
+    // -------- Collect + Summary ----------
+    const fmtMoney = (c)=> fmt(c);
 
     function collect(){
       const parent = {
@@ -273,23 +309,24 @@
 
       const students = [...studentsEl.querySelectorAll('details')].map((det, idx)=>{
         const i = idx+1;
-        const get = (sel)=> det.querySelector(`[name="s${i}_${sel}"]`);
-        const getAll = (sel)=> [...det.querySelectorAll(`[name="s${i}_${sel}"]:checked`)];
-
+        const q = (n)=>det.querySelector(`[name="s${i}_${n}"]`);
+        const qa= (n)=>[...det.querySelectorAll(`[name="s${i}_${n}"]:checked`)];
         return {
           i,
-          first:  get('first')?.value.trim() || '',
-          last:   get('last')?.value.trim() || '',
-          teacher:get('teacher')?.value.trim() || '',
-          grade:  get('grade')?.value.trim() || '',
-          pkg:    get('package')?.value || '',
-          bg:     get('background')?.value || 'F1',
-          addons: getAll('addons').map(x=>x.value)
+          first:  q('first')?.value.trim() || '',
+          last:   q('last')?.value.trim() || '',
+          teacher:q('teacher')?.value.trim() || '',
+          grade:  q('grade')?.value.trim() || '',
+          pkg:    q('package')?.value || '',
+          bg:     q('background')?.value || 'F1',
+          addons: qa('addons').map(x=>x.value)
         };
       });
 
       return { parent, students };
     }
+
+    function displayName(s){ return (s.first || s.last) ? `${s.first} ${s.last}`.trim() : `Student ${s.i}`; }
 
     function renderSummary(){
       const { parent, students } = collect();
@@ -301,24 +338,26 @@
       let total = 0;
 
       students.forEach(s=>{
+        const who = displayName(s);
         if (s.pkg && PACKAGE_PRICES[s.pkg]){
           total += PACKAGE_PRICES[s.pkg];
           body.insertAdjacentHTML('beforeend',
-            `<tr><td>S${s.i} — Package ${s.pkg}</td><td>1</td><td>${fmtMoney(PACKAGE_PRICES[s.pkg])}</td></tr>`);
+            `<tr><td>${who} — Package ${s.pkg}</td><td>1</td><td>${fmtMoney(PACKAGE_PRICES[s.pkg])}</td></tr>`);
         }
         s.addons.forEach(code=>{
           const amt = ADDON_PRICES[code]; if (!amt) return;
           total += amt;
           body.insertAdjacentHTML('beforeend',
-            `<tr><td>S${s.i} — Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
+            `<tr><td>${who} — Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
         });
       });
 
       $('#sumTotal').textContent = fmtMoney(total);
+      updateSummaryHeaders();
     }
 
     document.addEventListener('input', (e)=>{
-      if (e.target.closest('#multiForm')) renderSummary();
+      if (e.target.closest('#multiForm')) { renderSummary(); }
     });
 
     // initial render
@@ -338,30 +377,31 @@
       // Build Stripe line_items (aggregate)
       const line_items = [];
       students.forEach(s=>{
+        const who = displayName(s);
         if (s.pkg && PACKAGE_PRICES[s.pkg]){
           line_items.push({
             price_data: {
-              currency: "usd",
-              product_data: { name: `Student ${s.i} — Package ${s.pkg}` },
+              currency:"usd",
+              product_data:{ name:`${who} — Package ${s.pkg}` },
               unit_amount: PACKAGE_PRICES[s.pkg]
             },
-            quantity: 1
+            quantity:1
           });
         }
         s.addons.forEach(code=>{
           const amt = ADDON_PRICES[code]; if (!amt) return;
           line_items.push({
-            price_data: {
-              currency: "usd",
-              product_data: { name: `Student ${s.i} — Add-on ${code} — ${ADDON_NAMES[code]||''}` },
+            price_data:{
+              currency:"usd",
+              product_data:{ name:`${who} — Add-on ${code} — ${ADDON_NAMES[code]||''}` },
               unit_amount: amt
             },
-            quantity: 1
+            quantity:1
           });
         });
       });
 
-      // Metadata (compact to stay within Stripe metadata limits)
+      // Metadata: compact but includes names
       const metadata = {
         parent_name: parent.name,
         parent_phone: parent.phone,
@@ -370,7 +410,7 @@
       };
       students.forEach((s, idx)=>{
         const k = idx+1;
-        metadata[`s${k}_name`] = `${s.first} ${s.last}`.trim();
+        metadata[`s${k}_name`] = displayName(s);
         metadata[`s${k}_teacher`] = s.teacher;
         metadata[`s${k}_grade`] = s.grade;
         metadata[`s${k}_bg`] = s.bg;
@@ -378,19 +418,17 @@
         metadata[`s${k}_addons`] = s.addons.join(', ');
       });
 
-      const email = parent.email; // prefill on Stripe
+      const email = parent.email;
       const btn = $('#checkout'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Processing…';
 
       try{
         const res = await fetch('/.netlify/functions/create-checkout-session', {
           method:'POST',
           headers:{'Content-Type':'application/json','Accept':'application/json'},
-          // Include both formats (line_items + raw package lists) for compatibility
           body: JSON.stringify({
             line_items,
             email,
             metadata,
-            // fallback/plain for older handlers:
             students: students.map(s=>({package:s.pkg, addons:s.addons}))
           })
         });
