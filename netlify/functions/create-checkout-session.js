@@ -1,5 +1,4 @@
-// netlify/functions/create-checkout-session.js
-const fetch = require("node-fetch");
+// No node-fetch import needed—Netlify/Node 18+ has fetch globally.
 
 exports.handler = async (event) => {
   try {
@@ -13,6 +12,7 @@ exports.handler = async (event) => {
       D: 1800, D1: 2300,
       E: 1200, E1: 1700
     };
+
     const addonPrices = {
       F: 500, G: 800, H: 800,
       I: 800, J: 800, K: 800,
@@ -27,6 +27,7 @@ exports.handler = async (event) => {
     (body.addons || []).forEach(code => {
       if (addonPrices[code]) items.push({ name: `Add-on ${code}`, amount: addonPrices[code] });
     });
+
     if (items.length === 0) {
       return { statusCode: 400, body: JSON.stringify({ error: "No valid items in the order." }) };
     }
@@ -45,7 +46,7 @@ exports.handler = async (event) => {
       addons: (body.addons || []).join(", ")
     };
 
-    // Build form-encoded payload
+    // Stripe requires application/x-www-form-urlencoded
     const form = new URLSearchParams();
     form.append("mode", "payment");
     form.append("success_url", "https://schools.scottymkerphotos.com/success.html");
@@ -59,11 +60,11 @@ exports.handler = async (event) => {
       form.append(`line_items[${i}][quantity]`, "1");
     });
 
-    Object.entries(metadata).forEach(([k, v]) =>
-      form.append(`metadata[${k}]`, String(v ?? ""))
-    );
+    Object.entries(metadata).forEach(([k, v]) => {
+      form.append(`metadata[${k}]`, String(v ?? ""));
+    });
 
-    const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+    const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
@@ -72,15 +73,11 @@ exports.handler = async (event) => {
       body: form
     });
 
-    if (!stripeRes.ok) {
-      const text = await stripeRes.text();
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Stripe error", details: text })
-      };
+    const text = await resp.text();
+    if (!resp.ok) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Stripe error", details: text }) };
     }
-
-    const session = await stripeRes.json();
+    const session = JSON.parse(text);
     return { statusCode: 200, body: JSON.stringify({ url: session.url, id: session.id }) };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: "Server error", message: err.message }) };
