@@ -1,7 +1,6 @@
 // netlify/functions/create-checkout-session.js
 
 exports.handler = async (event) => {
-  // Only allow POST
   if (event.httpMethod && event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -11,7 +10,80 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { line_items, metadata } = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || '{}');
+
+    // --- Prices in cents (authoritative on the server) ---
+    const packagePrices = {
+      A: 3200, A1: 4100,
+      B: 2700, B1: 3200,
+      C: 2200, C1: 2700,
+      D: 1800, D1: 2300,
+      E: 1200, E1: 1700,
+    };
+
+    const addonPrices = {
+      F: 500,   // 8x10 Print
+      G: 800,   // 2x 5x7 Prints
+      H: 800,   // 4x 3.5x5 Prints
+      I: 1800,  // 24 Wallets
+      J: 800,   // 8 Wallets
+      K: 800,   // 16 Mini Wallets
+      L: 1000,  // Retouching
+      M: 1500,  // 8x10 Class Composite
+      N: 2000,  // Digital File
+    };
+
+    // --- Build line_items ---
+    let line_items = Array.isArray(body.line_items) ? body.line_items : [];
+
+    // If the client didn't send line_items, build them here using codes
+    if (!Array.isArray(line_items) || line_items.length === 0) {
+      const selectedPackage = body.package;
+      const selectedAddons = Array.isArray(body.addons)
+        ? body.addons
+        : (typeof body.addons === 'string'
+            ? [body.addons]
+            : []);
+
+      const li = [];
+
+      if (selectedPackage && packagePrices[selectedPackage]) {
+        li.push({
+          price_data: {
+            currency: 'usd',
+            product_data: { name: `Package ${selectedPackage}` },
+            unit_amount: packagePrices[selectedPackage],
+          },
+          quantity: 1,
+        });
+      }
+
+      selectedAddons.forEach(code => {
+        if (addonPrices[code]) {
+          const names = {
+            F: '8x10 Print',
+            G: '2x 5x7 Prints',
+            H: '4x 3.5x5 Prints',
+            I: '24 Wallets',
+            J: '8 Wallets',
+            K: '16 Mini Wallets',
+            L: 'Retouching',
+            M: '8x10 Class Composite',
+            N: 'Digital File',
+          };
+          li.push({
+            price_data: {
+              currency: 'usd',
+              product_data: { name: `Add-on ${code}${names[code] ? ` — ${names[code]}` : ''}` },
+              unit_amount: addonPrices[code],
+            },
+            quantity: 1,
+          });
+        }
+      });
+
+      line_items = li;
+    }
 
     if (!Array.isArray(line_items) || line_items.length === 0) {
       return {
@@ -31,15 +103,35 @@ exports.handler = async (event) => {
       };
     }
 
-    // Scrub metadata: only keep defined, non-empty values and stringify them
+    // --- Metadata: accept either body.metadata or individual fields ---
+    const metaSource = body.metadata || body || {};
+    const metadataRaw = {
+      // map both camelCase and snake_case from the client
+      student_first: metaSource.student_first || metaSource.studentFirstName,
+      student_last:  metaSource.student_last  || metaSource.studentLastName,
+      teacher:       metaSource.teacher,
+      grade:         metaSource.grade,
+      school:        metaSource.school,
+      parent_name:   metaSource.parent_name   || metaSource.parentName,
+      parent_phone:  metaSource.parent_phone  || metaSource.phone,
+      parent_email:  metaSource.parent_email  || metaSource.email,
+      background:    metaSource.background,
+      // optional: what was ordered
+      package:       metaSource.package,
+      addons: Array.isArray(metaSource.addons)
+        ? metaSource.addons.join(', ')
+        : (typeof metaSource.addons === 'string' ? metaSource.addons : undefined),
+    };
+
+    // Scrub metadata (Stripe requires string values)
     const scrubbedMeta = {};
-    Object.entries(metadata || {}).forEach(([k, v]) => {
+    Object.entries(metadataRaw).forEach(([k, v]) => {
       if (v !== undefined && v !== null && `${v}`.trim() !== '') {
         scrubbedMeta[k] = String(v);
       }
     });
 
-    // Build absolute success/cancel URLs from request headers
+    // Build absolute URLs for success/cancel
     const proto = event.headers['x-forwarded-proto'] || 'https';
     const host =
       event.headers['x-forwarded-host'] ||
@@ -54,16 +146,16 @@ exports.handler = async (event) => {
       cancel_url: `${baseUrl}/cancel.html`,
       payment_method_types: ['card'],
 
-      // Prefill the email field (still editable on the Checkout page)
-      customer_email: scrubbedMeta.email || undefined,
+      // Prefill email (still user-editable)
+      customer_email:
+        metaSource.customer_email ||
+        metaSource.email ||
+        scrubbedMeta.parent_email ||
+        undefined,
 
-      // Put metadata on the session…
+      // Put metadata on BOTH the session and the PaymentIntent
       metadata: scrubbedMeta,
-
-      // …and ALSO on the PaymentIntent so it appears in the Dashboard's Metadata box
-      payment_intent_data: {
-        metadata: scrubbedMeta,
-      },
+      payment_intent_data: { metadata: scrubbedMeta },
 
       line_items,
     };
