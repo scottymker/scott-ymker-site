@@ -4,331 +4,386 @@
   <meta charset="UTF-8" />
   <title>Order • Scott Ymker Photography</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Inter font to match success page -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root{
-      --bg:#fafafa; --card:#fff; --ink:#111; --muted:#666; --accent:#0ea5e9;
-      --ok:#16a34a; --border:#e7e7e9; --ring:rgba(14,165,233,.45);
+      --bg:#f7f7f9; --card:#fff; --ink:#111; --muted:#666; --border:#e7e7e9;
+      --accent:#0ea5e9; --accent-ink:#fff; --focus: #93c5fd;
     }
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    a{color:var(--accent);text-decoration:none}
-    a:hover{text-decoration:underline}
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px 16px 48px}
 
-    .wrap{max-width:1000px;margin:24px auto;padding:0 16px}
-
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand img{height:42px;width:auto}
+    /* Header / nav */
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand img{height:36px;width:auto}
     .brand .name{font-weight:700;letter-spacing:.2px}
-    nav.top a{margin-left:14px;color:var(--muted)}
-    nav.top a[aria-current="page"]{color:var(--ink);font-weight:600}
+    .nav{display:flex;align-items:center;gap:18px}
+    .nav a{color:var(--muted);text-decoration:none;font-weight:500}
+    .nav a.current{color:var(--ink)}
+    .badge{font-size:12px;color:var(--muted)}
 
-    .hero{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-    .hero h1{margin:0;font-size:20px}
-    .hero p{margin:4px 0 0;color:var(--muted)}
-    .help{font-size:13px;color:var(--muted)}
+    /* Hero */
+    .hero{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .hero h1{font-size:18px;margin:0 0 4px}
+    .hero p{margin:0;color:var(--muted);font-size:14px}
 
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    /* Layout */
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px}
+    .card .body{padding:18px 16px}
+    .sticky{position:sticky;top:16px}
 
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px}
-    .card h2{font-size:16px;margin:0 0 12px}
+    /* Sections/titles */
+    .section{border-top:1px solid var(--border);padding-top:16px;margin-top:16px}
+    .section:first-child{border-top:0;margin-top:0;padding-top:0}
+    .section h2{font-size:14px;letter-spacing:.2px;text-transform:uppercase;margin:0 0 8px;color:var(--muted)}
 
-    /* form controls */
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    select,input[type="text"],input[type="tel"],input[type="email"]{
-      width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;
-      font:inherit;outline:none;transition:.15s border-color,.15s box-shadow;
+    /* Form controls */
+    label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+    select, input[type="text"], input[type="email"], input[type="tel"]{
+      width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;
+      font:inherit;outline:none;
     }
-    select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
-    .stack{display:grid;gap:12px}
+    select:focus, input:focus{border-color:var(--focus);box-shadow:0 0 0 3px rgba(147,197,253,.35)}
+    .checks{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+    .checkrow{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#fff}
+    .checkrow small{color:var(--muted)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:640px){.row{grid-template-columns:1fr}}
 
-    .addons label{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink);margin:6px 0}
-    .addons input[type="checkbox"]{width:16px;height:16px}
+    /* Summary */
+    .summary-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .summary-head .title{font-weight:700}
+    table.items{width:100%;border-collapse:collapse;font-size:14px}
+    table.items th, table.items td{padding:10px 16px;border-bottom:1px solid var(--border);text-align:left}
+    table.items th{color:var(--muted);font-weight:600;font-size:12px}
+    .totalrow td{font-weight:700}
+    .muted{color:var(--muted)}
+    .right{text-align:right}
 
-    .actions{display:flex;gap:10px;align-items:center;margin-top:8px}
-    .btn{
-      appearance:none;border:1px solid var(--border);background:#fff;border-radius:999px;
-      padding:10px 16px;cursor:pointer;font-weight:600;
-    }
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+    /* Buttons */
+    .actions{padding:14px 16px}
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:12px 14px;border-radius:999px;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
     .btn[disabled]{opacity:.6;cursor:not-allowed}
 
-    .hint{font-size:12px;color:var(--muted)}
-    .error{color:#b91c1c;font-size:13px;margin-top:6px;display:none}
-    .error.show{display:block}
+    .footnote{padding:0 16px 14px;color:var(--muted);font-size:12px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <!-- Top: brand + nav -->
-    <header>
+    <header class="header">
       <div class="brand">
-        <img src="2020Logo_black.png" alt="Scott Ymker Photography">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography" />
         <div class="name">Scott Ymker Photography</div>
       </div>
-      <nav class="top" aria-label="Primary">
+      <nav class="nav">
         <a href="index.html">Home</a>
-        <a href="order.html" aria-current="page">Order</a>
+        <a href="order.html" class="current">Order</a>
         <a href="mailto:support@scottymkerphotos.com">Contact</a>
       </nav>
     </header>
 
-    <!-- Hero -->
-    <section class="hero">
+    <section class="hero card">
       <div>
-        <h1>Order Your School Photo Package</h1>
-        <p>Choose a package, optional add-ons, and fill in student/parent details.</p>
+        <h1>Order your school photo package</h1>
+        <p>Choose a package, add-ons, and enter student & parent details.</p>
       </div>
-      <div class="help">Secure checkout powered by Stripe</div>
+      <div class="badge">Secure checkout powered by Stripe</div>
     </section>
 
-    <!-- Form -->
-    <form id="orderForm" novalidate>
-      <div class="grid">
-        <!-- Left column -->
-        <div class="card">
-          <h2>Package</h2>
-          <div class="stack">
-            <div>
-              <label for="pkg">Select a package</label>
-              <select id="pkg" name="package" required>
-                <option value="">— Select a Package —</option>
-                <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
-                <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
-                <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
-                <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
-                <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
-                <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
-                <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
-                <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
-                <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
-                <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
-              </select>
-              <div id="pkgErr" class="error">Please select a package.</div>
-            </div>
+    <div class="grid">
+      <!-- LEFT: Form -->
+      <form id="orderForm" class="card" novalidate>
+        <div class="body">
+          <!-- Package -->
+          <div class="section">
+            <h2>Select a Package</h2>
+            <select name="package" required id="pkgSel">
+              <option value="">— Select a Package —</option>
+              <option value="A">Package A – $32 (1 8x10 Class Composite, 2 8x10, 2 5x7, 8 wallets, 16 mini wallets)</option>
+              <option value="A1">Package A1 – $41 (A + 1 Digital File)</option>
+              <option value="B">Package B – $27 (1 8x10 Class Composite, 1 8x10, 2 5x7, 16 wallets)</option>
+              <option value="B1">Package B1 – $32 (B + 2 extra 5x7)</option>
+              <option value="C">Package C – $22 (1 8x10 Class Composite, 1 8x10, 2 3.5x5, 4 wallets, 16 mini wallets)</option>
+              <option value="C1">Package C1 – $27 (C + 2 5x7)</option>
+              <option value="D">Package D – $18 (1 8x10 Class Composite, 2 5x7, 8 wallets)</option>
+              <option value="D1">Package D1 – $23 (D + 16 mini wallets)</option>
+              <option value="E">Package E – $12 (2 5x7, 2 3.5x5, 4 wallets)</option>
+              <option value="E1">Package E1 – $17 (E + 8 extra wallets)</option>
+            </select>
+          </div>
 
-            <div>
-              <h2 style="margin-top:6px">Add-Ons</h2>
-              <div class="addons" role="group" aria-label="Add-ons">
-                <label><input type="checkbox" name="addons" value="F"> F — 8x10 Print ($6)</label>
-                <label><input type="checkbox" name="addons" value="G"> G — 2× 5x7 Prints ($6)</label>
-                <label><input type="checkbox" name="addons" value="H"> H — 4× 3½x5 Prints ($6)</label>
-                <label><input type="checkbox" name="addons" value="I"> I — 24 Wallets ($18)</label>
-                <label><input type="checkbox" name="addons" value="J"> J — 8 Wallets ($6)</label>
-                <label><input type="checkbox" name="addons" value="K"> K — 16 Mini Wallets ($6)</label>
-                <label><input type="checkbox" name="addons" value="L"> L — Retouching ($7)</label>
-                <label><input type="checkbox" name="addons" value="M"> M — 8x10 Class Composite ($8)</label>
-                <label><input type="checkbox" name="addons" value="N"> N — Digital File ($15)</label>
+          <!-- Add-ons -->
+          <div class="section">
+            <h2>Select Add-Ons</h2>
+            <div class="checks" id="addonsGroup">
+              <label class="checkrow"><input type="checkbox" name="addons" value="F"> <span>F — 8x10 Print <small>($6)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="G"> <span>G — 2× 5×7 Prints <small>($6)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="H"> <span>H — 4× 3½×5 Prints <small>($6)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="I"> <span>I — 24 Wallets <small>($18)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="J"> <span>J — 8 Wallets <small>($6)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="K"> <span>K — 16 Mini Wallets <small>($6)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="L"> <span>L — Retouching <small>($7)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="M"> <span>M — 8×10 Class Composite <small>($8)</small></span></label>
+              <label class="checkrow"><input type="checkbox" name="addons" value="N"> <span>N — Digital File <small>($15)</small></span></label>
+            </div>
+          </div>
+
+          <!-- Background -->
+          <div class="section">
+            <h2>Select a Background</h2>
+            <select name="background" id="bgSel">
+              <option value="F1" selected>F1 (Default)</option>
+              <option value="F2">F2</option>
+              <option value="F3">F3</option>
+              <option value="F4">F4</option>
+              <option value="F5">F5</option>
+              <option value="F6">F6</option>
+            </select>
+          </div>
+
+          <!-- Student -->
+          <div class="section">
+            <h2>Student Information</h2>
+            <div class="row">
+              <div>
+                <label>First name</label>
+                <input type="text" name="student_first" id="sFirst" placeholder="First Name" required />
+              </div>
+              <div>
+                <label>Last name</label>
+                <input type="text" name="student_last" id="sLast" placeholder="Last Name" required />
               </div>
             </div>
-
+            <div class="row">
+              <div>
+                <label>Teacher</label>
+                <input type="text" name="teacher" id="teacher" placeholder="Teacher" required />
+              </div>
+              <div>
+                <label>Grade</label>
+                <input type="text" name="grade" id="grade" placeholder="Grade" required />
+              </div>
+            </div>
             <div>
-              <h2 style="margin-top:6px">Background</h2>
-              <label for="bg">Select a background</label>
-              <select id="bg" name="background" required>
-                <option value="F1" selected>F1 (Default)</option>
-                <option value="F2">F2</option>
-                <option value="F3">F3</option>
-                <option value="F4">F4</option>
-                <option value="F5">F5</option>
-                <option value="F6">F6</option>
-              </select>
+              <label>School</label>
+              <input type="text" name="school" id="school" placeholder="School" required />
+            </div>
+          </div>
+
+          <!-- Parent -->
+          <div class="section">
+            <h2>Parent Information</h2>
+            <div>
+              <label>Parent name</label>
+              <input type="text" name="parent_name" id="pName" placeholder="Parent Name" required />
+            </div>
+            <div class="row">
+              <div>
+                <label>Phone</label>
+                <input type="tel" name="parent_phone" id="pPhone" placeholder="Phone" required />
+              </div>
+              <div>
+                <label>Email</label>
+                <input type="email" name="parent_email" id="pEmail" placeholder="Email" required />
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Right column -->
-        <div class="card">
-          <h2>Student</h2>
-          <div class="stack" style="margin-bottom:12px">
-            <div>
-              <label for="sf">First name</label>
-              <input id="sf" name="student_first" type="text" placeholder="First Name" required>
-            </div>
-            <div>
-              <label for="sl">Last name</label>
-              <input id="sl" name="student_last" type="text" placeholder="Last Name" required>
-            </div>
-            <div>
-              <label for="teacher">Teacher</label>
-              <input id="teacher" name="teacher" type="text" placeholder="Teacher" required>
-            </div>
-            <div>
-              <label for="grade">Grade</label>
-              <input id="grade" name="grade" type="text" placeholder="Grade" required>
-            </div>
-            <div>
-              <label for="school">School</label>
-              <input id="school" name="school" type="text" placeholder="School" required>
-            </div>
-          </div>
+        <div class="actions">
+          <button type="submit" id="checkoutBtn" class="btn primary">Proceed to Checkout</button>
+        </div>
+        <div class="footnote">You’ll review & pay securely on Stripe.</div>
+      </form>
 
-          <h2>Parent</h2>
-          <div class="stack">
-            <div>
-              <label for="pname">Parent name</label>
-              <input id="pname" name="parent_name" type="text" placeholder="Parent Name" required>
-            </div>
-            <div>
-              <label for="pphone">Phone</label>
-              <input id="pphone" name="parent_phone" type="tel" placeholder="Phone" required>
-            </div>
-            <div>
-              <label for="pemail">Email</label>
-              <input id="pemail" name="parent_email" type="email" placeholder="Email" required>
-              <div class="hint">We’ll prefill this on the Stripe payment page.</div>
-            </div>
-          </div>
+      <!-- RIGHT: Summary -->
+      <aside class="card sticky" id="summaryCard" aria-live="polite">
+        <div class="summary-head">
+          <div class="title">Order summary</div>
+          <div class="muted" id="sumNote"></div>
+        </div>
+        <div class="body">
+          <table class="items">
+            <thead>
+              <tr><th>Description</th><th class="right">Qty</th><th class="right">Amount</th></tr>
+            </thead>
+            <tbody id="itemsBody">
+              <tr><td class="muted" colspan="3">Select a package to begin.</td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="totalrow"><td>Total</td><td></td><td class="right" id="totalCell">$0.00</td></tr>
+            </tfoot>
+          </table>
 
-          <div class="actions">
-            <button id="checkout-button" class="btn primary" type="submit">Proceed to Checkout</button>
-            <span id="formErr" class="error"></span>
+          <div class="section">
+            <div class="muted" style="margin-bottom:6px">Details</div>
+            <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;font-size:14px">
+              <div class="muted">Background</div><div id="kvBg">—</div>
+              <div class="muted">Student</div><div id="kvStudent">—</div>
+              <div class="muted">Teacher/Grade</div><div id="kvTG">—</div>
+              <div class="muted">School</div><div id="kvSchool">—</div>
+              <div class="muted">Parent</div><div id="kvParent">—</div>
+              <div class="muted">Email</div><div id="kvEmail">—</div>
+              <div class="muted">Add-ons</div><div id="kvAddons">—</div>
+            </div>
           </div>
         </div>
-      </div>
-    </form>
-
-    <p class="help" style="margin-top:14px">
-      By continuing you agree to receive an email receipt. For changes, contact
-      <a href="mailto:support@scottymkerphotos.com">support@scottymkerphotos.com</a>.
-    </p>
+      </aside>
+    </div>
   </div>
 
   <script>
-    // ------- price tables (cents) -------
-    const PACKAGE_PRICES = {
-      A: 3200, A1: 4100,
-      B: 2700, B1: 3200,
-      C: 2200, C1: 2700,
-      D: 1800, D1: 2300,
-      E: 1200, E1: 1700
+    // ---------- price tables (cents) ----------
+    const PACKAGE_PRICES = { A:3200,A1:4100,B:2700,B1:3200,C:2200,C1:2700,D:1800,D1:2300,E:1200,E1:1700 };
+    const ADDON_PRICES   = { F:600,G:600,H:600,I:1800,J:600,K:600,L:700,M:800,N:1500 };
+    const ADDON_NAMES    = {
+      F:"8x10 Print", G:"2× 5×7 Prints", H:"4× 3½×5 Prints",
+      I:"24 Wallets", J:"8 Wallets", K:"16 Mini Wallets",
+      L:"Retouching", M:"8×10 Class Composite", N:"Digital File"
     };
 
-    const ADDON_PRICES = {
-      F: 600,   // 8x10 Print
-      G: 600,   // 2x 5x7 Prints
-      H: 600,   // 4x 3.5x5 Prints
-      I: 1800,  // 24 Wallets
-      J: 600,   // 8 Wallets
-      K: 600,   // 16 Mini Wallets
-      L: 700,   // Retouching
-      M: 800,   // 8x10 Class Composite
-      N: 1500   // Digital File
-    };
+    // ---------- helpers ----------
+    const $ = (s)=>document.querySelector(s);
+    const $$ = (s)=>Array.from(document.querySelectorAll(s));
+    const money=(c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
+    const getAddons = ()=> $$('#addonsGroup input[type=checkbox]:checked').map(cb=>cb.value);
 
-    const ADDON_NAMES = {
-      F: "8x10 Print", G: "2x 5x7 Prints", H: "4x 3½x5 Prints", I: "24 Wallets",
-      J: "8 Wallets", K: "16 Mini Wallets", L: "Retouching", M: "8x10 Class Composite", N: "Digital File"
-    };
+    // ---------- live summary ----------
+    function rebuildSummary(){
+      const pkg = $('#pkgSel').value;
+      const addons = getAddons();
+      const tbody = $('#itemsBody');
+      tbody.innerHTML = '';
 
-    // ------- helpers -------
-    const $ = (sel) => document.querySelector(sel);
-    const getVal = (sel) => { const el = $(sel); return el ? el.value.trim() : ""; };
-    const getAddons = () =>
-      Array.from(document.querySelectorAll('input[name="addons"]:checked')).map(cb => cb.value);
+      let total = 0;
 
-    // ------- submit handler -------
-    $('#orderForm')?.addEventListener('submit', async (e) => {
+      if(pkg && PACKAGE_PRICES[pkg]){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>Package ${pkg}</td><td class="right">1</td><td class="right">${money(PACKAGE_PRICES[pkg])}</td>`;
+        tbody.appendChild(tr);
+        total += PACKAGE_PRICES[pkg];
+      } else {
+        tbody.innerHTML = `<tr><td class="muted" colspan="3">Select a package to begin.</td></tr>`;
+      }
+
+      addons.forEach(code=>{
+        const amt = ADDON_PRICES[code];
+        if(!amt) return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td class="right">1</td><td class="right">${money(amt)}</td>`;
+        tbody.appendChild(tr);
+        total += amt;
+      });
+
+      $('#totalCell').textContent = money(total);
+
+      // Details
+      const md = collectMetadata();
+      $('#kvBg').textContent = md.background || '—';
+      $('#kvStudent').textContent = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
+      $('#kvTG').textContent = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+      $('#kvSchool').textContent = md.school || '—';
+      $('#kvParent').textContent = md.parent_name || '—';
+      $('#kvEmail').textContent = md.parent_email || '—';
+      $('#kvAddons').textContent = addons.join(', ') || '—';
+    }
+
+    function collectMetadata(){
+      return {
+        background: $('#bgSel').value,
+        student_first: $('#sFirst').value.trim(),
+        student_last:  $('#sLast').value.trim(),
+        teacher:       $('#teacher').value.trim(),
+        grade:         $('#grade').value.trim(),
+        school:        $('#school').value.trim(),
+        parent_name:   $('#pName').value.trim(),
+        parent_phone:  $('#pPhone').value.trim(),
+        parent_email:  $('#pEmail').value.trim(),
+        addons:        getAddons().join(', ')
+      };
+    }
+
+    // wire live updates
+    ['change','input'].forEach(evt=>{
+      document.addEventListener(evt, (e)=>{
+        if(e.target.closest('#orderForm')) rebuildSummary();
+      });
+    });
+    rebuildSummary();
+
+    // ---------- submit handler ----------
+    $('#orderForm')?.addEventListener('submit', async (e)=>{
       e.preventDefault();
-
-      const pkg = getVal('#pkg');
-      if (!pkg) { $('#pkgErr').classList.add('show'); return; }
-      $('#pkgErr').classList.remove('show');
+      const pkg = $('#pkgSel').value;
+      if(!pkg || !PACKAGE_PRICES[pkg]){
+        alert('Please select a valid package.');
+        return;
+      }
 
       const addons = getAddons();
+      const metadata = collectMetadata();
 
       // Build Stripe line_items
       const line_items = [];
-
-      // package line
-      if (PACKAGE_PRICES[pkg]) {
-        line_items.push({
-          price_data: {
-            currency: "usd",
-            product_data: { name: `Package ${pkg}` },
-            unit_amount: PACKAGE_PRICES[pkg]
-          },
-          quantity: 1
-        });
-      }
-
-      // add-ons
-      addons.forEach(code => {
+      line_items.push({
+        price_data:{ currency:'usd', product_data:{ name:`Package ${pkg}` }, unit_amount: PACKAGE_PRICES[pkg] },
+        quantity:1
+      });
+      addons.forEach(code=>{
         const amt = ADDON_PRICES[code];
-        if (amt) {
-          line_items.push({
-            price_data: {
-              currency: "usd",
-              product_data: { name: `Add-on ${code} — ${ADDON_NAMES[code] || ""}`.trim() },
-              unit_amount: amt
-            },
-            quantity: 1
-          });
-        }
+        if(!amt) return;
+        line_items.push({
+          price_data:{ currency:'usd', product_data:{ name:`Add-on ${code} — ${ADDON_NAMES[code]||''}` }, unit_amount: amt },
+          quantity:1
+        });
       });
 
-      // metadata
-      const metadata = {
-        background:    getVal('#bg'),
-        student_first: getVal('#sf'),
-        student_last:  getVal('#sl'),
-        teacher:       getVal('#teacher'),
-        grade:         getVal('#grade'),
-        school:        getVal('#school'),
-        parent_name:   getVal('#pname'),
-        parent_phone:  getVal('#pphone'),
-        parent_email:  getVal('#pemail'),
-        addons:        addons.join(", ")
-      };
+      // Email for Stripe prefill
+      const email = metadata.parent_email || '';
 
-      const email = metadata.parent_email;
-
-      const btn = $('#checkout-button');
-      const errBox = $('#formErr');
-      errBox.textContent = '';
+      const btn = $('#checkoutBtn');
+      const oldTxt = btn.textContent;
       btn.disabled = true; btn.textContent = 'Processing…';
 
-      try {
-        // IMPORTANT: also send package/addons to satisfy older function versions
+      try{
         const res = await fetch('/.netlify/functions/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            line_items, metadata, email,
-            package: pkg,           // backwards-compatible
-            addons                   // backwards-compatible
-          })
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ line_items, metadata, email })
         });
-
         const json = await res.json();
 
-        if (!res.ok) {
+        if(!res.ok){
           console.error('Stripe error:', json);
-          const msg = json?.details?.error?.message || json?.error || 'Stripe error';
-          errBox.textContent = msg;
-          btn.disabled = false; btn.textContent = 'Proceed to Checkout';
+          alert(json?.details?.error?.message || json?.error || 'Stripe error');
+          btn.disabled=false; btn.textContent=oldTxt;
           return;
         }
 
-        if (json.url) {
+        if(json.url){
+          // 👍 Server should map `email` => Stripe `customer_email` when creating the session
           window.location.href = json.url;
-        } else {
-          errBox.textContent = 'No checkout URL returned.';
-          btn.disabled = false; btn.textContent = 'Proceed to Checkout';
+        }else{
+          alert('No checkout URL returned.');
+          btn.disabled=false; btn.textContent=oldTxt;
         }
-      } catch (err) {
+      }catch(err){
         console.error(err);
-        errBox.textContent = 'Network error. Please try again.';
-        btn.disabled = false; btn.textContent = 'Proceed to Checkout';
+        alert('Network error. Please try again.');
+        btn.disabled=false; btn.textContent=oldTxt;
       }
     });
+
+    // helpful hint
+    $('#sumNote').textContent = 'Live total';
   </script>
 </body>
 </html>
