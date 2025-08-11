@@ -1,27 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Cancel - Scott Ymker Photography</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout canceled • Scott Ymker Photography</title>
+
+  <!-- Inter font to match order/success -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f6f7f9; --card:#fff; --ink:#121212; --muted:#68707a;
+      --accent:#0ea5e9; --accent-ink:#fff; --ok:#16a34a; --warn:#a16207;
+      --border:#e8ebef;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    /* Header (same style as success/order) */
+    .sitebar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 10px 12px;border-bottom:1px solid var(--border);
+      background:linear-gradient(#fbfbfc,#f6f7f9);
+      border-radius:12px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand img{height:36px;width:auto}
+    nav a{
+      text-decoration:none;color:#2d3640;margin-left:18px;font-weight:500;
+      padding:6px 8px;border-radius:8px
+    }
+    nav a[aria-current="page"]{background:#eef7ff;color:#0b77c5}
+    nav a:hover{background:#eff2f6}
+
+    /* Cards & layout */
+    .hero{
+      margin-top:18px;background:var(--card);border:1px solid var(--border);
+      border-radius:16px;padding:22px 20px;display:flex;gap:14px;align-items:center
+    }
+    .icon{
+      height:36px;width:36px;border-radius:50%;display:grid;place-items:center;
+      background:rgba(161,98,7,.12);color:var(--warn);font-weight:800
+    }
+    h1{margin:0 0 4px;font-size:24px}
+    .subtle{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+    .card h2{font-size:16px;margin:0 0 12px}
+
+    .btn{
+      appearance:none;border:1px solid var(--border);background:#fff;color:var(--ink);
+      padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:600
+    }
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+
+    .list{display:grid;row-gap:8px}
+    .kv{display:grid;grid-template-columns:160px 1fr;column-gap:12px;row-gap:8px}
+    .label{color:var(--muted)}
+
+    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+  </style>
 </head>
 <body>
-
-
-<header class="site-header">
-    <div class="header-content">
-        <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
-        <nav class="topnav">
-            <a href="index.html">Home</a>
-            <a href="order.html">Order Prints</a>
-        </nav>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="sitebar">
+      <div class="brand">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography logo" />
+        <span>Scott Ymker Photography</span>
+      </div>
+      <nav aria-label="Main">
+        <a href="index.html">Home</a>
+        <a href="order.html" aria-current="page">Order</a>
+        <a href="contact.html">Contact</a>
+      </nav>
     </div>
 
-    <h1>Order Canceled</h1>
-</header>
-<section style="padding: 20px;">
-    <p>Your order was not completed. Try again or contact us.</p>
-</section>
+    <!-- Hero -->
+    <section class="hero" role="status" aria-live="polite">
+      <div class="icon">!</div>
+      <div>
+        <h1>Checkout canceled</h1>
+        <div class="subtle">No charge was made. You can review your order and try again below.</div>
+      </div>
+    </section>
 
+    <section class="grid">
+      <!-- Actions -->
+      <div class="card">
+        <h2>What would you like to do?</h2>
+        <div class="list" style="margin-top:4px">
+          <div>• Return to your order form to make changes or resume checkout.</div>
+          <div>• Or head back home to keep browsing.</div>
+        </div>
+
+        <div class="btn-row" style="margin-top:14px">
+          <a class="btn primary" href="order.html">Resume order</a>
+          <a class="btn" href="index.html">Back to Home</a>
+        </div>
+      </div>
+
+      <!-- Help / contact -->
+      <div class="card">
+        <h2>Need help?</h2>
+        <div class="kv">
+          <div class="label">Email</div>
+          <div><a href="mailto:support@scottymkerphotos.com">support@scottymkerphotos.com</a></div>
+
+          <div class="label">Receipt status</div>
+          <div>Because payment wasn’t completed, a receipt was not issued.</div>
+
+          <div class="label">Tip</div>
+          <div>If you saw an authorization on your bank, it will drop automatically per your bank’s policy.</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+    </footer>
+  </div>
+
+  <script>
+    // Small nicety: if a reason came through (?reason=something), show it under the headline.
+    const params = new URLSearchParams(location.search);
+    const reason = params.get('reason');
+    if (reason) {
+      const hero = document.querySelector('.hero .subtle');
+      hero.textContent = `No charge was made. Reason: ${reason}. You can review your order and try again below.`;
+    }
+    document.getElementById('yr').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
