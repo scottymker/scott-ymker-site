@@ -1,27 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Success - Scott Ymker Photography</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <title>Thank you!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>body{font-family:system-ui;margin:2rem;max-width:720px}</style>
 </head>
 <body>
+  <h1>Thank you!</h1>
+  <p>Your payment was successful. A receipt will be emailed shortly.</p>
+  <div id="summary">Loading order…</div>
 
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const sid = qs.get('session_id');
+    async function load() {
+      if (!sid) { document.getElementById('summary').textContent = 'Missing session id.'; return; }
+      const res = await fetch('/.netlify/functions/get-session?sid=' + encodeURIComponent(sid));
+      const data = await res.json();
 
-<header class="site-header">
-    <div class="header-content">
-        <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
-        <nav class="topnav">
-            <a href="index.html">Home</a>
-            <a href="order.html">Order Prints</a>
-        </nav>
-    </div>
+      // Render a tiny summary
+      const meta = data.metadata || {};
+      const email = data.customer_email || meta.parent_email || '(no email)';
+      const amount = (data.amount_total/100).toFixed(2);
 
-    <h1>Thank You!</h1>
-</header>
-<section style="padding: 20px;">
-    <p>Your order was placed successfully.</p>
-</section>
-
+      document.getElementById('summary').innerHTML = `
+        <h2>Order Summary</h2>
+        <p><strong>Total:</strong> $${amount}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Student:</strong> ${meta.student_first || ''} ${meta.student_last || ''}</p>
+        <p><strong>Teacher/Grade:</strong> ${meta.teacher || ''} / ${meta.grade || ''}</p>
+        <p><strong>School:</strong> ${meta.school || ''}</p>
+        <p><strong>Background:</strong> ${meta.background || ''}</p>
+        <p><strong>Add-ons:</strong> ${meta.addons || ''}</p>
+      `;
+    }
+    load();
+  </script>
 </body>
 </html>
