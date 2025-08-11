@@ -1,98 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Scott Ymker Photography</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scott Ymker Photography • School Portraits</title>
+
+  <!-- Inter to match the new theme -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --bg:#f7f8fb; --card:#fff; --ink:#111; --muted:#666; --border:#e7e7ee; --accent:#0ea5e9; --accent-ink:#fff;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+
+    /* Header / Nav */
+    .sitebar{position:sticky;top:0;background:#fff;z-index:40;border-bottom:1px solid var(--border)}
+    .sitebar .row{display:flex;align-items:center;justify-content:space-between;height:64px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:700}
+    .brand img{height:30px;width:auto}
+    nav a{color:#222;padding:10px 12px;border-radius:10px}
+    nav a[aria-current="page"]{font-weight:700}
+    nav a:hover{background:#f0f2f7}
+
+    /* Hero */
+    .hero{padding:28px 0}
+    .hero .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;display:flex;align-items:center;gap:14px}
+    .hero h1{margin:0 0 6px;font-size:22px}
+    .subtle{color:var(--muted)}
+    .cta{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:600}
+    .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+    .btn:hover{filter:brightness(0.98)}
+
+    /* Section titles */
+    .section-title{margin:20px 0 10px;font-size:18px;font-weight:700}
+
+    /* Background gallery */
+    .gallery{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+    @media (max-width:1000px){.gallery{grid-template-columns:repeat(8,1fr)}}
+    @media (max-width:720px){.gallery{grid-template-columns:repeat(4,1fr)}}
+
+    .bg-card{
+      grid-column:span 4;
+      background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .bg-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(18,32,56,.06)}
+    .thumb{position:relative;aspect-ratio:4/5;background:#e9ecf4}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .badge{
+      position:absolute;left:10px;top:10px;background:rgba(17,17,17,.85);color:#fff;
+      padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;letter-spacing:.2px
+    }
+    .subbadge{
+      position:absolute;right:10px;top:10px;background:rgba(0,0,0,.5);color:#fff;
+      padding:5px 8px;border-radius:999px;font-size:12px
+    }
+    .bg-meta{display:flex;justify-content:space-between;align-items:center;padding:10px 12px}
+    .bg-meta .label{color:var(--muted);font-size:12px}
+
+    /* Composite promo */
+    .promo{margin:20px 0}
+    .promo .card{display:grid;grid-template-columns:1.1fr .9fr;gap:16px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+    @media (max-width:900px){.promo .card{grid-template-columns:1fr}}
+    .promo img{width:100%;height:auto;border-radius:12px;border:1px solid var(--border)}
+    .promo h2{margin:0 0 8px;font-size:18px}
+    ul.clean{margin:8px 0 0 18px;color:var(--muted)}
+    .note{color:var(--muted);font-size:13px;margin-top:6px}
+
+    /* Contact / Footer */
+    .contact{margin:22px 0}
+    .contact .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+    .kvs{display:grid;grid-template-columns:160px 1fr;row-gap:8px}
+    .kvs .key{color:var(--muted)}
+    footer{padding:28px 0 40px;color:var(--muted);font-size:13px;text-align:center}
+  </style>
 </head>
 <body>
-    <header style="background: #fff; color: #000;">
-        <div class="header-content">
-            <img src="2020Logo_black.png" alt="Scott Ymker Photography Logo" class="logo">
-            <nav class="topnav">
-                <a href="index.html">Home</a>
-                <a href="order.html">Order Prints</a>
-        </nav>
-        <h1>School Photography – Custom Background Options</h1>
-    </header>
-
-    <section class="gallery">
-        <img src="F1_Background_Example.jpg" alt="Background Option 1">
-        <img src="F1_Background_Example2.jpg" alt="Background Option 2">
-        <img src="F3_Background_Example.jpg" alt="Background Option 3">
-        <img src="F3_Background_Example2.jpg" alt="Background Option 4">
-        <img src="F4_Background_Example.jpg" alt="Background Option 5">
-        <img src="F4_Background_Example2.jpg" alt="Background Option 6">
-        <img src="F6_Background_Example.jpg" alt="Background Option 7">
-        <img src="F6_Background_Example2.jpg" alt="Background Option 8">
-        <img src="F2_Background_Example.jpg" alt="Background Option 9">
-        <img src="F2_Background_Example2.jpg" alt="Background Option 10">
-        <img src="F5_Background_Example.jpg" alt="Background Option 11">
-        <img src="F5_Background_Example2.jpg" alt="Background Option 12">
-    </section>
-
-    <section class="composite-promo">
-        <div class="promo-container">
-            <div class="promo-image">
-                <img src="composite_example.jpg" alt="8x10 Class Composite Example">
-            </div>
-            <div class="promo-text">
-                <h2>8x10 Class Composite</h2>
-                <p>This professionally designed 8x10 Class Composite features all students and instructors from the class. It's a great keepsake for both students and educators to remember the school year.</p>
-                <p>Available for purchase individually or as part of our packages.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="packages">
-        <h2>Photo Package Options</h2>
-        <img src="Package A.png" alt="Package A">
-        <img src="Package B.png" alt="Package B">
-        <img src="Package C.png" alt="Package C">
-        <img src="Package D.png" alt="Package D">
-        <img src="Package E.png" alt="Package E">
-    </section>
-
-    <section class="addons">
-        <h2>Add-On Items</h2>
-        <table class="addon-table">
-            <thead>
-                <tr>
-                    <th>PKG</th>
-                    <th>QTY</th>
-                    <th>Description</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr><td>F</td><td>1</td><td>8x10 Print</td><td>$6</td></tr>
-                <tr><td>G</td><td>2</td><td>5x7 Print</td><td>$6</td></tr>
-                <tr><td>H</td><td>4</td><td>3½x5 Print</td><td>$6</td></tr>
-                <tr><td>I</td><td>24</td><td>Wallets</td><td>$18</td></tr>
-                <tr><td>J</td><td>8</td><td>Wallets</td><td>$6</td></tr>
-                <tr><td>K</td><td>16</td><td>Mini Wallets</td><td>$6</td></tr>
-                <tr><td>L</td><td>1</td><td>Retouching</td><td>$7</td></tr>
-                <tr><td>M</td><td>1</td><td>8x10 Class Composite</td><td>$8</td></tr>
-                <tr><td>N</td><td>1</td><td>Digital File</td><td>$15</td></tr>
-            </tbody>
-        </table>
-        <p class="addon-note">Add-on items may only be ordered with the purchase of a package.</p>
-    </section>
-
-    <section class="start-order">
-        <a href="order.html" class="start-order-button">Start Your Order</a>
-    </section>
-
-    <div class="contact-info">
-        <p><strong>Email:</strong> <a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a></p>
-        <p><strong>Phone:</strong> <a href="tel:6055500828">605-550-0828</a></p>
-        <p><strong>Website:</strong> <a href="https://scottymkerphotos.com" target="_blank">scottymkerphotos.com</a></p>
-        <p><strong>Mailing Address:</strong> PO Box 544, Armour SD 57313</p>
+  <!-- Top bar -->
+  <header class="sitebar">
+    <div class="wrap row">
+      <div class="brand">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography logo">
+        <div>Scott Ymker Photography</div>
+      </div>
+      <nav aria-label="main">
+        <a href="index.html" aria-current="page">Home</a>
+        <a href="order.html">Order</a>
+        <a href="contact.html">Contact</a>
+      </nav>
     </div>
+  </header>
 
-    <footer>
-        <p>Contact us to schedule your school picture day!</p>
-        <p>&copy; 2025 Scott Ymker Photography</p>
-    </footer>
+  <main class="wrap">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="card">
+        <div>
+          <h1>School Photography • Choose your background</h1>
+          <div class="subtle">Preview each style below (F1–F6). You’ll select a background during checkout and we’ll match it to your student’s portrait.</div>
+          <div class="cta">
+            <a class="btn primary" href="order.html">Start your order</a>
+            <a class="btn" href="#backgrounds">Jump to backgrounds</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Backgrounds -->
+    <h2 id="backgrounds" class="section-title">Background options (F1–F6)</h2>
+    <section class="gallery" aria-label="Background examples">
+      <!-- F1 -->
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F1_Background_Example.jpg" loading="lazy" alt="Background F1 — example 1">
+          <div class="badge">F1</div>
+          <div class="subbadge">Example 1</div>
+        </div>
+        <figcaption class="bg-meta">
+          <span class="label">F1 (Default)</span>
+          <span><a class="btn" href="order.html">Use F1</a></span>
+        </figcaption>
+      </figure>
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F1_Background_Example2.jpg" loading="lazy" alt="Background F1 — example 2">
+          <div class="badge">F1</div>
+          <div class="subbadge">Example 2</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F1 (Default)</span></figcaption>
+      </figure>
+
+      <!-- F2 -->
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F2_Background_Example.jpg" loading="lazy" alt="Background F2 — example 1">
+          <div class="badge">F2</div>
+          <div class="subbadge">Example 1</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F2</span><span><a class="btn" href="order.html">Use F2</a></span></figcaption>
+      </figure>
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F2_Background_Example2.jpg" loading="lazy" alt="Background F2 — example 2">
+          <div class="badge">F2</div>
+          <div class="subbadge">Example 2</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F2</span></figcaption>
+      </figure>
+
+      <!-- F3 -->
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F3_Background_Example.jpg" loading="lazy" alt="Background F3 — example 1">
+          <div class="badge">F3</div>
+          <div class="subbadge">Example 1</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F3</span><span><a class="btn" href="order.html">Use F3</a></span></figcaption>
+      </figure>
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F3_Background_Example2.jpg" loading="lazy" alt="Background F3 — example 2">
+          <div class="badge">F3</div>
+          <div class="subbadge">Example 2</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F3</span></figcaption>
+      </figure>
+
+      <!-- F4 -->
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F4_Background_Example.jpg" loading="lazy" alt="Background F4 — example 1">
+          <div class="badge">F4</div>
+          <div class="subbadge">Example 1</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F4</span><span><a class="btn" href="order.html">Use F4</a></span></figcaption>
+      </figure>
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F4_Background_Example2.jpg" loading="lazy" alt="Background F4 — example 2">
+          <div class="badge">F4</div>
+          <div class="subbadge">Example 2</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F4</span></figcaption>
+      </figure>
+
+      <!-- F5 -->
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F5_Background_Example.jpg" loading="lazy" alt="Background F5 — example 1">
+          <div class="badge">F5</div>
+          <div class="subbadge">Example 1</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F5</span><span><a class="btn" href="order.html">Use F5</a></span></figcaption>
+      </figure>
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F5_Background_Example2.jpg" loading="lazy" alt="Background F5 — example 2">
+          <div class="badge">F5</div>
+          <div class="subbadge">Example 2</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F5</span></figcaption>
+      </figure>
+
+      <!-- F6 -->
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F6_Background_Example.jpg" loading="lazy" alt="Background F6 — example 1">
+          <div class="badge">F6</div>
+          <div class="subbadge">Example 1</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F6</span><span><a class="btn" href="order.html">Use F6</a></span></figcaption>
+      </figure>
+      <figure class="bg-card">
+        <div class="thumb">
+          <img src="F6_Background_Example2.jpg" loading="lazy" alt="Background F6 — example 2">
+          <div class="badge">F6</div>
+          <div class="subbadge">Example 2</div>
+        </div>
+        <figcaption class="bg-meta"><span class="label">F6</span></figcaption>
+      </figure>
+    </section>
+
+    <!-- Composite promo -->
+    <section class="promo" aria-label="8x10 Class Composite">
+      <div class="card">
+        <div>
+          <img src="composite_example.jpg" alt="8x10 Class Composite sample" loading="lazy">
+        </div>
+        <div>
+          <h2>8×10 Class Composite</h2>
+          <p class="subtle">A timeless keepsake featuring each student and their teacher—professionally designed and delivered as a print.</p>
+          <ul class="clean">
+            <li>Sized for standard 8×10 frames and albums</li>
+            <li>Includes school name, year and teacher</li>
+            <li>Available as an add-on or included in select packages</li>
+          </ul>
+          <p class="note">You can add the Composite from the order form—look for add-on <strong>M</strong>.</p>
+          <div class="cta"><a class="btn primary" href="order.html">Order now</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact / quick info -->
+    <section class="contact">
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0">Questions before you order?</h2>
+        <div class="kvs" role="list">
+          <div class="key">Email</div><div><a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a></div>
+          <div class="key">Phone</div><div><a href="tel:6055500828">605-550-0828</a></div>
+          <div class="key">Mailing</div><div>PO Box 544, Armour, SD 57313</div>
+          <div class="key">Website</div><div><a href="https://scottymkerphotos.com" target="_blank" rel="noopener">scottymkerphotos.com</a></div>
+        </div>
+        <div class="cta" style="margin-top:14px">
+          <a class="btn" href="contact.html">Contact form</a>
+          <a class="btn primary" href="order.html">Start your order</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+  </footer>
+
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
