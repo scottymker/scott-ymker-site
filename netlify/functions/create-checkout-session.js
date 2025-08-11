@@ -1,8 +1,6 @@
-const fetch = require("node-fetch");
-
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
   try {
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || "{}");
 
     // Prices in cents
     const packagePrices = {
@@ -20,7 +18,7 @@ exports.handler = async (event, context) => {
     };
 
     const selectedPackage = body.package;
-    const selectedAddons = body.addons || [];
+    const selectedAddons = Array.isArray(body.addons) ? body.addons : [];
     const background = body.background;
 
     const line_items = [];
@@ -29,29 +27,25 @@ exports.handler = async (event, context) => {
       line_items.push({
         price_data: {
           currency: "usd",
-          product_data: {
-            name: `Package ${selectedPackage}`
-          },
+          product_data: { name: `Package ${selectedPackage}` },
           unit_amount: packagePrices[selectedPackage]
         },
         quantity: 1
       });
     }
 
-    selectedAddons.forEach(addon => {
+    for (const addon of selectedAddons) {
       if (addonPrices[addon]) {
         line_items.push({
           price_data: {
             currency: "usd",
-            product_data: {
-              name: `Add-on ${addon}`
-            },
+            product_data: { name: `Add-on ${addon}` },
             unit_amount: addonPrices[addon]
           },
           quantity: 1
         });
       }
-    });
+    }
 
     const metadata = {
       student_first: body.student_first,
@@ -62,7 +56,7 @@ exports.handler = async (event, context) => {
       parent_name: body.parent_name,
       parent_phone: body.parent_phone,
       parent_email: body.parent_email,
-      background: background,
+      background,
       addons: selectedAddons.join(", ")
     };
 
@@ -84,15 +78,24 @@ exports.handler = async (event, context) => {
 
     const session = await stripeRes.json();
 
+    if (!stripeRes.ok) {
+      return {
+        statusCode: 500,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: session.error || "Stripe error" })
+      };
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ id: session.id })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: session.url })
     };
-
   } catch (err) {
     console.error("Stripe Checkout Session Error:", err);
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ error: "Failed to create checkout session" })
     };
   }
