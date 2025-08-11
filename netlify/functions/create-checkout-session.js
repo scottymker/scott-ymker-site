@@ -1,17 +1,27 @@
 // netlify/functions/create-checkout-session.js
+// Uses native fetch (Node 18+), no external deps.
+
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  let body = {};
+  const SECRET = process.env.STRIPE_SECRET_KEY;
+  if (!SECRET) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Missing STRIPE_SECRET_KEY env var" }),
+    };
+  }
+
+  let body;
   try {
-    body = JSON.parse(event.body || '{}');
+    body = JSON.parse(event.body || "{}");
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
+    return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
   }
 
-  // --- Price tables (cents) ---
+  // ----- Price tables (amounts in cents) -----
   const packagePrices = {
     A: 3200, A1: 4100,
     B: 2700, B1: 3200,
@@ -21,109 +31,153 @@ exports.handler = async (event) => {
   };
 
   const addonPrices = {
-    F: 600, G: 600, H: 600,
-    I: 1800, J: 600, K: 600,
-    L: 700,  M: 800, N: 1500,
+    F: 600,  // 8x10 Print
+    G: 600,  // 2x 5x7 Prints
+    H: 600,  // 4x 3½x5 Prints
+    I: 1800, // 24 Wallets
+    J: 600,  // 8 Wallets
+    K: 600,  // 16 Mini Wallets
+    L: 700,  // Retouching
+    M: 800,  // 8x10 Class Composite
+    N: 1500, // Digital File
   };
 
-  // Accept prebuilt line_items OR compute from package/addons
-  let line_items = Array.isArray(body.line_items) && body.line_items.length ? body.line_items : null;
+  const selectedPackage = (body.package || "").trim();
+  const selectedAddons = Array.isArray(body.addons) ? body.addons : [];
 
-  if (!line_items) {
-    const pkg = body.package;
-    const addons = Array.isArray(body.addons) ? body.addons : (body.addons ? [body.addons] : []);
+  // ---------- Build line items ----------
+  const lineItems = [];
 
-    if (!pkg || !packagePrices[pkg]) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing or invalid package' }) };
-    }
-
-    line_items = [{
-      price_data: {
-        currency: 'usd',
-        product_data: { name: `Package ${pkg}` },
-        unit_amount: packagePrices[pkg],
-      },
-      quantity: 1,
-    }];
-
-    for (const a of addons) {
-      if (addonPrices[a]) {
-        line_items.push({
-          price_data: {
-            currency: 'usd',
-            product_data: { name: `Add-on ${a}` },
-            unit_amount: addonPrices[a],
-          },
-          quantity: 1,
-        });
-      }
-    }
+  // Validate and add package
+  const pkgAmount = packagePrices[selectedPackage];
+  if (!pkgAmount) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Missing or invalid package" }) };
   }
 
-  if (!Array.isArray(line_items) || !line_items.length) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing or invalid line_items' }) };
+  lineItems.push({
+    name: `Package ${selectedPackage}`,
+    amount: pkgAmount,
+    quantity: 1,
+  });
+
+  // Validate and add each add-on
+  selectedAddons.forEach((code) => {
+    const price = addonPrices[code];
+    if (price) {
+      const names = {
+        F: "8x10 Print",
+        G: "2x 5x7 Prints",
+        H: "4x 3½x5 Prints",
+        I: "24 Wallets",
+        J: "8 Wallets",
+        K: "16 Mini Wallets",
+        L: "Retouching",
+        M: "8x10 Class Composite",
+        N: "Digital File",
+      };
+      lineItems.push({
+        name: `Add-on ${code} — ${names[code]}`,
+        amount: price,
+        quantity: 1,
+      });
+    }
+  });
+
+  if (lineItems.length === 0) {
+    return { statusCode: 400, body: JSON.stringify({ error: "Missing or invalid line_items" }) };
   }
 
-  // Merge metadata (top-level fields win if present)
+  // ---------- Metadata ----------
   const mergedMetadata = {
-    ...(body.metadata || {}),
-    background:    body.background    ?? (body.metadata || {}).background,
-    student_first: body.student_first ?? (body.metadata || {}).student_first,
-    student_last:  body.student_last  ?? (body.metadata || {}).student_last,
-    teacher:       body.teacher       ?? (body.metadata || {}).teacher,
-    grade:         body.grade         ?? (body.metadata || {}).grade,
-    school:        body.school        ?? (body.metadata || {}).school,
-    parent_name:   body.parent_name   ?? (body.metadata || {}).parent_name,
-    parent_phone:  body.parent_phone  ?? (body.metadata || {}).parent_phone,
-    parent_email:  body.parent_email  ?? (body.metadata || {}).parent_email ?? body.email,
-    addons: Array.isArray(body.addons) ? body.addons.join(', ') : (body.metadata || {}).addons,
+    addons: selectedAddons.join(", "),
+    background: body.background || "",
+    student_first: body.student_first || "",
+    student_last: body.student_last || "",
+    teacher: body.teacher || "",
+    grade: body.grade || "",
+    school: body.school || "",
+    parent_name: body.parent_name || "",
+    parent_phone: body.parent_phone || "",
+    parent_email: body.parent_email || "",
   };
 
-  // Build form-encoded body for Stripe
-  const params = new URLSearchParams();
-  params.append('mode', 'payment');
-  params.append('success_url', 'https://schools.scottymkerphotos.com/success.html');
-  params.append('cancel_url',  'https://schools.scottymkerphotos.com/cancel.html');
-  params.append('phone_number_collection[enabled]', 'true');
-
-  const email = body.email || body.parent_email;
-  if (email) params.append('customer_email', email);
-
-  line_items.forEach((item, i) => {
-    const q = item.quantity || 1;
-    const { currency, unit_amount, product_data } = item.price_data || {};
-    params.append(`line_items[${i}][quantity]`, String(q));
-    params.append(`line_items[${i}][price_data][currency]`, String(currency || 'usd'));
-    params.append(`line_items[${i}][price_data][unit_amount]`, String(unit_amount || 0));
-    params.append(`line_items[${i}][price_data][product_data][name]`, String(product_data?.name || 'Item'));
-  });
-
-  Object.entries(mergedMetadata).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && String(v).trim() !== '') {
-      params.append(`metadata[${k}]`, String(v));
-    }
-  });
-
+  // ---------- Create Stripe Checkout Session ----------
   try {
-    const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params,
+    const params = new URLSearchParams();
+
+    // session core
+    params.append("mode", "payment");
+    params.append("payment_method_types[]", "card");
+
+    // success/cancel (include session id on success)
+    params.append(
+      "success_url",
+      "https://schools.scottymkerphotos.com/success.html?session_id={CHECKOUT_SESSION_ID}"
+    );
+    params.append(
+      "cancel_url",
+      "https://schools.scottymkerphotos.com/cancel.html"
+    );
+
+    // prefill email and show phone field
+    const email = (body.parent_email || "").trim();
+    if (email) params.append("customer_email", email);
+    params.append("phone_number_collection[enabled]", "true");
+
+    // line items
+    lineItems.forEach((li, idx) => {
+      params.append(`line_items[${idx}][price_data][currency]`, "usd");
+      params.append(`line_items[${idx}][price_data][product_data][name]`, li.name);
+      params.append(`line_items[${idx}][price_data][unit_amount]`, String(li.amount));
+      params.append(`line_items[${idx}][quantity]`, String(li.quantity));
     });
 
-    const text = await res.text(); // keep raw for debugging
-    if (!res.ok) {
-      // Bubble up Stripe’s error message so we can see it in the Network > Response tab
-      return { statusCode: res.status, body: JSON.stringify({ error: 'Stripe error', details: text }) };
+    // session metadata
+    Object.entries(mergedMetadata).forEach(([k, v]) => {
+      if (v != null && String(v).trim() !== "") {
+        params.append(`metadata[${k}]`, String(v));
+      }
+    });
+
+    // ALSO mirror metadata to the Payment so it appears in Stripe's "Payment" view
+    Object.entries(mergedMetadata).forEach(([k, v]) => {
+      if (v != null && String(v).trim() !== "") {
+        params.append(`payment_intent_data[metadata][${k}]`, String(v));
+      }
+    });
+
+    // create session
+    const stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SECRET}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    const text = await stripeRes.text();
+    let session;
+    try { session = JSON.parse(text); } catch { /* leave as text */ }
+
+    if (!stripeRes.ok) {
+      // bubble Stripe's error
+      return {
+        statusCode: stripeRes.status,
+        body: typeof session === "object" ? JSON.stringify(session) : text,
+      };
     }
 
-    const session = JSON.parse(text);
-    return { statusCode: 200, body: JSON.stringify({ id: session.id, url: session.url }) };
+    // Return URL for redirect
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ url: session.url }),
+    };
   } catch (err) {
-    console.error('Stripe Checkout Session Error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Failed to create checkout session' }) };
+    console.error("Stripe error:", err);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Stripe error" }),
+    };
   }
 };
