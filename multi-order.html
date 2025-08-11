@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order • Scott Ymker Photography</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f7f7f8; --card:#fff; --ink:#111; --muted:#6b7280; --border:#e6e7ea;
+      --accent:#0ea5e9; --accent-ink:#fff; --shadow:0 1px 2px rgba(0,0,0,.06);
+      --radius:16px; --radius-sm:12px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+    /* Header */
+    header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border)}
+    .nav{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px}
+    .nav img{height:28px}
+    .nav .spacer{flex:1}
+    .nav a{color:#111;text-decoration:none;padding:6px 10px;border-radius:10px}
+    .nav a[aria-current="page"]{font-weight:700}
+
+    /* Shell */
+    .wrap{max-width:1120px;margin:22px auto;padding:0 16px}
+    .hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+          padding:16px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+    .hero h1{margin:0;font-size:20px}
+    .muted{color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px;margin-top:16px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+          padding:16px;box-shadow:var(--shadow)}
+    .section-title{font-weight:700;margin:4px 0 12px}
+
+    /* Form */
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    @media (max-width:720px){.row,.row-3{grid-template-columns:1fr}}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:12px;color:var(--muted)}
+    .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff}
+
+    /* Student card (collapsible) */
+    details.student{border:1px solid var(--border);border-radius:14px;margin-top:12px;overflow:hidden;background:#fff}
+    details.student > summary{
+      list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;
+      padding:12px 14px;font-weight:600;background:#fafafa;border-bottom:1px solid var(--border);
+    }
+    details.student[open] > summary{background:#f4f7fb}
+    details.student > summary::-webkit-details-marker{display:none}
+    .student-body{padding:14px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid var(--border);
+          border-radius:999px;font-size:12px;color:var(--muted);background:#fff}
+
+    .addons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    @media (min-width:880px){.addons{grid-template-columns:repeat(3,1fr)}}
+    .addons label{font-size:13px;display:flex;gap:8px;align-items:center;border:1px solid var(--border);
+                  padding:10px 12px;border-radius:12px;background:#fff}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 12px;border-radius:12px;cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+    .btn.ghost{background:#fff}
+
+    /* Summary */
+    .sticky{position:sticky;top:78px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
+    th{font-size:12px;color:var(--muted)}
+    tfoot td{font-weight:700}
+
+    /* Helpers */
+    .small{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="nav">
+      <img src="2020Logo_black.png" alt="Scott Ymker Photography">
+      <div class="spacer"></div>
+      <a href="index.html">Home</a>
+      <a href="order.html" aria-current="page">Order</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <h1>Order your school photo package</h1>
+      <div class="muted">One checkout • up to 6 students</div>
+    </section>
+
+    <div class="grid">
+      <!-- LEFT: Form -->
+      <div class="card">
+        <form id="orderForm" novalidate>
+          <div class="section-title">Parent & school</div>
+          <div class="row">
+            <div class="field">
+              <label>Parent name</label>
+              <input name="parent_name" placeholder="Jane Doe" required>
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input name="parent_phone" placeholder="605-555-5555" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Email (prefilled on Stripe)</label>
+              <input type="email" name="parent_email" placeholder="jane@example.com" required>
+            </div>
+            <div class="field">
+              <label>School</label>
+              <input name="school" placeholder="NRCS" required>
+            </div>
+          </div>
+
+          <div id="students"></div>
+
+          <div class="controls">
+            <button type="button" class="btn ghost" id="addStudent">+ Add student</button>
+            <span class="small" id="limitMsg"></span>
+          </div>
+
+          <div class="controls" style="margin-top:12px">
+            <button type="submit" class="btn primary" id="checkoutBtn">Proceed to Checkout</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- RIGHT: Summary -->
+      <aside class="card sticky">
+        <h3 style="margin:0 0 10px">Order summary</h3>
+        <table>
+          <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
+          <tbody id="summaryBody"></tbody>
+          <tfoot><tr><td colspan="2">Total</td><td id="summaryTotal">$0.00</td></tr></tfoot>
+        </table>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // ---- Pricing (cents)
+    const PKG = { A:3200,A1:4100,B:2700,B1:3200,C:2200,C1:2700,D:1800,D1:2300,E:1200,E1:1700 };
+    const ADD = {
+      F:{name:"8x10 Print",amt:600}, G:{name:"2x 5x7 Prints",amt:600}, H:{name:"4x 3½x5 Prints",amt:600},
+      I:{name:"24 Wallets",amt:1800}, J:{name:"8 Wallets",amt:600}, K:{name:"16 Mini Wallets",amt:600},
+      L:{name:"Retouching",amt:700},  M:{name:"8x10 Class Composite",amt:800}, N:{name:"Digital File",amt:1500}
+    };
+    const MAX_STUDENTS = 6;
+
+    // ---- Helpers
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    const money = c => (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
+
+    // ---- Student UI
+    const studentsBox = $('#students');
+    const limitMsg = $('#limitMsg');
+
+    function studentCard(idx){
+      return `
+      <details class="student" data-idx="${idx}" open>
+        <summary>
+          <span>Student ${idx+1}</span>
+          <span class="pill" data-pill="${idx}">No details yet</span>
+        </summary>
+        <div class="student-body">
+          <div class="row">
+            <div class="field">
+              <label>Package</label>
+              <select name="package" required>
+                <option value="">— Select a Package —</option>
+                <option value="A">Package A — $32</option>
+                <option value="A1">Package A1 — $41</option>
+                <option value="B">Package B — $27</option>
+                <option value="B1">Package B1 — $32</option>
+                <option value="C">Package C — $22</option>
+                <option value="C1">Package C1 — $27</option>
+                <option value="D">Package D — $18</option>
+                <option value="D1">Package D1 — $23</option>
+                <option value="E">Package E — $12</option>
+                <option value="E1">Package E1 — $17</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Background</label>
+              <select name="background" required>
+                <option value="F1" selected>F1 (Default)</option>
+                <option value="F2">F2</option>
+                <option value="F3">F3</option>
+                <option value="F4">F4</option>
+                <option value="F5">F5</option>
+                <option value="F6">F6</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:8px">
+            <label>Add-ons (optional)</label>
+            <div class="addons">
+              ${Object.entries(ADD).map(([c,a])=>`
+                <label><input type="checkbox" name="addons" value="${c}"> ${c} — ${a.name} (${money(a.amt)})</label>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <div class="field"><label>First name</label><input name="student_first" required></div>
+            <div class="field"><label>Last name</label><input name="student_last" required></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Teacher</label><input name="teacher" required></div>
+            <div class="field"><label>Grade</label><input name="grade" required></div>
+          </div>
+
+          <div class="controls">
+            <button type="button" class="btn ghost remove">Remove</button>
+          </div>
+        </div>
+      </details>`;
+    }
+
+    function addStudent(){
+      const count = studentsBox.children.length;
+      if(count >= MAX_STUDENTS){ limitMsg.textContent = "Maximum of 6 students per order."; return; }
+      studentsBox.insertAdjacentHTML('beforeend', studentCard(count));
+      wireStudent(studentsBox.lastElementChild);
+      refreshNumbers();
+      updateSummary();
+      limitMsg.textContent = (count+1 >= MAX_STUDENTS) ? "Maximum of 6 students per order." : "";
+    }
+
+    function wireStudent(card){
+      card.addEventListener('input', ()=>{
+        updatePill(card);
+        updateSummary();
+      });
+      card.addEventListener('change', ()=>{
+        updatePill(card);
+        updateSummary();
+      });
+      card.querySelector('.remove').addEventListener('click', ()=>{
+        card.remove(); refreshNumbers(); updateSummary(); limitMsg.textContent="";
+      });
+      updatePill(card);
+    }
+
+    function refreshNumbers(){
+      [...studentsBox.children].forEach((el,i)=>{
+        el.dataset.idx = i;
+        el.querySelector('summary span').textContent = `Student ${i+1}`;
+        el.querySelector('[data-pill]').setAttribute('data-pill', i);
+      });
+    }
+
+    function updatePill(card){
+      const i = card.dataset.idx;
+      const f = card.querySelector('input[name="student_first"]').value.trim();
+      const l = card.querySelector('input[name="student_last"]').value.trim();
+      const pkg = card.querySelector('select[name="package"]').value;
+      const pill = card.querySelector(`[data-pill="${i}"]`);
+      const name = [f,l].filter(Boolean).join(' ');
+      let text = name || 'No name yet';
+      if(pkg) text += ` • Package ${pkg}`;
+      pill.textContent = text;
+    }
+
+    $('#addStudent').addEventListener('click', addStudent);
+    // start with one student
+    addStudent();
+
+    // ---- Collect & summary
+    function collect(){
+      const parent = {
+        parent_name: $('input[name="parent_name"]').value.trim(),
+        parent_phone: $('input[name="parent_phone"]').value.trim(),
+        parent_email: $('input[name="parent_email"]').value.trim(),
+        school: $('input[name="school"]').value.trim()
+      };
+      const students = [...studentsBox.children].map(card=>{
+        const sel = q => card.querySelector(q);
+        const addons = [...card.querySelectorAll('input[name="addons"]:checked')].map(i=>i.value);
+        return {
+          package: sel('select[name="package"]').value,
+          background: sel('select[name="background"]').value,
+          addons,
+          student_first: sel('input[name="student_first"]').value.trim(),
+          student_last:  sel('input[name="student_last"]').value.trim(),
+          teacher:       sel('input[name="teacher"]').value.trim(),
+          grade:         sel('input[name="grade"]').value.trim(),
+          school: parent.school
+        };
+      });
+      return { parent, students };
+    }
+
+    function updateSummary(){
+      const {students} = collect();
+      const body = $('#summaryBody'); body.innerHTML='';
+      let total = 0;
+
+      students.forEach(s=>{
+        if(s.package && PKG[s.package]){
+          total += PKG[s.package];
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>Package ${s.package} — ${s.student_first||''} ${s.student_last||''}</td><td>1</td><td>${money(PKG[s.package])}</td>`;
+          body.appendChild(tr);
+        }
+        (s.addons||[]).forEach(code=>{
+          if(ADD[code]){
+            total += ADD[code].amt;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>Add-on ${code} — ${ADD[code].name} — ${s.student_first||''} ${s.student_last||''}</td><td>1</td><td>${money(ADD[code].amt)}</td>`;
+            body.appendChild(tr);
+          }
+        });
+      });
+      $('#summaryTotal').textContent = money(total);
+    }
+
+    $('#orderForm').addEventListener('input', updateSummary);
+    $('#orderForm').addEventListener('change', updateSummary);
+
+    // ---- Submit
+    $('#orderForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const payload = collect();
+
+      if(!payload.students.length){ alert('Add at least one student.'); return; }
+      if(!payload.students.every(s => s.package)){ alert('Please select a package for each student.'); return; }
+
+      const btn = $('#checkoutBtn'); const txt = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Processing…';
+
+      try{
+        const res = await fetch('/.netlify/functions/create-checkout-session', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if(!res.ok || !json.url){ console.error(json); alert(json.error || 'Stripe error'); btn.disabled=false; btn.textContent=txt; return; }
+        location.href = json.url;
+      }catch(err){
+        console.error(err); alert('Network error. Please try again.');
+        btn.disabled=false; btn.textContent=txt;
+      }
+    });
+  </script>
+</body>
+</html>
