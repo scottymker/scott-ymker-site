@@ -1,24 +1,28 @@
 import { getStore } from '@netlify/blobs';
-import { verifyJWT } from './_lib/jwt.mjs';
 
-export default async (req, context) => {
-  try {
-    const cookie = req.headers.get('cookie') || '';
-    const token = /(?:^|; )reorder=([^;]+)/.exec(cookie)?.[1];
-    if (!token) return new Response('unauthorized', { status: 401 });
-    const { code } = verifyJWT(decodeURIComponent(token), process.env.JWT_SECRET);
+function readCookie(req, name) {
+  const h = req.headers.get('cookie') || '';
+  const m = h.match(new RegExp(`${name}=([^;]+)`));
+  return m ? m[1] : null;
+}
 
-    const store = getStore();
-    const meta = await store.get(`meta/students/${code}.json`, { type: 'json' });
-    if (!meta) return new Response('not found', { status: 404 });
+export default async (req, ctx) => {
+  const sesh = readCookie(req, 'sesh');
+  if (!sesh) return new Response('Unauthorized', { status: 401 });
+  const { c: code } = JSON.parse(Buffer.from(sesh, 'base64url').toString('utf8'));
 
-    // Return only safe fields
-    return Response.json({
-      student_label: meta.student_label, // e.g., "Emma Y."
-      event_label: meta.event_label,
-      preview_keys: meta.preview_keys,   // e.g., ["previews/Fall2025/AB2DEF/IMG_1234.jpg", ...]
-    });
-  } catch (e) {
-    return new Response('error', { status: 500 });
-  }
+  const meta = getStore('meta');
+  const student = await meta.get(`students/${code}.json`, { type: 'json', consistency: 'strong' });
+  if (!student) return new Response('Unauthorized', { status: 401 });
+
+  // Build preview URLs that our preview function will serve
+  const images = (student.previewKeys || []).map((key) => ({
+    previewUrl: `/preview/${encodeURIComponent(key)}`,
+  }));
+
+  return Response.json({
+    eventName: student.eventName,
+    studentLabel: student.studentLabel,
+    images,
+  });
 };
