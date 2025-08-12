@@ -2,46 +2,101 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Access My Event • Scott Ymker Photography</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/reorder.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    /* Scoped extras only for this page */
+    .center-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100svh - 140px);padding:24px;}
+    .card{max-width:560px;width:100%;background:var(--card,#fff);border:1px solid var(--border,#e6e7ea);border-radius:16px;box-shadow:var(--shadow,0 1px 2px rgba(0,0,0,.06));padding:28px;}
+    .eyebrow{font-weight:700;font-size:28px;line-height:1.2;margin:0 0 16px;color:var(--ink,#111);}
+    .muted{color:var(--muted,#6b7280);}
+    .field{margin:16px 0 10px;}
+    .input{width:100%;padding:14px 16px;border:1px solid var(--border,#e6e7ea);border-radius:12px;font:inherit;letter-spacing:.08em;text-transform:uppercase}
+    .help{font-size:.9rem;color:var(--muted,#6b7280);margin-top:6px}
+    .actions{display:flex;gap:12px;margin-top:18px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent,#0ea5e9);color:var(--accent-ink,#fff);font-weight:600;cursor:pointer}
+    .btn.secondary{background:transparent;border-color:var(--border,#e6e7ea);color:var(--ink,#111)}
+    .error{margin-top:12px;color:#b42318;font-weight:600;display:none}
+  </style>
 </head>
-<body class="bg">
-  <main class="center-card">
-    <div class="card">
-      <h1>Access My Event</h1>
-      <p class="muted">Enter your 6‑character event code</p>
-      <form id="codeForm" autocomplete="off">
-        <input id="code" name="code" class="codebox" inputmode="latin" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="e.g. 6G7YQ5" aria-label="Event code" required />
-        <button class="btn" type="submit">Next</button>
-      </form>
-      <p id="error" class="error" role="alert" hidden></p>
-      <details class="faq">
-        <summary>Where do I find my event code?</summary>
-        <p>Your code is printed on the take‑home card or email from the photographer.</p>
-      </details>
+<body>
+  <!-- Header: reuse the same markup as index/order/success -->
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="Scott Ymker Photography" height="36"></a>
+      <nav class="site-nav">
+        <a href="/order.html">Order Forms</a>
+        <a class="active" href="/access.html">Access Event</a>
+      </nav>
     </div>
+  </header>
+
+  <main class="center-wrap">
+    <section class="card" aria-labelledby="access-title">
+      <h1 id="access-title" class="eyebrow">Access My Event</h1>
+      <p class="muted">Enter your 6-character event code from the card that was sent home.</p>
+
+      <form id="access-form" class="form" novalidate>
+        <div class="field">
+          <label for="code" class="muted">Event code</label>
+          <input id="code" name="code" class="input" inputmode="latin" maxlength="6" minlength="6"
+                 pattern="[A-HJ-NP-Z2-9]{6}" placeholder="ABC123" autocomplete="one-time-code" required />
+          <div class="help">Letters & numbers only. Avoid O/0 and I/1.</div>
+        </div>
+
+        <div class="actions">
+          <button id="nextBtn" class="btn" type="submit">Next</button>
+          <a class="btn secondary" href="/">Cancel</a>
+        </div>
+        <div id="err" class="error">That code wasn’t found. Please check and try again.</div>
+      </form>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      © <span id="y"></span> Scott Ymker Photography
+    </div>
+  </footer>
+
   <script>
-  const form = document.getElementById('codeForm');
-  const errorEl = document.getElementById('error');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    errorEl.hidden = true;
-    const code = (document.getElementById('code').value || '').toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'');
-    if (code.length !== 6) { errorEl.textContent = 'Please enter a 6‑character code.'; errorEl.hidden = false; return; }
-    try {
-      const res = await fetch('/api/verify-code', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
-      if (!res.ok) throw new Error(await res.text());
-      // Success sets an HttpOnly cookie. Go to gallery.
-      location.assign('/gallery.html');
-    } catch (err) {
-      errorEl.textContent = 'That code wasn\'t found. Double‑check and try again.';
-      errorEl.hidden = false;
-    }
-  });
+    document.getElementById('y').textContent = new Date().getFullYear();
+    const input = document.getElementById('code');
+    input.addEventListener('input', () => input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+
+    const form = document.getElementById('access-form');
+    const err = document.getElementById('err');
+    const nextBtn = document.getElementById('nextBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.style.display = 'none';
+      const code = input.value.trim().toUpperCase();
+      if (code.length !== 6) return input.focus();
+
+      nextBtn.disabled = true;
+      try {
+        const res = await fetch('/api/verify-code', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ code })
+        });
+        if (res.ok) {
+          // Worker sets an httpOnly session cookie; gallery uses it.
+          window.location.href = '/gallery.html';
+        } else {
+          err.style.display = 'block';
+          nextBtn.disabled = false;
+        }
+      } catch {
+        err.style.display = 'block';
+        nextBtn.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
