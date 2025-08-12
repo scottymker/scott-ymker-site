@@ -6,3 +6,12 @@
     "test": "echo \"No tests specified\" && exit 0"
   }
 }
+{
+  "type": "module",
+  "scripts": {
+    "import:one": "node scripts/import-one.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^6.0.0"   // whatever version you installed
+  }
+}
