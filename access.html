@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Access My Event • Scott Ymker Photography</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/reorder.css">
+</head>
+<body class="bg">
+  <main class="center-card">
+    <div class="card">
+      <h1>Access My Event</h1>
+      <p class="muted">Enter your 6‑character event code</p>
+      <form id="codeForm" autocomplete="off">
+        <input id="code" name="code" class="codebox" inputmode="latin" maxlength="6" pattern="[A-HJ-NP-Z2-9]{6}" placeholder="e.g. 6G7YQ5" aria-label="Event code" required />
+        <button class="btn" type="submit">Next</button>
+      </form>
+      <p id="error" class="error" role="alert" hidden></p>
+      <details class="faq">
+        <summary>Where do I find my event code?</summary>
+        <p>Your code is printed on the take‑home card or email from the photographer.</p>
+      </details>
+    </div>
+  </main>
+  <script>
+  const form = document.getElementById('codeForm');
+  const errorEl = document.getElementById('error');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.hidden = true;
+    const code = (document.getElementById('code').value || '').toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'');
+    if (code.length !== 6) { errorEl.textContent = 'Please enter a 6‑character code.'; errorEl.hidden = false; return; }
+    try {
+      const res = await fetch('/api/verify-code', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
+      if (!res.ok) throw new Error(await res.text());
+      // Success sets an HttpOnly cookie. Go to gallery.
+      location.assign('/gallery.html');
+    } catch (err) {
+      errorEl.textContent = 'That code wasn\'t found. Double‑check and try again.';
+      errorEl.hidden = false;
+    }
+  });
+  </script>
+</body>
+</html>
