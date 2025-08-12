@@ -24,6 +24,8 @@ const MAX_STUDENTS = 6;
 const $  = (s)=>document.querySelector(s);
 const $$ = (s)=>Array.from(document.querySelectorAll(s));
 const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
+const fmtMoney = (c)=> fmt(c);
+const safeCode = (v)=> (v||'').toString().trim().toUpperCase();
 
 const studentsEl = $('#students');
 const addBtn = $('#addStudent');
@@ -38,16 +40,16 @@ function studentTemplate(i){
     <div class="content">
       <div class="section-title">Student information</div>
       <div class="row">
-        <input type="text" name="s${i}_first"   placeholder="First name" required>
-        <input type="text" name="s${i}_last"    placeholder="Last name" required>
+        <input type="text" name="s${i}_first"   placeholder="First name" required oninput="window.renderSummary()">
+        <input type="text" name="s${i}_last"    placeholder="Last name" required oninput="window.renderSummary()">
       </div>
       <div class="row" style="margin-top:10px">
-        <input type="text" name="s${i}_teacher" placeholder="Teacher" required>
-        <input type="text" name="s${i}_grade"   placeholder="Grade" required>
+        <input type="text" name="s${i}_teacher" placeholder="Teacher" required oninput="window.renderSummary()">
+        <input type="text" name="s${i}_grade"   placeholder="Grade" required oninput="window.renderSummary()">
       </div>
 
       <div class="section-title" style="margin-top:14px">Package</div>
-      <select name="s${i}_package">
+      <select name="s${i}_package" onchange="window.renderSummary()">
         <option value="">— Select a Package —</option>
         <option value="A">Package A — $32</option>
         <option value="A1">Package A1 — $41</option>
@@ -65,14 +67,14 @@ function studentTemplate(i){
       <div>
         ${Object.entries(ADDON_NAMES).map(([code, name])=>(
           `<label class="addon">
-             <input type="checkbox" name="s${i}_addons" value="${code}">
+             <input type="checkbox" name="s${i}_addons" value="${code}" disabled onchange="window.renderSummary()">
              ${code} — ${name} <span class="muted">($${(ADDON_PRICES[code]/100).toFixed(2)})</span>
            </label>`
         )).join('')}
       </div>
 
       <div class="section-title" style="margin-top:14px">Background</div>
-      <select name="s${i}_background">
+      <select name="s${i}_background" onchange="window.renderSummary()">
         <option value="F1" selected>F1 (Default)</option>
         <option value="F2">F2</option>
         <option value="F3">F3</option>
@@ -82,7 +84,7 @@ function studentTemplate(i){
       </select>
 
       <div class="actions" style="justify-content:flex-end;margin-top:14px">
-        <button type="button" class="btn small rm" data-remove="${i}">Remove student</button>
+        <button type="button" class="btn small rm" data-remove="${i}" onclick="window.__removeStudent(${i})">Remove student</button>
       </div>
     </div>
   </details>`;
@@ -118,19 +120,8 @@ function removeStudent(i){
   if (el){ el.remove(); renumberStudents(); renderSummary(); }
 }
 
-addBtn.addEventListener('click', (e)=>{ e.preventDefault(); addStudent(); });
-studentsEl.addEventListener('click',(e)=>{
-  const rm = e.target.closest('[data-remove]');
-  if (rm){ e.preventDefault(); removeStudent(+rm.dataset.remove); }
-});
-
-// Live updates
-$('#multiForm').addEventListener('input', (e)=>{
-  renderSummary();
-});
-$('#multiForm').addEventListener('change', (e)=>{
-  renderSummary();
-});
+// expose for inline handlers
+window.__removeStudent = removeStudent;
 
 // seed with 2 students
 addStudent(); addStudent();
@@ -146,7 +137,7 @@ function studentName(det){
 function studentSubLabel(det){
   const t = det.querySelector('[name$="_teacher"]')?.value.trim() || '';
   const g = det.querySelector('[name$="_grade"]')?.value.trim()   || '';
-  const pkg = (det.querySelector('[name$="_package"]')?.value || '').trim().toUpperCase();
+  const pkg = safeCode(det.querySelector('[name$="_package"]')?.value);
   const pkgTxt = pkg ? `Pkg ${pkg}` : '';
   const parts = [t, g, pkgTxt].filter(Boolean);
   return parts.join(' / ');
@@ -179,9 +170,6 @@ function updateSummaryHeaders(){
 }
 
 // -------- Collect + Summary ----------
-const fmtMoney = (c)=> fmt(c);
-const safeCode = (v)=> (v||'').toString().trim().toUpperCase();
-
 function enforceAddonRules(det){
   const hasPkg = !!safeCode(det.querySelector('[name$="_package"]')?.value);
   det.querySelectorAll('[name$="_addons"]').forEach(cb=>{
@@ -222,7 +210,8 @@ function renderSummary(){
   $('#kvEmail').textContent  = parent.email || '—';
   $('#kvPhone').textContent  = parent.phone || '—';
 
-  const body = $('#sumItems'); body.innerHTML='';
+  const body = $('#sumItems'); if (!body) return;
+  body.innerHTML='';
   let total = 0;
 
   students.forEach((s)=>{
@@ -256,17 +245,17 @@ function renderSummary(){
   updateSummaryHeaders();
 }
 
+window.renderSummary = renderSummary; // expose globally for inline handlers
 renderSummary();
 
 // -------- Submit ----------
-$('#multiForm').addEventListener('submit', async (e)=>{
+document.getElementById('multiForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const { parent, students } = collect();
 
   if (!parent.name || !parent.phone || !parent.email){
     alert('Please complete parent name, phone, and email.'); return;
   }
-  // At least one package selected
   if (!students.some(s=>!!s.pkg)){
     alert('Pick a package for at least one student.'); return;
   }

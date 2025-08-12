@@ -94,10 +94,10 @@
     <form id="multiForm" class="card" novalidate>
       <div>
         <div class="section-title">Parent / Guardian</div>
-        <input type="text" name="parent_name" placeholder="Parent name" required style="margin-bottom:10px">
+        <input type="text" name="parent_name" placeholder="Parent name" required oninput="window.renderSummary()" style="margin-bottom:10px">
         <div class="row">
-          <input type="tel"  name="parent_phone" placeholder="Phone" required>
-          <input type="email" name="parent_email" placeholder="Email" required>
+          <input type="tel"  name="parent_phone" placeholder="Phone" required oninput="window.renderSummary()">
+          <input type="email" name="parent_email" placeholder="Email" required oninput="window.renderSummary()">
         </div>
       </div>
       <div id="students"></div>
