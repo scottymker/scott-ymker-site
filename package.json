@@ -2,16 +2,18 @@
   "name": "scott-ymker-site",
   "version": "1.0.0",
   "description": "Static site for Scott Ymker Photography",
-  "scripts": {
-    "test": "echo \"No tests specified\" && exit 0"
-  }
-}
-{
   "type": "module",
   "scripts": {
-    "import:one": "node scripts/import-one.mjs"
+    "dev": "netlify dev",
+    "build": "echo \"static site\" && exit 0",
+    "import:one": "node scripts/import-one.mjs",
+    "import:events": "node scripts/import-events.mjs"
   },
   "dependencies": {
-    "@netlify/blobs": "^6.0.0"   // whatever version you installed
+    "@netlify/blobs": "^6.0.0",
+    "csv-parse": "^5.5.5",
+    "pdfkit": "^0.15.0",
+    "qrcode": "^1.5.3",
+    "sharp": "^0.33.3"
   }
 }
