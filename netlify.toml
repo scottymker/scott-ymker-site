@@ -7,3 +7,12 @@
 
 [dev]
   functions = "netlify/functions"
+
+[build]
+  publish = "public" # keep your current value if different
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
