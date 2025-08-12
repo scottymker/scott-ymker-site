@@ -121,56 +121,53 @@
 
   async function load() {
     const sessionId = getSessionId();
+    const sub = document.getElementById('orderSub');
 
     if (!sessionId) {
       console.error('Missing session id');
-      // leave the page friendly; headline already shown
+      sub.textContent = 'No receipt found. Please check your email or contact us for help.';
       return;
     }
 
-    // Call Netlify function (expects ?id=...)
-    const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
+      const data = await res.json();
+      if (!res.ok) throw data;
 
-    if (!res.ok) {
-      console.error('get-session error:', data);
-      // keep the friendly message showing
-      return;
-    }
+      sub.textContent = `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
 
-    // Update headline subtext
-    const sub = document.getElementById('orderSub');
-    sub.textContent = `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
-
-    // Build items table
-    const body = document.getElementById('itemsBody');
-    body.innerHTML = '';
-    (data.items || []).forEach(it => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
+      const body = document.getElementById('itemsBody');
+      body.innerHTML = '';
+      (data.items || []).forEach(it => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
         <td>${it.description || 'Item'}</td>
         <td>${it.quantity ?? 1}</td>
         <td>${fmtMoney(it.amount_total ?? it.unit_amount * (it.quantity ?? 1), it.currency || data.currency)}</td>`;
-      body.appendChild(tr);
-    });
+        body.appendChild(tr);
+      });
 
-    document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
+      document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
 
-    // Details / metadata
-    const md = data.metadata || {};
-    const v = (x)=> x && String(x).trim() ? x : '—';
-    const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
-    const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
+      const md = data.metadata || {};
+      const v = (x)=> x && String(x).trim() ? x : '—';
+      const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
+      const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
 
-    document.getElementById('kvOrder').textContent  = data.id?.replace('cs_', 'CS-') ?? '—';
-    document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
-    document.getElementById('kvEmail').textContent  = v(data.customer_email);
-    document.getElementById('kvPhone').textContent  = v(data.customer_phone || md.parent_phone);
-    document.getElementById('kvStudent').textContent= student;
-    document.getElementById('kvTeacher').textContent= tg;
-    document.getElementById('kvSchool').textContent = v(md.school);
-    document.getElementById('kvBg').textContent     = v(md.background);
-    document.getElementById('kvAddons').textContent = v(md.addons);
+      document.getElementById('kvOrder').textContent  = data.id?.replace('cs_', 'CS-') ?? '—';
+      document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
+      document.getElementById('kvEmail').textContent  = v(data.customer_email);
+      document.getElementById('kvPhone').textContent  = v(data.customer_phone || md.parent_phone);
+      document.getElementById('kvStudent').textContent= student;
+      document.getElementById('kvTeacher').textContent= tg;
+      document.getElementById('kvSchool').textContent = v(md.school);
+      document.getElementById('kvBg').textContent     = v(md.background);
+      document.getElementById('kvAddons').textContent = v(md.addons);
+    } catch (err) {
+      console.error('get-session error:', err);
+      sub.textContent = 'We could not load your receipt. Please check your email or contact us for assistance.';
+      document.getElementById('summary').innerHTML = '<p class="muted">Receipt details are unavailable.</p>';
+    }
   }
 
   load();

@@ -105,6 +105,7 @@
           <a class="btn primary" href="index.html">Back to Home</a>
           <a class="btn" href="order.html">Start an Order</a>
           <a class="btn" href="contact.html">Send another message</a>
+          <button class='btn' type='button' id='copyEmail'>Copy email address</button>
         </div>
       </div>
 
@@ -135,6 +136,11 @@
   <script>
     // Year
     document.getElementById('yr').textContent = new Date().getFullYear();
+
+    const copyBtn = document.getElementById('copyEmail');
+    copyBtn?.addEventListener('click', () => {
+      navigator.clipboard.writeText('scott@scottymkerphotos.com').then(() => alert('Email address copied to clipboard'));
+    });
 
     // If email/name were passed via query string, surface them in the subline (optional nicety)
     const q = new URLSearchParams(location.search);

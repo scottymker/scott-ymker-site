@@ -135,7 +135,7 @@
           <div class="row">
             <div>
               <label for="phone">Phone (optional)</label>
-              <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g., 605-555-5555" />
+              <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g., 605-555-5555"  pattern="\d{3}-?\d{3}-?\d{4}" title="Enter a 10-digit phone number" />
             </div>
             <div>
               <label for="topic">Topic</label>
@@ -159,6 +159,7 @@
           <div class="btn-row">
             <button class="btn primary" type="submit">Send message</button>
             <a class="btn" href="mailto:support@scottymkerphotos.com">Email instead</a>
+            <a class="btn" href="index.html">Back to Home</a>
           </div>
         </form>
       </div>
