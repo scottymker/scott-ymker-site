@@ -2,45 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>My Gallery • Scott Ymker Photography</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gallery • Scott Ymker Photography</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/reorder.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .hero{padding:32px 0 16px;background:var(--bg,#f7f7f8)}
+    .hero .title{font-size:28px;font-weight:700;margin:0}
+    .muted{color:var(--muted,#6b7280)}
+    .gallery-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .thumb{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:12px;overflow:hidden;aspect-ratio:3/4;display:block}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .panel{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:16px;padding:18px}
+    .panel h2{font-size:18px;margin:0 0 10px}
+    .stack{display:grid;gap:12px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent,#0ea5e9);color:var(--accent-ink,#fff);font-weight:600;cursor:pointer}
+    .btn.secondary{background:transparent;border-color:var(--border,#e6e7ea);color:var(--ink,#111)}
+    .row{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    @media (max-width:900px){.row{grid-template-columns:1fr}}
+  </style>
 </head>
-<body class="bg">
-  <header class="topbar">
+<body>
+  <header class="site-header">
     <div class="container">
-      <div class="brand">Scott Ymker Photography</div>
-      <nav><a href="/access.html">Enter a different code</a></nav>
+      <a class="brand" href="/"><img src="/assets/logo.svg" alt="Scott Ymker Photography" height="36"></a>
+      <nav class="site-nav">
+        <a href="/order.html">Order Forms</a>
+        <a class="active" href="/access.html">Access Event</a>
+      </nav>
     </div>
   </header>
 
-  <main class="container pad">
-    <section id="hero" class="hero">
-      <div>
-        <h1 id="studentName">Loading…</h1>
-        <p class="muted" id="eventLabel"></p>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <p class="muted" id="eventLine">Event</p>
+        <h1 class="title" id="studentTitle">Your Gallery</h1>
       </div>
-      <button id="checkoutBtn" class="btn" disabled>Go to Checkout</button>
     </section>
 
-    <section>
-      <h2>Photos</h2>
-      <div id="grid" class="grid"></div>
-    </section>
+    <section class="container" style="padding:24px 0 32px">
+      <div class="row">
+        <!-- Left: image grid -->
+        <div class="panel">
+          <h2>Photos</h2>
+          <div id="grid" class="gallery-wrap" aria-live="polite"></div>
+          <p class="muted" style="margin-top:10px">Previews are watermarked. Purchased digitals will be delivered without watermarks.</p>
+        </div>
 
-    <section>
-      <h2>Packages</h2>
-      <div id="packages"></div>
-      <h3 class="mt">Add‑ons (require a package)</h3>
-      <div id="addons"></div>
-      <p class="total">Total: <span id="total">$0.00</span></p>
+        <!-- Right: packages/add-ons reused from your order form -->
+        <aside class="panel">
+          <h2>Reorder Packages & Add-ons</h2>
+          <div class="stack" id="reorderRoot">
+            <!-- Your existing order UI mounts here (same data & components). -->
+          </div>
+          <div style="display:flex;gap:12px;margin-top:14px">
+            <button id="checkoutBtn" class="btn">Checkout</button>
+            <a href="/access.html" class="btn secondary">Use a different code</a>
+          </div>
+          <p class="muted" style="margin-top:8px">Prints are fulfilled manually; you’ll receive an email confirmation after checkout.</p>
+          <div id="err" class="muted" style="color:#b42318;display:none;margin-top:8px">Unable to start checkout. Please try again.</div>
+        </aside>
+      </div>
     </section>
   </main>
 
-  <!-- Your existing full package details. Update src if different. -->
-  <script src="/assets/packages-data.js"></script>
-  <script src="/assets/reorder.js"></script>
+  <footer class="site-footer">
+    <div class="container">
+      © <span id="y"></span> Scott Ymker Photography
+    </div>
+  </footer>
+
+  <!-- Load the same JS that builds package/add-on cards on /order.html -->
+  <script src="/js/packages-data.js"></script>
+  <script src="/js/reorder-ui.js"></script>
+
+  <script>
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // 1) Load gallery using the session set by /api/verify-code
+    (async function init() {
+      try {
+        const res = await fetch('/api/gallery', { credentials:'include' });
+        if (!res.ok) throw new Error('Not authorized');
+        const data = await res.json();
+        // data: { eventName, studentLabel, images:[{previewUrl}] }
+        document.getElementById('eventLine').textContent = data.eventName || 'Event';
+        document.getElementById('studentTitle').textContent = data.studentLabel || 'Your Gallery';
+
+        const grid = document.getElementById('grid');
+        data.images.forEach(img => {
+          const a = document.createElement('a');
+          a.className = 'thumb';
+          a.href = img.previewUrl; a.target = '_blank'; a.rel = 'noopener';
+          const i = document.createElement('img');
+          i.loading = 'lazy';
+          i.alt = 'Student photo preview';
+          i.src = img.previewUrl;
+          a.appendChild(i);
+          grid.appendChild(a);
+        });
+
+        // 2) Mount reorder UI using your existing component
+        // Assumes /js/reorder-ui.js exposes window.Reorder.mount(el)
+        if (window.Reorder && typeof window.Reorder.mount === 'function') {
+          window.Reorder.mount(document.getElementById('reorderRoot'), { context: 'reorder' });
+        }
+      } catch (e) {
+        location.href = '/access.html';
+      }
+    })();
+
+    // 3) Checkout with Stripe (server creates session from current reorder cart)
+    document.getElementById('checkoutBtn').addEventListener('click', async () => {
+      const err = document.getElementById('err');
+      err.style.display = 'none';
+      try {
+        // Expect your reorder-ui to expose a cart snapshot
+        const cart = (window.Reorder && window.Reorder.getCart) ? window.Reorder.getCart() : {};
+        const res = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ cart, source: 'reorder' })
+        });
+        const { url } = await res.json();
+        if (!url) throw new Error('No URL');
+        window.location.href = url;
+      } catch {
+        err.style.display = 'block';
+      }
+    });
+  </script>
 </body>
 </html>
