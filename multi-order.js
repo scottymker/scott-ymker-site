@@ -1,4 +1,3 @@
-
 // ---------- price tables (cents) ----------
 const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
 const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
@@ -30,7 +29,6 @@ const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'US
 
 const studentsEl = $('#students');
 const addBtn = $('#addStudent');
-
 
 function studentTemplate(i){
   return `
@@ -128,7 +126,11 @@ studentsEl.addEventListener('click',(e)=>{
   if (rm){ e.preventDefault(); removeStudent(+rm.dataset.remove); }
 });
 
+// Live updates for inputs, selects, and checkboxes
 document.addEventListener('input', (e)=>{
+  if (e.target.closest('#multiForm')) renderSummary();
+});
+document.addEventListener('change', (e)=>{
   if (e.target.closest('#multiForm')) renderSummary();
 });
 
@@ -146,10 +148,10 @@ function studentName(det){
 function studentSubLabel(det){
   const t = det.querySelector('[name$="_teacher"]')?.value.trim() || '';
   const g = det.querySelector('[name$="_grade"]')?.value.trim()   || '';
-  if (t && g) return `${t} / ${g}`;
-  if (t) return t;
-  if (g) return g;
-  return '';
+  const pkg = det.querySelector('[name$="_package"]')?.value || '';
+  const pkgTxt = pkg ? `Pkg ${pkg}` : '';
+  const parts = [t, g, pkgTxt].filter(Boolean);
+  return parts.join(' / ');
 }
 function updateSummaryHeaders(){
   [...studentsEl.children].forEach((det)=>{
@@ -183,9 +185,19 @@ function updateSummaryHeaders(){
 const fmtMoney = (c)=> fmt(c);
 
 function displayName(det){
-  // Prefer typed name; fall back to the left label ("Student i")
   const typed = studentName(det);
   return typed;
+}
+
+// Enforce: Add-ons require a package selection
+function enforceAddonRules(det){
+  const pkgSel = det.querySelector('[name$="_package"]');
+  const hasPkg = !!(pkgSel && pkgSel.value);
+  const checkboxes = det.querySelectorAll('[name$="_addons"]');
+  checkboxes.forEach(cb=>{
+    cb.disabled = !hasPkg;
+    if (!hasPkg && cb.checked) cb.checked = false;
+  });
 }
 
 function collect(){
@@ -196,6 +208,7 @@ function collect(){
   };
 
   const students = [...studentsEl.querySelectorAll('details')].map((det)=>{
+    enforceAddonRules(det);
     const pkgSel = det.querySelector('[name$="_package"]');
     const bgSel  = det.querySelector('[name$="_background"]');
     const addons = [...det.querySelectorAll('[name$="_addons"]:checked')].map(x=>x.value);
@@ -222,7 +235,10 @@ function renderSummary(){
   const body = $('#sumItems'); body.innerHTML='';
   let total = 0;
 
-  students.forEach(s=>{
+  students.forEach((s, idx)=>{
+    // If nothing selected for the student, skip output lines for them.
+    if (!s.pkg && !s.addons.length) return;
+
     if (s.pkg && PACKAGE_PRICES[s.pkg]){
       const amt = PACKAGE_PRICES[s.pkg]; total += amt;
       // main package line
@@ -243,16 +259,22 @@ function renderSummary(){
     });
   });
 
+  // if still no rows, show a placeholder
+  if (!body.children.length){
+    body.insertAdjacentHTML('beforeend',
+      `<tr><td class="muted">Select a package/add-ons to build your order…</td><td></td><td></td></tr>`);
+  }
+
   $('#sumTotal').textContent = fmtMoney(total);
   updateSummaryHeaders();
 }
-
 
 // initial render
 renderSummary();
 
 // -------- Submit ----------
-
+const form = document.getElementById('multiForm');
+form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const { parent, students } = collect();
 
@@ -316,8 +338,7 @@ renderSummary();
         line_items,
         email,
         metadata,
-        // small echo payload for your function if it's expecting "package/addons" style too
-        students: students.map(s=>({package:s.pkg, addons:s.addons}))
+        students: students.map(s=>({package:s.pkg, addons:s.addons, name:s.name, background:s.bg}))
       })
     });
     const json = await res.json();
