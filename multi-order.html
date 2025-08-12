@@ -280,11 +280,11 @@
 
     // -------- Name label helpers ----------
     function studentName(det){
-      // Work from elements inside this details block (no index assumptions)
       const first = det.querySelector('[name$="_first"]')?.value.trim() || '';
       const last  = det.querySelector('[name$="_last"]')?.value.trim()  || '';
-      const label = (first || last) ? `${first} ${last}`.trim() : det.querySelector('.summ-left')?.textContent || 'Student';
-      return label;
+      if (first || last) return `${first} ${last}`.trim();
+      const i = det.dataset.i || '';
+      return `Student ${i}`.trim();
     }
     function studentSubLabel(det){
       const t = det.querySelector('[name$="_teacher"]')?.value.trim() || '';
@@ -296,14 +296,23 @@
     }
     function updateSummaryHeaders(){
       [...studentsEl.children].forEach((det)=>{
+        const i = det.dataset.i || '';
         const name = studentName(det);
         const extra = studentSubLabel(det);
         const span = det.querySelector('[data-summ]');
+        const left = det.querySelector('.summ-left');
+        const base = `Student ${i}`;
+
+        if (left){
+          if (/^Student \d+$/.test(name)) left.textContent = base;
+          else left.textContent = `${base}: ${name}`;
+        }
+
         if (!span) return;
         if (extra){
           span.textContent = `${name} — ${extra}`;
           span.classList.remove('muted');
-        }else if (name && !/^Student \d+$/.test(name)){
+        }else if (!/^Student \d+$/.test(name)){
           span.textContent = name;
           span.classList.remove('muted');
         }else{

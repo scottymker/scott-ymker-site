@@ -1,0 +1,8 @@
+{
+  "name": "scott-ymker-site",
+  "version": "1.0.0",
+  "description": "Static site for Scott Ymker Photography",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  }
+}
