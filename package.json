@@ -1,11 +1,11 @@
 {
   "name": "scott-ymker-site",
   "version": "1.0.0",
-  "description": "Static site for Scott Ymker Photography",
+  "private": true,
   "type": "module",
+  "description": "Static site for Scott Ymker Photography",
   "scripts": {
     "dev": "netlify dev",
-    "build": "echo \"static site\" && exit 0",
     "import:one": "node scripts/import-one.mjs",
     "import:events": "node scripts/import-events.mjs"
   },
