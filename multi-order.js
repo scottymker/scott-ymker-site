@@ -30,6 +30,7 @@ const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'US
 
 const studentsEl = $('#students');
 const addBtn = $('#addStudent');
+const form = $('#multiForm');
 
 function studentTemplate(i){
   return `
@@ -243,17 +244,15 @@ function renderSummary(){
 }
 
 // live updates (any change inside form)
-['input','change'].forEach(evt=>{
-  document.addEventListener(evt, (e)=>{
-    if (e.target.closest('#multiForm')) { renderSummary(); }
-  });
+['input','change'].forEach(evt => {
+  form.addEventListener(evt, renderSummary);
 });
 
 // initial render
 renderSummary();
 
 // -------- Submit ----------
-$('#multiForm').addEventListener('submit', async (e)=>{
+form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   const { parent, students } = collect();
 
