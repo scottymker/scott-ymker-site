@@ -54,9 +54,9 @@
     }
     details.student[open] > summary{background:#f4f7fb}
     details.student > summary::-webkit-details-marker{display:none}
+    .summ-left{flex:0 0 auto}
+    .summ-right{flex:1 1 auto;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
     .student-body{padding:14px}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border:1px solid var(--border);
-          border-radius:999px;font-size:12px;color:var(--muted);background:#fff}
 
     .addons{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
     @media (min-width:880px){.addons{grid-template-columns:repeat(3,1fr)}}
@@ -73,6 +73,8 @@
     th,td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
     th{font-size:12px;color:var(--muted)}
     tfoot td{font-weight:700}
+    .subrow td{padding-top:0}
+    .sub{color:var(--muted);font-size:13px;padding-left:24px;line-height:1.35}
 
     /* Helpers */
     .small{font-size:12px;color:var(--muted)}
@@ -155,6 +157,18 @@
       I:{name:"24 Wallets",amt:1800}, J:{name:"8 Wallets",amt:600}, K:{name:"16 Mini Wallets",amt:600},
       L:{name:"Retouching",amt:700},  M:{name:"8x10 Class Composite",amt:800}, N:{name:"Digital File",amt:1500}
     };
+    const PKG_BREAKDOWN = {
+      A:  ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets"],
+      A1: ["Package A","1 × Digital File"],
+      B:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 5x7","16 × wallets"],
+      B1: ["Package B","2 × extra 5x7"],
+      C:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 3.5x5","4 × wallets","16 × mini wallets"],
+      C1: ["Package C","2 × 5x7"],
+      D:  ["1 × 8x10 Class Composite","2 × 5x7","8 × wallets"],
+      D1: ["Package D","16 × mini wallets"],
+      E:  ["2 × 5x7","2 × 3.5x5","4 × wallets"],
+      E1: ["Package E","8 × extra wallets"]
+    };
     const MAX_STUDENTS = 6;
 
     // ---- Helpers
@@ -170,38 +184,34 @@
       return `
       <details class="student" data-idx="${idx}" open>
         <summary>
-          <span>Student ${idx+1}</span>
-          <span class="pill" data-pill="${idx}">No details yet</span>
+          <span class="summ-left">Student ${idx+1}</span>
+          <span class="summ-right muted" data-summ="${idx}">No details yet</span>
         </summary>
         <div class="student-body">
           <div class="row">
-            <div class="field">
-              <label>Package</label>
-              <select name="package" required>
-                <option value="">— Select a Package —</option>
-                <option value="A">Package A — $32</option>
-                <option value="A1">Package A1 — $41</option>
-                <option value="B">Package B — $27</option>
-                <option value="B1">Package B1 — $32</option>
-                <option value="C">Package C — $22</option>
-                <option value="C1">Package C1 — $27</option>
-                <option value="D">Package D — $18</option>
-                <option value="D1">Package D1 — $23</option>
-                <option value="E">Package E — $12</option>
-                <option value="E1">Package E1 — $17</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Background</label>
-              <select name="background" required>
-                <option value="F1" selected>F1 (Default)</option>
-                <option value="F2">F2</option>
-                <option value="F3">F3</option>
-                <option value="F4">F4</option>
-                <option value="F5">F5</option>
-                <option value="F6">F6</option>
-              </select>
-            </div>
+            <div class="field"><label>First name</label><input name="student_first" required></div>
+            <div class="field"><label>Last name</label><input name="student_last" required></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Teacher</label><input name="teacher" required></div>
+            <div class="field"><label>Grade</label><input name="grade" required></div>
+          </div>
+
+          <div class="field" style="margin-top:8px">
+            <label>Package</label>
+            <select name="package" required>
+              <option value="">— Select a Package —</option>
+              <option value="A">Package A — $32</option>
+              <option value="A1">Package A1 — $41</option>
+              <option value="B">Package B — $27</option>
+              <option value="B1">Package B1 — $32</option>
+              <option value="C">Package C — $22</option>
+              <option value="C1">Package C1 — $27</option>
+              <option value="D">Package D — $18</option>
+              <option value="D1">Package D1 — $23</option>
+              <option value="E">Package E — $12</option>
+              <option value="E1">Package E1 — $17</option>
+            </select>
           </div>
 
           <div class="field" style="margin-top:8px">
@@ -213,13 +223,16 @@
             </div>
           </div>
 
-          <div class="row" style="margin-top:8px">
-            <div class="field"><label>First name</label><input name="student_first" required></div>
-            <div class="field"><label>Last name</label><input name="student_last" required></div>
-          </div>
-          <div class="row">
-            <div class="field"><label>Teacher</label><input name="teacher" required></div>
-            <div class="field"><label>Grade</label><input name="grade" required></div>
+          <div class="field" style="margin-top:8px">
+            <label>Background</label>
+            <select name="background" required>
+              <option value="F1" selected>F1 (Default)</option>
+              <option value="F2">F2</option>
+              <option value="F3">F3</option>
+              <option value="F4">F4</option>
+              <option value="F5">F5</option>
+              <option value="F6">F6</option>
+            </select>
           </div>
 
           <div class="controls">
@@ -240,38 +253,47 @@
     }
 
     function wireStudent(card){
-      card.addEventListener('input', ()=>{
-        updatePill(card);
-        updateSummary();
-      });
-      card.addEventListener('change', ()=>{
-        updatePill(card);
-        updateSummary();
-      });
+        card.addEventListener('input', ()=>{
+          updateSummaryHeader(card);
+          updateSummary();
+        });
+        card.addEventListener('change', ()=>{
+          updateSummaryHeader(card);
+          updateSummary();
+        });
       card.querySelector('.remove').addEventListener('click', ()=>{
         card.remove(); refreshNumbers(); updateSummary(); limitMsg.textContent="";
       });
-      updatePill(card);
+        updateSummaryHeader(card);
     }
 
     function refreshNumbers(){
       [...studentsBox.children].forEach((el,i)=>{
         el.dataset.idx = i;
-        el.querySelector('summary span').textContent = `Student ${i+1}`;
-        el.querySelector('[data-pill]').setAttribute('data-pill', i);
+        el.querySelector('.summ-left').textContent = `Student ${i+1}`;
+        const span = el.querySelector('[data-summ]');
+        if(span) span.setAttribute('data-summ', i);
+        updateSummaryHeader(el);
       });
     }
 
-    function updatePill(card){
+    function updateSummaryHeader(card){
       const i = card.dataset.idx;
       const f = card.querySelector('input[name="student_first"]').value.trim();
       const l = card.querySelector('input[name="student_last"]').value.trim();
-      const pkg = card.querySelector('select[name="package"]').value;
-      const pill = card.querySelector(`[data-pill="${i}"]`);
+      const teacher = card.querySelector('input[name="teacher"]').value.trim();
+      const grade = card.querySelector('input[name="grade"]').value.trim();
+      const span = card.querySelector(`[data-summ="${i}"]`);
       const name = [f,l].filter(Boolean).join(' ');
-      let text = name || 'No name yet';
-      if(pkg) text += ` • Package ${pkg}`;
-      pill.textContent = text;
+      const extra = [teacher,grade].filter(Boolean).join(' / ');
+      if(!span) return;
+      if(name || extra){
+        span.textContent = [name, extra].filter(Boolean).join(' — ');
+        span.classList.remove('muted');
+      }else{
+        span.textContent = 'No details yet';
+        span.classList.add('muted');
+      }
     }
 
     $('#addStudent').addEventListener('click', addStudent);
@@ -311,15 +333,24 @@
       students.forEach(s=>{
         if(s.package && PKG[s.package]){
           total += PKG[s.package];
+          const name = [s.student_first||'', s.student_last||''].filter(Boolean).join(' ').trim();
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td>Package ${s.package} — ${s.student_first||''} ${s.student_last||''}</td><td>1</td><td>${money(PKG[s.package])}</td>`;
+          tr.innerHTML = `<td>${name ? name + ' — ' : ''}Package ${s.package}</td><td>1</td><td>${money(PKG[s.package])}</td>`;
           body.appendChild(tr);
+          const breakdown = PKG_BREAKDOWN[s.package] || [];
+          if(breakdown.length){
+            const tr2 = document.createElement('tr');
+            tr2.classList.add('subrow');
+            tr2.innerHTML = `<td colspan="3"><div class="sub">• ${breakdown.join('<br>• ')}</div></td>`;
+            body.appendChild(tr2);
+          }
         }
         (s.addons||[]).forEach(code=>{
           if(ADD[code]){
             total += ADD[code].amt;
+            const name = [s.student_first||'', s.student_last||''].filter(Boolean).join(' ').trim();
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>Add-on ${code} — ${ADD[code].name} — ${s.student_first||''} ${s.student_last||''}</td><td>1</td><td>${money(ADD[code].amt)}</td>`;
+            tr.innerHTML = `<td>${name ? name + ' — ' : ''}Add-on ${code} — ${ADD[code].name}</td><td>1</td><td>${money(ADD[code].amt)}</td>`;
             body.appendChild(tr);
           }
         });
