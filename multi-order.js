@@ -128,6 +128,10 @@ studentsEl.addEventListener('click',(e)=>{
   if (rm){ e.preventDefault(); removeStudent(+rm.dataset.remove); }
 });
 
+document.addEventListener('input', (e)=>{
+  if (e.target.closest('#multiForm')) renderSummary();
+});
+
 // seed with 2 students by default
 addStudent(); addStudent();
 
