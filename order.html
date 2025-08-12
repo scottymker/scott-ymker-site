@@ -69,6 +69,8 @@
     .total-row td{font-weight:700}
     .kv{display:grid;grid-template-columns:140px 1fr;row-gap:6px;column-gap:8px;margin-top:10px}
     .kv .k{color:var(--muted)}
+      .error{border-color:#ef4444}
+    .error-message{color:#ef4444;font-size:13px;margin-top:4px}
   </style>
 </head>
 <body>
@@ -208,18 +210,6 @@
       </div>
     </aside>
   </main>
-
-  <script>
-    // ---- price tables (cents) ----
-    const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
-    const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
-    const ADDON_NAMES    = {
-      F:"8x10 Print", G:"2x 5x7 Prints", H:"4x 3½x5 Prints", I:"24 Wallets",
-      J:"8 Wallets", K:"16 Mini Wallets", L:"Retouching", M:"8x10 Class Composite", N:"Digital File"
-    };
-
-    // ---- helpers ----
-    const $  = (s)=>document.querySelector(s);
-    const $$ = (s)=>Array.from(document.querySelectorAll(s));
-    const v  = (sel)=>{ const el=$(sel); return el? el.value.trim() : ""; };
-    const fmt= (c)=> (c/100).
+  <script src="order.js"></script>
+</body>
+</html>
