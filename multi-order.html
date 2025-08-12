@@ -125,20 +125,19 @@
       </div>
     </form>
 
-    <!-- Live-updating Order Summary -->
+    <!-- Summary -->
     <aside class="card" id="summaryCard">
       <div class="section-title">Order summary</div>
       <table aria-live="polite">
         <thead>
           <tr><th>Description</th><th>Qty</th><th>Amount</th></tr>
         </thead>
-        <tbody id="sumItems">
-          <!-- Items will be dynamically injected here -->
-        </tbody>
+        <tbody id="sumItems"></tbody>
         <tfoot>
           <tr class="total-row"><td>Total</td><td></td><td id="sumTotal">$0.00</td></tr>
         </tfoot>
       </table>
+
       <div class="kv" style="margin-top:12px">
         <div class="k">Parent</div><div id="kvParent">—</div>
         <div class="k">Email</div><div id="kvEmail">—</div>
