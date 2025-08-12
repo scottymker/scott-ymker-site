@@ -6,7 +6,6 @@ const ADDON_NAMES    = {
   J:"8 Wallets", K:"16 Mini Wallets", L:"Retouching", M:"8x10 Class Composite", N:"Digital File"
 };
 
-// Breakdown text under packages
 const PACKAGE_BREAKDOWN = {
   A:  ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets"],
   A1: ["Package A","1 × Digital File"],
@@ -22,7 +21,6 @@ const PACKAGE_BREAKDOWN = {
 
 const MAX_STUDENTS = 6;
 
-// ---------- helpers ----------
 const $  = (s)=>document.querySelector(s);
 const $$ = (s)=>Array.from(document.querySelectorAll(s));
 const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
@@ -51,16 +49,16 @@ function studentTemplate(i){
       <div class="section-title" style="margin-top:14px">Package</div>
       <select name="s${i}_package">
         <option value="">— Select a Package —</option>
-        <option value="A">Package A – $32</option>
-        <option value="A1">Package A1 – $41</option>
-        <option value="B">Package B – $27</option>
-        <option value="B1">Package B1 – $32</option>
-        <option value="C">Package C – $22</option>
-        <option value="C1">Package C1 – $27</option>
-        <option value="D">Package D – $18</option>
-        <option value="D1">Package D1 – $23</option>
-        <option value="E">Package E – $12</option>
-        <option value="E1">Package E1 – $17</option>
+        <option value="A">Package A — $32</option>
+        <option value="A1">Package A1 — $41</option>
+        <option value="B">Package B — $27</option>
+        <option value="B1">Package B1 — $32</option>
+        <option value="C">Package C — $22</option>
+        <option value="C1">Package C1 — $27</option>
+        <option value="D">Package D — $18</option>
+        <option value="D1">Package D1 — $23</option>
+        <option value="E">Package E — $12</option>
+        <option value="E1">Package E1 — $17</option>
       </select>
 
       <div class="section-title" style="margin-top:14px">Add-ons (optional)</div>
@@ -126,18 +124,18 @@ studentsEl.addEventListener('click',(e)=>{
   if (rm){ e.preventDefault(); removeStudent(+rm.dataset.remove); }
 });
 
-// Live updates for inputs, selects, and checkboxes
-document.addEventListener('input', (e)=>{
-  if (e.target.closest('#multiForm')) renderSummary();
+// Live updates
+$('#multiForm').addEventListener('input', (e)=>{
+  renderSummary();
 });
-document.addEventListener('change', (e)=>{
-  if (e.target.closest('#multiForm')) renderSummary();
+$('#multiForm').addEventListener('change', (e)=>{
+  renderSummary();
 });
 
-// seed with 2 students by default
+// seed with 2 students
 addStudent(); addStudent();
 
-// -------- Name label helpers ----------
+// -------- Header helpers ----------
 function studentName(det){
   const first = det.querySelector('[name$="_first"]')?.value.trim() || '';
   const last  = det.querySelector('[name$="_last"]')?.value.trim()  || '';
@@ -148,7 +146,7 @@ function studentName(det){
 function studentSubLabel(det){
   const t = det.querySelector('[name$="_teacher"]')?.value.trim() || '';
   const g = det.querySelector('[name$="_grade"]')?.value.trim()   || '';
-  const pkg = det.querySelector('[name$="_package"]')?.value || '';
+  const pkg = (det.querySelector('[name$="_package"]')?.value || '').trim().toUpperCase();
   const pkgTxt = pkg ? `Pkg ${pkg}` : '';
   const parts = [t, g, pkgTxt].filter(Boolean);
   return parts.join(' / ');
@@ -166,7 +164,6 @@ function updateSummaryHeaders(){
       if (/^Student \d+$/.test(name)) left.textContent = base;
       else left.textContent = `${base}: ${name}`;
     }
-
     if (!span) return;
     if (extra){
       span.textContent = `${name} — ${extra}`;
@@ -183,18 +180,11 @@ function updateSummaryHeaders(){
 
 // -------- Collect + Summary ----------
 const fmtMoney = (c)=> fmt(c);
+const safeCode = (v)=> (v||'').toString().trim().toUpperCase();
 
-function displayName(det){
-  const typed = studentName(det);
-  return typed;
-}
-
-// Enforce: Add-ons require a package selection
 function enforceAddonRules(det){
-  const pkgSel = det.querySelector('[name$="_package"]');
-  const hasPkg = !!(pkgSel && pkgSel.value);
-  const checkboxes = det.querySelectorAll('[name$="_addons"]');
-  checkboxes.forEach(cb=>{
+  const hasPkg = !!safeCode(det.querySelector('[name$="_package"]')?.value);
+  det.querySelectorAll('[name$="_addons"]').forEach(cb=>{
     cb.disabled = !hasPkg;
     if (!hasPkg && cb.checked) cb.checked = false;
   });
@@ -211,14 +201,14 @@ function collect(){
     enforceAddonRules(det);
     const pkgSel = det.querySelector('[name$="_package"]');
     const bgSel  = det.querySelector('[name$="_background"]');
-    const addons = [...det.querySelectorAll('[name$="_addons"]:checked')].map(x=>x.value);
+    const addons = [...det.querySelectorAll('[name$="_addons"]:checked')].map(x=>safeCode(x.value));
     return {
       det,
-      name: displayName(det),
+      name: studentName(det),
       teacher: det.querySelector('[name$="_teacher"]')?.value.trim() || '',
       grade:   det.querySelector('[name$="_grade"]')?.value.trim()   || '',
-      pkg:     pkgSel?.value || '',
-      bg:      bgSel?.value  || 'F1',
+      pkg:     safeCode(pkgSel?.value),
+      bg:      safeCode(bgSel?.value) || 'F1',
       addons
     };
   });
@@ -235,16 +225,14 @@ function renderSummary(){
   const body = $('#sumItems'); body.innerHTML='';
   let total = 0;
 
-  students.forEach((s, idx)=>{
-    // If nothing selected for the student, skip output lines for them.
+  students.forEach((s)=>{
     if (!s.pkg && !s.addons.length) return;
 
-    if (s.pkg && PACKAGE_PRICES[s.pkg]){
-      const amt = PACKAGE_PRICES[s.pkg]; total += amt;
-      // main package line
+    if (s.pkg){
+      const amt = PACKAGE_PRICES[s.pkg] ?? 0;
+      total += amt;
       body.insertAdjacentHTML('beforeend',
         `<tr><td>${s.name} — Package ${s.pkg}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
-      // breakdown row
       const breakdown = PACKAGE_BREAKDOWN[s.pkg] || [];
       if (breakdown.length){
         body.insertAdjacentHTML('beforeend',
@@ -252,14 +240,13 @@ function renderSummary(){
       }
     }
     s.addons.forEach(code=>{
-      const amt = ADDON_PRICES[code]; if (!amt) return;
+      const amt = ADDON_PRICES[code] ?? 0;
       total += amt;
       body.insertAdjacentHTML('beforeend',
         `<tr><td>${s.name} — Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
     });
   });
 
-  // if still no rows, show a placeholder
   if (!body.children.length){
     body.insertAdjacentHTML('beforeend',
       `<tr><td class="muted">Select a package/add-ons to build your order…</td><td></td><td></td></tr>`);
@@ -269,48 +256,45 @@ function renderSummary(){
   updateSummaryHeaders();
 }
 
-// initial render
 renderSummary();
 
 // -------- Submit ----------
-const form = document.getElementById('multiForm');
-form.addEventListener('submit', async (e)=>{
+$('#multiForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const { parent, students } = collect();
 
   if (!parent.name || !parent.phone || !parent.email){
     alert('Please complete parent name, phone, and email.'); return;
   }
-  if (!students.length){ alert('Please add at least one student.'); return; }
-  if (!students.some(s=>s.pkg)){ alert('Pick a package for at least one student.'); return; }
+  // At least one package selected
+  if (!students.some(s=>!!s.pkg)){
+    alert('Pick a package for at least one student.'); return;
+  }
 
-  // Build Stripe line_items (aggregate)
   const line_items = [];
   students.forEach(s=>{
-    if (s.pkg && PACKAGE_PRICES[s.pkg]){
+    if (s.pkg){
       line_items.push({
         price_data: {
           currency:"usd",
           product_data:{ name:`${s.name} — Package ${s.pkg}` },
-          unit_amount: PACKAGE_PRICES[s.pkg]
+          unit_amount: PACKAGE_PRICES[s.pkg] ?? 0
         },
         quantity:1
       });
     }
     s.addons.forEach(code=>{
-      const amt = ADDON_PRICES[code]; if (!amt) return;
       line_items.push({
         price_data:{
           currency:"usd",
           product_data:{ name:`${s.name} — Add-on ${code} — ${ADDON_NAMES[code]||''}` },
-          unit_amount: amt
+          unit_amount: ADDON_PRICES[code] ?? 0
         },
         quantity:1
       });
     });
   });
 
-  // Metadata: compact but includes names
   const metadata = {
     parent_name: parent.name,
     parent_phone: parent.phone,
