@@ -1,18 +1,15 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
 
 [functions]
-  directory = "netlify/functions"
   node_bundler = "esbuild"
+  external_node_modules = ["stripe"]
+  included_files = ["_lib/**"]
 
-[dev]
-  functions = "netlify/functions"
-
-[build]
-  publish = "public" # keep your current value if different
-  functions = "netlify/functions"
-
+# Pretty /api/* routes to functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+  force = true
