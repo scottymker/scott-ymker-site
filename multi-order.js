@@ -1,4 +1,4 @@
-(() => {
+
 // ---------- price tables (cents) ----------
 const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
 const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
@@ -30,7 +30,7 @@ const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'US
 
 const studentsEl = $('#students');
 const addBtn = $('#addStudent');
-const form = $('#multiForm');
+
 
 function studentTemplate(i){
   return `
@@ -243,16 +243,12 @@ function renderSummary(){
   updateSummaryHeaders();
 }
 
-// live updates (any change inside form)
-['input','change'].forEach(evt => {
-  form.addEventListener(evt, renderSummary);
-});
 
 // initial render
 renderSummary();
 
 // -------- Submit ----------
-form.addEventListener('submit', async (e)=>{
+
   e.preventDefault();
   const { parent, students } = collect();
 
@@ -334,5 +330,3 @@ form.addEventListener('submit', async (e)=>{
     btn.disabled=false; btn.textContent=orig;
   }
 });
-
-})();
