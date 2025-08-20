@@ -1,3 +1,4 @@
+// scripts/set-student-meta.mjs
 import { getStore } from '@netlify/blobs';
 
 const [, , code, grade, teacher, ...schoolParts] = process.argv;
@@ -7,19 +8,26 @@ if (!code) {
 }
 const school = schoolParts.join(' ').trim();
 
-const meta = getStore('meta');
-const key = `students/${code}.json`;
+const siteID = process.env.NETLIFY_SITE_ID;
+const token  = process.env.NETLIFY_AUTH_TOKEN;
 
-// Read the existing student JSON and merge new fields
+if (!siteID || !token) {
+  console.error('Missing NETLIFY_SITE_ID and/or NETLIFY_AUTH_TOKEN in this shell.');
+  console.error('Export them, then retry.');
+  process.exit(1);
+}
+
+// Pass creds explicitly so it works locally
+const meta = getStore('meta', { siteID, token });
+
+const key = `students/${code}.json`;
 const current = (await meta.get(key, { type: 'json', consistency: 'strong' })) || {};
 const updated = {
   ...current,
-  // only write if values were provided
   ...(grade   ? { grade }   : {}),
   ...(teacher ? { teacher } : {}),
   ...(school  ? { school }  : {}),
 };
 
-// Save back as JSON
 await meta.set(key, JSON.stringify(updated), { contentType: 'application/json' });
 console.log('Updated', key, updated);
