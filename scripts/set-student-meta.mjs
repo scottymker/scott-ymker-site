@@ -1,50 +1,65 @@
-// scripts/set-student-meta.mjs
-import { getStore } from '@netlify/blobs';
-
+#!/usr/bin/env node
+// Update a student's extra metadata (grade / teacher / school) in Netlify Blobs.
+//
 // Usage:
 //   node scripts/set-student-meta.mjs CODE [grade] [teacher] [school ...]
-//   node scripts/set-student-meta.mjs CODE [grade] [teacher] [school ...] --site SITEID --token TOKEN
+//   node scripts/set-student-meta.mjs CODE [grade] [teacher] [school ...] \
+//     --site SITE_ID --token NETLIFY_AUTH_TOKEN [--debug]
+
+import { getStore } from '@netlify/blobs';
 
 const argv = process.argv.slice(2);
 
-// small helper to read flags
-const flag = (name) => {
-  const i = argv.indexOf(name);
-  return i > -1 ? argv[i + 1] : undefined;
-};
+let siteID = process.env.NETLIFY_SITE_ID || '';
+let token  = process.env.NETLIFY_AUTH_TOKEN || '';
+let debug  = false;
 
-// strip flags from positionals
-const positionals = argv.filter((a, i) => !['--site', '--token'].includes(a) && argv[i - 1] !== '--site' && argv[i - 1] !== '--token');
+const positionals = [];
+for (let i = 0; i < argv.length; i++) {
+  const a = argv[i];
+  if (a === '--site')  { siteID = argv[++i] || ''; continue; }
+  if (a === '--token') { token  = argv[++i] || ''; continue; }
+  if (a === '--debug') { debug  = true; continue; }
+  positionals.push(a);
+}
 
 const [code, grade, teacher, ...schoolParts] = positionals;
 const school = (schoolParts || []).join(' ').trim();
 
 if (!code) {
-  console.error('Usage: node scripts/set-student-meta.mjs CODE [grade] [teacher] [school ...] [--site SITEID --token TOKEN]');
+  console.error('Usage: node scripts/set-student-meta.mjs CODE [grade] [teacher] [school ...] [--site SITE_ID --token TOKEN] [--debug]');
   process.exit(1);
 }
 
-const siteID = process.env.NETLIFY_SITE_ID || flag('--site');
-const token  = process.env.NETLIFY_AUTH_TOKEN || flag('--token');
+if (debug) {
+  console.error('DEBUG site present?', Boolean(siteID), 'length', siteID?.length ?? 0);
+  console.error('DEBUG token present?', Boolean(token), 'length', token?.length ?? 0);
+}
 
 if (!siteID || !token) {
-  console.error('Missing NETLIFY_SITE_ID and/or NETLIFY_AUTH_TOKEN. Export them, or pass --site and --token.');
+  console.error('Missing NETLIFY_SITE_ID and/or NETLIFY_AUTH_TOKEN. Export them or pass --site/--token.');
   process.exit(1);
 }
 
-// IMPORTANT: pass credentials explicitly so it works outside Netlify Functions
-const meta = getStore('meta', { siteID, token });
+// Belt & suspenders: some lib versions only read from env
+process.env.NETLIFY_SITE_ID     = siteID;
+process.env.NETLIFY_AUTH_TOKEN  = token;
+
+// Create the store — prefer object signature; fall back to legacy
+let meta;
+try {
+  meta = getStore({ name: 'meta', siteID, token });   // modern signature
+} catch (_) {
+  meta = getStore('meta', { siteID, token });         // older signature
+}
 
 const key = `students/${code}.json`;
 const current = (await meta.get(key, { type: 'json', consistency: 'strong' })) || {};
+const updated = { ...current };
 
-const updated = {
-  ...current,
-  ...(grade   ? { grade }   : {}),
-  ...(teacher ? { teacher } : {}),
-  ...(school  ? { school }  : {}),
-};
+if (typeof grade   !== 'undefined' && grade !== '') updated.grade   = grade;
+if (typeof teacher !== 'undefined' && teacher)      updated.teacher = teacher;
+if (typeof school  !== 'undefined' && school)       updated.school  = school;
 
 await meta.set(key, JSON.stringify(updated), { contentType: 'application/json' });
-
 console.log('Updated', key, updated);
