@@ -5,11 +5,18 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["stripe"]
-  included_files = ["_lib/**"]
+  included_files = ["netlify/functions/_lib/**"]   # ✅ correct path
 
 # Pretty /api/* routes to functions
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
+
+# Serve preview images from the preview function
+[[redirects]]
+  from = "/preview/*"
+  to = "/.netlify/functions/preview/:splat"
   status = 200
   force = true
