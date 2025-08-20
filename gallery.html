@@ -8,22 +8,37 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
+
   <style>
-    .hero{padding:32px 0 16px;background:var(--bg,#f7f7f8)}
+    /* --- page-specific layout --- */
+    .hero{padding:28px 0 10px;background:var(--bg,#f7f7f8)}
     .hero .title{font-size:28px;font-weight:700;margin:0}
     .muted{color:var(--muted,#6b7280)}
-    .gallery-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
-    .thumb{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:12px;overflow:hidden;aspect-ratio:3/4;display:block}
-    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:24px;align-items:start}
+    @media (max-width: 980px){.layout{grid-template-columns:1fr}}
+
     .panel{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:16px;padding:18px}
-    .panel h2{font-size:18px;margin:0 0 10px}
+    .panel h2{font-size:18px;margin:0 0 12px}
+
+    /* viewer */
+    .viewer figure{margin:0;position:relative;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--border,#e6e7ea)}
+    .viewer .hero-wrap{aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;background:#fff}
+    .viewer img.hero{width:100%;height:100%;object-fit:cover;display:block}
+    .viewer .wm-note{margin-top:10px}
+
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:14px}
+    .thumb{position:relative;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#fff}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:3/4}
+    .thumb[aria-current="true"]{border-color:var(--accent,#0ea5e9)}
+
+    /* order panel */
     .stack{display:grid;gap:12px}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef6ff;color:#0369a1;font-weight:600;font-size:12px}
     .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent,#0ea5e9);color:var(--accent-ink,#fff);font-weight:600;cursor:pointer}
     .btn.secondary{background:transparent;border-color:var(--border,#e6e7ea);color:var(--ink,#111)}
-    .row{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
-    @media (max-width:900px){.row{grid-template-columns:1fr}}
-    .hidden{display:none}
+    .row-actions{display:flex;gap:12px;margin-top:10px}
     .error{color:#b42318}
+    .hidden{display:none}
   </style>
 </head>
 <body>
@@ -45,32 +60,41 @@
       </div>
     </section>
 
-    <section class="container" style="padding:24px 0 32px">
-      <div class="row">
-        <!-- Left: image grid -->
-        <div class="panel">
+    <section class="container" style="padding:20px 0 32px">
+      <div class="layout">
+        <!-- LEFT: Big viewer + thumbnails -->
+        <div class="panel viewer">
           <h2>Photos</h2>
-          <div id="grid" class="gallery-wrap" aria-live="polite"></div>
-          <p class="muted" style="margin-top:10px">
-            Previews are watermarked. Purchased digitals will be delivered without watermarks.
-          </p>
+          <figure>
+            <div class="hero-wrap">
+              <img id="heroImg" class="hero" alt="Student photo" src="" />
+            </div>
+          </figure>
+          <div id="thumbs" class="thumbs" aria-label="Select photo to preview"></div>
+          <p class="muted wm-note">Previews are watermarked. Purchased digitals are delivered without watermarks.</p>
           <p id="loadMsg" class="muted">Loading your images…</p>
           <p id="errMsg" class="error hidden">We couldn't load your gallery. Please try again.</p>
         </div>
 
-        <!-- Right: packages/add-ons reused from your order form -->
+        <!-- RIGHT: A la carte reorder form (same component you use on /order.html) -->
         <aside class="panel">
-          <h2>Reorder Packages & Add-ons</h2>
-          <div class="stack" id="reorderRoot">
-            <!-- Your existing order UI mounts here (same data & components). -->
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <h2 style="margin:0">Order Prints &amp; Digitals</h2>
+            <span class="badge">A la carte</span>
           </div>
-          <div style="display:flex;gap:12px;margin-top:14px">
+          <p class="muted" style="margin:6px 0 14px">
+            Choose anything you like—mix packages and add-ons freely. A <strong>$10 shipping</strong> fee applies at checkout.
+          </p>
+
+          <div id="reorderRoot" class="stack">
+            <!-- Your existing reorder UI mounts here -->
+          </div>
+
+          <div class="row-actions">
             <button id="checkoutBtn" class="btn">Checkout</button>
             <a href="/access.html" class="btn secondary">Use a different code</a>
           </div>
-          <p class="muted" style="margin-top:8px">
-            Prints are fulfilled manually; you’ll receive an email confirmation after checkout.
-          </p>
+
           <div id="checkoutErr" class="error hidden" style="margin-top:8px">
             Unable to start checkout. Please try again.
           </div>
@@ -80,32 +104,26 @@
   </main>
 
   <footer class="site-footer">
-    <div class="container">
-      © <span id="y"></span> Scott Ymker Photography
-    </div>
+    <div class="container">© <span id="y"></span> Scott Ymker Photography</div>
   </footer>
 
-  <!-- Load the same JS that builds package/add-on cards on /order.html -->
+  <!-- Reuse your existing order UI assets -->
   <script src="/js/packages-data.js"></script>
   <script src="/js/reorder-ui.js"></script>
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Load gallery using the session set by /api/verify-code
+    const SHIPPING_FEE_CENTS = 1000; // $10 flat shipping
+
+    // Load gallery using the session cookie set by /api/verify-code
     (async function init() {
       const loadMsg = document.getElementById('loadMsg');
       const errMsg  = document.getElementById('errMsg');
 
       try {
-        // IMPORTANT: correct route + include credentials so the cookie is sent
         const res = await fetch('/api/get-gallery', { credentials: 'include' });
-
-        if (res.status === 401) {
-          // No/expired session -> back to access
-          location.href = '/access.html?expired=1';
-          return;
-        }
+        if (res.status === 401) { location.href = '/access.html?expired=1'; return; }
         if (!res.ok) throw new Error('fetch failed');
 
         const data = await res.json();
@@ -114,45 +132,59 @@
         document.getElementById('eventLine').textContent = data.eventName || 'Event';
         document.getElementById('studentTitle').textContent = data.studentLabel || 'Your Gallery';
 
-        const grid = document.getElementById('grid');
-        (data.images || []).forEach(img => {
-          const a = document.createElement('a');
-          a.className = 'thumb';
-          a.href = img.previewUrl;
-          a.target = '_blank';
-          a.rel = 'noopener';
+        const hero = document.getElementById('heroImg');
+        const thumbsWrap = document.getElementById('thumbs');
 
+        const images = Array.isArray(data.images) ? data.images : [];
+        if (images.length) hero.src = images[0].previewUrl;
+
+        images.forEach((img, idx) => {
+          const t = document.createElement('button');
+          t.type = 'button';
+          t.className = 'thumb';
+          t.setAttribute('aria-current', idx === 0 ? 'true' : 'false');
+          t.addEventListener('click', () => {
+            hero.src = img.previewUrl;
+            [...thumbsWrap.children].forEach(el => el.setAttribute('aria-current','false'));
+            t.setAttribute('aria-current','true');
+          });
           const i = document.createElement('img');
+          i.alt = 'Photo thumbnail';
           i.loading = 'lazy';
-          i.alt = 'Student photo preview';
           i.src = img.previewUrl;
-
-          a.appendChild(i);
-          grid.appendChild(a);
+          t.appendChild(i);
+          thumbsWrap.appendChild(t);
         });
 
-        // Mount reorder UI using your existing component
-        if (window.Reorder && typeof window.Reorder.mount === 'function') {
-          window.Reorder.mount(document.getElementById('reorderRoot'), { context: 'reorder' });
+        // Mount your reorder UI (a la carte)
+        // Expecting window.Reorder.mount(el, { context, mode })
+        if (window.Reorder?.mount) {
+          window.Reorder.mount(document.getElementById('reorderRoot'), {
+            context: 'reorder',
+            mode: 'a-la-carte' // allow mixing packages & add-ons
+          });
         }
       } catch (e) {
         errMsg.classList.remove('hidden');
-        setTimeout(() => (location.href = '/access.html'), 1600);
+        setTimeout(() => (location.href = '/access.html'), 1500);
       }
     })();
 
-    // Checkout with Stripe (server creates session from current reorder cart)
+    // Checkout with Stripe — send the cart and shipping fee
     document.getElementById('checkoutBtn').addEventListener('click', async () => {
       const checkoutErr = document.getElementById('checkoutErr');
       checkoutErr.classList.add('hidden');
-
       try {
         const cart = (window.Reorder && window.Reorder.getCart) ? window.Reorder.getCart() : {};
         const res = await fetch('/api/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ cart, source: 'reorder' })
+          body: JSON.stringify({
+            cart,
+            source: 'reorder',
+            shippingFeeCents: SHIPPING_FEE_CENTS   // <-- server should enforce too
+          })
         });
         const { url } = await res.json();
         if (!url) throw new Error('No URL from server');
@@ -165,7 +197,7 @@
 
   <noscript>
     <div class="container" style="padding:16px 0 32px">
-      <p class="error">JavaScript is required to view the gallery. Please enable JavaScript and reload.</p>
+      <p class="error">JavaScript is required to view and order from the gallery.</p>
     </div>
   </noscript>
 </body>
