@@ -8,6 +8,7 @@
     "dev": "netlify dev",
     "import:one": "node scripts/import-one.mjs",
     "import:events": "node scripts/import-events.mjs"
+    "set:meta": "node scripts/set-student-meta.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^10.0.8",
