@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "netlify dev",
     "import:one": "node scripts/import-one.mjs",
-    "import:events": "node scripts/import-events.mjs"
+    "import:events": "node scripts/import-events.mjs",
     "set:meta": "node scripts/set-student-meta.mjs"
   },
   "dependencies": {
@@ -15,6 +15,7 @@
     "csv-parse": "^5.5.5",
     "pdfkit": "^0.15.0",
     "qrcode": "^1.5.3",
-    "sharp": "^0.33.3"
+    "sharp": "^0.33.3",
+    "node-fetch": "^3.3.2"
   }
 }
