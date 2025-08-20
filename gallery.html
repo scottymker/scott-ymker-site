@@ -22,6 +22,8 @@
     .btn.secondary{background:transparent;border-color:var(--border,#e6e7ea);color:var(--ink,#111)}
     .row{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
     @media (max-width:900px){.row{grid-template-columns:1fr}}
+    .hidden{display:none}
+    .error{color:#b42318}
   </style>
 </head>
 <body>
@@ -49,7 +51,11 @@
         <div class="panel">
           <h2>Photos</h2>
           <div id="grid" class="gallery-wrap" aria-live="polite"></div>
-          <p class="muted" style="margin-top:10px">Previews are watermarked. Purchased digitals will be delivered without watermarks.</p>
+          <p class="muted" style="margin-top:10px">
+            Previews are watermarked. Purchased digitals will be delivered without watermarks.
+          </p>
+          <p id="loadMsg" class="muted">Loading your images…</p>
+          <p id="errMsg" class="error hidden">We couldn't load your gallery. Please try again.</p>
         </div>
 
         <!-- Right: packages/add-ons reused from your order form -->
@@ -62,8 +68,12 @@
             <button id="checkoutBtn" class="btn">Checkout</button>
             <a href="/access.html" class="btn secondary">Use a different code</a>
           </div>
-          <p class="muted" style="margin-top:8px">Prints are fulfilled manually; you’ll receive an email confirmation after checkout.</p>
-          <div id="err" class="muted" style="color:#b42318;display:none;margin-top:8px">Unable to start checkout. Please try again.</div>
+          <p class="muted" style="margin-top:8px">
+            Prints are fulfilled manually; you’ll receive an email confirmation after checkout.
+          </p>
+          <div id="checkoutErr" class="error hidden" style="margin-top:8px">
+            Unable to start checkout. Please try again.
+          </div>
         </aside>
       </div>
     </section>
@@ -82,45 +92,61 @@
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // 1) Load gallery using the session set by /api/verify-code
+    // Load gallery using the session set by /api/verify-code
     (async function init() {
+      const loadMsg = document.getElementById('loadMsg');
+      const errMsg  = document.getElementById('errMsg');
+
       try {
-        const res = await fetch('/api/gallery', { credentials:'include' });
-        if (!res.ok) throw new Error('Not authorized');
+        // IMPORTANT: correct route + include credentials so the cookie is sent
+        const res = await fetch('/api/get-gallery', { credentials: 'include' });
+
+        if (res.status === 401) {
+          // No/expired session -> back to access
+          location.href = '/access.html?expired=1';
+          return;
+        }
+        if (!res.ok) throw new Error('fetch failed');
+
         const data = await res.json();
-        // data: { eventName, studentLabel, images:[{previewUrl}] }
+        loadMsg.classList.add('hidden');
+
         document.getElementById('eventLine').textContent = data.eventName || 'Event';
         document.getElementById('studentTitle').textContent = data.studentLabel || 'Your Gallery';
 
         const grid = document.getElementById('grid');
-        data.images.forEach(img => {
+        (data.images || []).forEach(img => {
           const a = document.createElement('a');
           a.className = 'thumb';
-          a.href = img.previewUrl; a.target = '_blank'; a.rel = 'noopener';
+          a.href = img.previewUrl;
+          a.target = '_blank';
+          a.rel = 'noopener';
+
           const i = document.createElement('img');
           i.loading = 'lazy';
           i.alt = 'Student photo preview';
           i.src = img.previewUrl;
+
           a.appendChild(i);
           grid.appendChild(a);
         });
 
-        // 2) Mount reorder UI using your existing component
-        // Assumes /js/reorder-ui.js exposes window.Reorder.mount(el)
+        // Mount reorder UI using your existing component
         if (window.Reorder && typeof window.Reorder.mount === 'function') {
           window.Reorder.mount(document.getElementById('reorderRoot'), { context: 'reorder' });
         }
       } catch (e) {
-        location.href = '/access.html';
+        errMsg.classList.remove('hidden');
+        setTimeout(() => (location.href = '/access.html'), 1600);
       }
     })();
 
-    // 3) Checkout with Stripe (server creates session from current reorder cart)
+    // Checkout with Stripe (server creates session from current reorder cart)
     document.getElementById('checkoutBtn').addEventListener('click', async () => {
-      const err = document.getElementById('err');
-      err.style.display = 'none';
+      const checkoutErr = document.getElementById('checkoutErr');
+      checkoutErr.classList.add('hidden');
+
       try {
-        // Expect your reorder-ui to expose a cart snapshot
         const cart = (window.Reorder && window.Reorder.getCart) ? window.Reorder.getCart() : {};
         const res = await fetch('/api/create-checkout-session', {
           method: 'POST',
@@ -129,12 +155,18 @@
           body: JSON.stringify({ cart, source: 'reorder' })
         });
         const { url } = await res.json();
-        if (!url) throw new Error('No URL');
+        if (!url) throw new Error('No URL from server');
         window.location.href = url;
       } catch {
-        err.style.display = 'block';
+        checkoutErr.classList.remove('hidden');
       }
     });
   </script>
+
+  <noscript>
+    <div class="container" style="padding:16px 0 32px">
+      <p class="error">JavaScript is required to view the gallery. Please enable JavaScript and reload.</p>
+    </div>
+  </noscript>
 </body>
 </html>
