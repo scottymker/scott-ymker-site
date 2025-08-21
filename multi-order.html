@@ -17,7 +17,7 @@
     a{color:inherit;text-decoration:none}
     .wrap{width:min(1100px,calc(100% - 32px));margin:24px auto}
 
-    /* === Header (same as other pages, with black hamburger) === */
+    /* === Header (same as other pages, black hamburger) === */
     .sitebar{position:relative;z-index:10;background:var(--card);border-bottom:1px solid var(--border)}
     .sitebar .inner{height:var(--nav-h);display:flex;align-items:center;justify-content:space-between;gap:16px;padding-inline:10px}
     .brand{display:flex;align-items:center;gap:10px;font-weight:700;min-width:0}
@@ -41,7 +41,7 @@
       .nav-links.open{display:flex;pointer-events:auto}
     }
 
-    /* === Hero & layout === */
+    /* === Hero & layout (hero same width as cards) === */
     .hero{margin-top:18px}
     .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
     .hero-card{display:flex;justify-content:space-between;gap:16px;align-items:center}
@@ -54,7 +54,9 @@
     @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
     .section-title{font-weight:600;margin:10px 0 8px}
-    select,input[type="text"],input[type="tel"],input[type="email"]{ width:100%;height:44px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit }
+    select,input[type="text"],input[type="tel"],input[type="email"]{
+      width:100%;height:44px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit
+    }
     input,select,textarea{font-size:16px} /* prevent iOS zoom */
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     @media (max-width:720px){.row{grid-template-columns:1fr}}
@@ -74,7 +76,7 @@
     .btn.small{padding:8px 12px;font-weight:600}
     .btn.rm{color:#ef4444;border-color:#ef4444}
 
-    /* === Summary (stop horizontal overflow on phones) === */
+    /* === Summary (contain width, allow wrap/scroll if needed) === */
     #summaryCard{overflow-x:auto}
     table{width:100%;border-collapse:collapse;table-layout:fixed} /* fixed layout prevents overflow */
     th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;word-break:break-word}
@@ -130,10 +132,10 @@
     <form id="multiForm" class="card" novalidate>
       <div>
         <div class="section-title">Parent / Guardian</div>
-        <input type="text" name="parent_name" placeholder="Parent name" autocomplete="name" required oninput="window.renderSummary()" style="margin-bottom:10px">
+        <input type="text" name="parent_name" placeholder="Parent name" autocomplete="name" required oninput="window.renderSummary && window.renderSummary()" style="margin-bottom:10px">
         <div class="row">
-          <input type="tel"  name="parent_phone" placeholder="Phone" inputmode="tel" autocomplete="tel" oninput="window.renderSummary()">
-          <input type="email" name="parent_email" placeholder="Email" inputmode="email" autocomplete="email" required oninput="window.renderSummary()">
+          <input type="tel"  name="parent_phone" placeholder="Phone" inputmode="tel" autocomplete="tel" oninput="window.renderSummary && window.renderSummary()">
+          <input type="email" name="parent_email" placeholder="Email" inputmode="email" autocomplete="email" required oninput="window.renderSummary && window.renderSummary()">
         </div>
       </div>
 
@@ -164,24 +166,64 @@
     </aside>
   </main>
 
-  <!-- Nav script -->
+  <!-- Nav script + small helpers (non-intrusive) -->
   <script>
+    // Mobile hamburger
     document.addEventListener('DOMContentLoaded', () => {
       const toggle = document.querySelector('.nav-toggle');
       const nav = document.getElementById('site-nav');
-      if (!toggle || !nav) return;
-      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
-      toggle.addEventListener('click', () => {
-        const open = !nav.classList.contains('open');
-        nav.classList.toggle('open', open);
-        toggle.setAttribute('aria-expanded', String(open));
+      if (toggle && nav) {
+        const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+        toggle.addEventListener('click', () => {
+          const open = !nav.classList.contains('open');
+          nav.classList.toggle('open', open);
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+        nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+      }
+    });
+
+    // Keep only the student's NAME in each student header (no package/summary blob).
+    // This does NOT touch your add-on logic; it only trims visible text.
+    function simplifyStudentSummaries(){
+      document.querySelectorAll('details.student summary').forEach(sum => {
+        const right = sum.querySelector('.summ-right') || sum;
+        const raw = right.textContent.trim();
+        // Try to extract after ":" and before any of these separators
+        let out = raw;
+        const colon = raw.indexOf(':');
+        if (colon !== -1) out = raw.slice(colon + 1);
+        // cut off extra info after separators
+        const cuts = ['—',' - ',' (',' | ',' Package '];
+        let end = out.length;
+        cuts.forEach(c => { const i = out.indexOf(c); if (i !== -1) end = Math.min(end, i); });
+        out = out.slice(0, end).trim();
+        if (!out) out = raw; // fallback
+        right.textContent = out;
       });
-      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    }
+
+    // Re-run simplifier when your JS adds/updates student blocks
+    const studentsRoot = document.getElementById('students');
+    const obs = new MutationObserver(() => { simplifyStudentSummaries(); });
+    if (studentsRoot) obs.observe(studentsRoot, { childList: true, subtree: true });
+
+    // Also run on input changes inside student blocks
+    document.addEventListener('input', (e) => {
+      if (e.target.closest('details.student')) simplifyStudentSummaries();
+    });
+
+    // First pass after load
+    document.addEventListener('DOMContentLoaded', () => {
+      simplifyStudentSummaries();
+      // Keep summary in view (no horizontal overflow)
+      const sc = document.getElementById('summaryCard');
+      if (sc) sc.scrollLeft = 0;
     });
   </script>
 
-  <!-- Page logic -->
+  <!-- Your original page logic (kept intact so add-ons work as before) -->
   <script src="multi-order.js"></script>
 </body>
 </html>
