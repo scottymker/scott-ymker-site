@@ -9,12 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
   <link rel="icon" href="/2020Logo_black.png">
-
   <style>
     :root { --ink:#0f172a; --muted:#64748b; --border:#e6e7ea; --accent:#0ea5e9; }
     body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:var(--ink) }
 
-    /* Header */
     .site-header { border-bottom:1px solid var(--border); background:#fff }
     .site-header .container { display:flex; align-items:center; gap:16px; padding:10px 0 }
     .brand img { display:block; height:30px }
@@ -22,7 +20,6 @@
     .site-nav a { text-decoration:none; color:var(--ink); font-weight:600; opacity:.85 }
     .site-nav a.active { color:var(--accent) }
 
-    /* Top: Name + chips centered */
     .header-box{padding:18px 0;border-bottom:1px solid var(--border)}
     .title-wrap{ text-align:center }
     .title{ font-weight:800; font-size:22px; margin:0 0 10px }
@@ -31,14 +28,12 @@
     .muted{ color:var(--muted) }
     .hidden{ display:none }
 
-    /* Layout */
     .layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);gap:24px;align-items:start}
     @media (max-width:980px){.layout{grid-template-columns:1fr}}
 
     .panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px}
     .panel h2{font-size:18px;margin:0 0 12px}
 
-    /* Viewer */
     .viewer figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:#fff}
     .hero-wrap{ display:flex;align-items:center;justify-content:center;background:#fff; height: clamp(420px, 72vh, 780px); }
     .hero{ width:100%; height:100%; object-fit:contain; display:block; background:#f8fafc; }
@@ -47,7 +42,6 @@
     .thumb img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:3/4}
     .thumb[aria-current="true"]{border-color:var(--accent)}
 
-    /* Order form (right) */
     .stack{display:grid;gap:12px}
     .field{display:grid;gap:8px}
     .select{appearance:none;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font:inherit}
@@ -78,7 +72,6 @@
     </div>
   </header>
 
-  <!-- Centered name + chips -->
   <div class="header-box">
     <div class="container">
       <div class="title-wrap">
@@ -95,24 +88,16 @@
 
   <main class="container" style="padding:18px 0 32px">
     <div class="layout">
-      <!-- LEFT: viewer -->
       <div>
         <div class="panel viewer">
-          <figure>
-            <div class="hero-wrap">
-              <img id="heroImg" class="hero" alt="Student photo" src="">
-            </div>
-          </figure>
-
+          <figure><div class="hero-wrap"><img id="heroImg" class="hero" alt="Student photo"></div></figure>
           <div id="thumbs" class="thumbs" aria-label="Select photo"></div>
-
           <p class="muted" style="margin-top:10px">Previews are watermarked. Purchased digitals are delivered without watermarks.</p>
           <p id="loadMsg" class="muted">Loading your images…</p>
           <p id="errMsg" class="error hidden">We couldn't load your gallery. Please try again.</p>
         </div>
       </div>
 
-      <!-- RIGHT: Order form -->
       <aside class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
           <h2 style="margin:0">Order Prints &amp; Digitals</h2>
@@ -125,9 +110,7 @@
         <div class="stack" id="orderRoot">
           <div class="field">
             <label class="group-title" for="pkgSelect">Select a Package</label>
-            <select id="pkgSelect" class="select">
-              <option value="">— Select a Package —</option>
-            </select>
+            <select id="pkgSelect" class="select"><option value="">— Select a Package —</option></select>
           </div>
 
           <div class="field">
@@ -155,16 +138,13 @@
     <div class="container">© <span id="y"></span> Scott Ymker Photography</div>
   </footer>
 
-  <!-- optional catalog loader -->
   <script src="/js/packages-data.js"></script>
-
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    const SHIPPING_FEE_CENTS = 1000; // $10
     const fmt = c => `$${(c/100).toFixed(2)}`;
+    const SHIPPING_FEE_CENTS = 1000;
 
-    /* ---------------- Catalog resolve ---------------- */
     function resolveCatalog(){
       const cat =
         window.OrderCatalog ||
@@ -172,49 +152,25 @@
         window.PACKAGES_DATA ||
         (window.Reorder && window.Reorder.catalog) ||
         null;
-
       if (cat && (cat.packages || cat.PACKAGES)) {
-        return {
-          packages: cat.packages || cat.PACKAGES,
-          addons:   cat.addons   || cat.ADDONS   || []
-        };
+        return { packages: cat.packages || cat.PACKAGES, addons: cat.addons || cat.ADDONS || [] };
       }
-      // fallback demo catalog
-      return {
-        packages: [
-          { id:'A', name:'Package A', price:3500 },
-          { id:'B', name:'Package B', price:2500 }
-        ],
-        addons: [
-          { id:'F', name:'F — 8×10 Print', price:600 },
-          { id:'G', name:'G — 2× 5×7 Prints', price:600 },
-          { id:'H', name:'H — 4× 3½×5 Prints', price:600 },
-          { id:'I', name:'I — 24 Wallets', price:1800 },
-          { id:'J', name:'J — 8 Wallets', price:600 },
-          { id:'K', name:'K — 16 Mini Wallets', price:600 },
-          { id:'L', name:'L — Retouching', price:700 },
-          { id:'M', name:'M — 8×10 Class Composite', price:800 },
-          { id:'N', name:'N — Digital File', price:1500 }
-        ]
-      };
+      return { packages: [], addons: [] }; // minimal; you can keep the demo list if preferred
     }
     const Catalog = resolveCatalog();
 
     function buildOrderUI(){
       const pkgSelect = document.getElementById('pkgSelect');
       const addonsList = document.getElementById('addonsList');
-
       (Catalog.packages || []).forEach(p => {
         const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = `${p.name || p.label || p.id} (${fmt(p.price)})`;
+        opt.value = p.id; opt.textContent = `${p.name || p.label || p.id} (${fmt(p.price)})`;
         pkgSelect.appendChild(opt);
       });
-
       (Catalog.addons || []).forEach(a => {
         const id = `addon-${a.id}`;
         const card = document.createElement('div'); card.className = 'option-card';
-        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = id; cb.dataset.addon=a.id; cb.dataset.price=a.price;
+        const cb = document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.dataset.addon=a.id; cb.dataset.price=a.price;
         const label = document.createElement('label'); label.setAttribute('for', id);
         label.innerHTML = `<span>${a.name || a.label || a.id}</span> <span class="price">(${fmt(a.price)})</span>`;
         card.appendChild(cb); card.appendChild(label); addonsList.appendChild(card);
@@ -225,12 +181,10 @@
       const pkg = document.getElementById('pkgSelect').value || null;
       const addons = [...document.querySelectorAll('#addonsList input[type="checkbox"]:checked')]
         .map(cb => ({ id: cb.dataset.addon, price: parseInt(cb.dataset.price,10) }));
-
       const pkgPrice = pkg ? (Catalog.packages.find(p => p.id===pkg)?.price || 0) : 0;
       const addOnTotal = addons.reduce((s,a)=>s+a.price,0);
       const subtotal = pkgPrice + addOnTotal;
       const total = subtotal + SHIPPING_FEE_CENTS;
-
       return { pkg, addons: addons.map(a=>a.id), subtotal, total };
     }
 
@@ -244,36 +198,57 @@
 
     function attachOrderEvents(){
       document.getElementById('pkgSelect').addEventListener('change', renderTotals);
-      document.querySelectorAll('#addonsList input[type="checkbox"]').forEach(cb=>{
-        cb.addEventListener('change', renderTotals);
-      });
+      document.querySelectorAll('#addonsList input[type="checkbox"]').forEach(cb=>cb.addEventListener('change', renderTotals));
       renderTotals();
     }
 
-    /* ---------------- Image helpers: CDN first, API fallback once ---------------- */
-    function cdnUrlForKey(key){ return `/.netlify/blobs/site:galleries/${encodeURIComponent(key)}` }
-    function apiPreviewForKey(key){ return `/api/preview?key=${encodeURIComponent(key)}` }
+    /* ---------- Image URL helpers ---------- */
+    function extractKeyFromPreviewUrl(url){
+      // /api/preview?key=galleries/THM239/Thomas_preview.jpg  ->  galleries/THM239/Thomas_preview.jpg
+      const m = /[?&]key=([^&]+)/.exec(url || '');
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    function normalizeKey(rawKey){
+      let k = rawKey || '';
+      // allow devs to pass entire CDN url; strip to key
+      const cdnIdx = k.indexOf('/.netlify/blobs/site:galleries/');
+      if (cdnIdx !== -1) {
+        k = decodeURIComponent(k.slice(cdnIdx + '/.netlify/blobs/site:galleries/'.length));
+      }
+      // if the stored keys include a leading "galleries/", drop it for the CDN path segment
+      k = k.replace(/^galleries\//,'');
+      return k;
+    }
+    function cdnUrlForKey(key){
+      const k = normalizeKey(key);
+      return `/.netlify/blobs/site:galleries/${encodeURIComponent(k)}`;
+    }
+    function apiPreviewForKey(key){
+      // keep the original key (may include 'galleries/…') for the API
+      return `/api/preview?key=${encodeURIComponent(key)}`;
+    }
 
     function normalizeImages(raw){
-      // Accept either: [{previewUrl}] or [{previewKey}] or ["galleries/THM239/Thomas_preview.jpg"]
       const arr = Array.isArray(raw) ? raw : [];
       return arr.map(x => {
         if (typeof x === 'string') {
-          return { key: x, cdnUrl: cdnUrlForKey(x), apiUrl: apiPreviewForKey(x) };
+          const key = x;
+          return { key, cdnUrl: cdnUrlForKey(key), apiUrl: apiPreviewForKey(key) };
         }
-        const key = x.previewKey || x.key || x.path ||
-                    (typeof x.previewUrl === 'string' && x.previewUrl.replace(/^.*site:(?:galleries|meta)\//,''));
-        return {
-          key,
-          cdnUrl: x.cdnUrl || (key ? cdnUrlForKey(key) : x.previewUrl),
-          apiUrl: x.apiUrl || (key ? apiPreviewForKey(key) : '')
-        };
+        // derive a key from any form we see
+        let key = x.previewKey || x.key || x.path || '';
+        if (!key && x.previewUrl) key = extractKeyFromPreviewUrl(x.previewUrl);
+        // prefer CDN if previewUrl already is a blobs URL
+        const cdnUrl = (x.previewUrl && x.previewUrl.includes('/.netlify/blobs/site:'))
+          ? x.previewUrl
+          : (key ? cdnUrlForKey(key) : '');
+        const apiUrl = key ? apiPreviewForKey(key) : '';
+        return { key, cdnUrl, apiUrl };
       });
     }
 
     function setWithFallback(imgEl, imgObj){
       if (!imgObj) return;
-      // guard so we only swap once
       imgEl.dataset.fellback = '0';
       imgEl.onerror = () => {
         if (imgEl.dataset.fellback === '1') return;
@@ -283,10 +258,9 @@
       imgEl.src = imgObj.cdnUrl || imgObj.apiUrl || '';
     }
 
-    /* ---------------- Init ---------------- */
+    /* ---------- Init ---------- */
     (async function init(){
-      buildOrderUI();
-      attachOrderEvents();
+      buildOrderUI(); attachOrderEvents();
 
       const loadMsg = document.getElementById('loadMsg');
       const errMsg  = document.getElementById('errMsg');
@@ -299,7 +273,6 @@
         const data = await res.json();
         loadMsg.classList.add('hidden');
 
-        // Name + chips
         document.getElementById('studentName').textContent = data.studentLabel || 'Student';
         const showChip = (id, text) => { if (text) { const el = document.getElementById(id); el.textContent = text; el.style.display='inline-block'; } }
         showChip('chipEvent',   data.eventName || 'Fall Picture Day');
@@ -307,7 +280,6 @@
         showChip('chipTeacher', data.teacher ? `Teacher: ${data.teacher}` : '');
         showChip('chipSchool',  data.school  ? `School: ${data.school}`   : '');
 
-        // Images
         const images = normalizeImages(data.images);
         const hero = document.getElementById('heroImg');
         const thumbsWrap = document.getElementById('thumbs');
@@ -316,7 +288,7 @@
 
         images.forEach((img, idx) => {
           const b = document.createElement('button');
-          b.type = 'button'; b.className='thumb';
+          b.type='button'; b.className='thumb';
           b.setAttribute('aria-current', idx===0 ? 'true' : 'false');
           b.addEventListener('click', () => {
             setWithFallback(hero, img);
@@ -325,7 +297,6 @@
           });
           const i = document.createElement('img');
           i.alt = 'Photo thumbnail'; i.loading='lazy';
-          // thumbs can use CDN only (lighter), with a single fallback
           i.onerror = () => { if (i.dataset.fellback!=='1' && img.apiUrl){ i.dataset.fellback='1'; i.src = img.apiUrl; } };
           i.src = img.cdnUrl || img.apiUrl || '';
           b.appendChild(i); thumbsWrap.appendChild(b);
@@ -338,7 +309,6 @@
       }
     })();
 
-    /* ---------------- Checkout ---------------- */
     document.getElementById('checkoutBtn').addEventListener('click', async () => {
       const checkoutErr = document.getElementById('checkoutErr');
       checkoutErr.classList.add('hidden');
@@ -363,11 +333,5 @@
       }
     });
   </script>
-
-  <noscript>
-    <div class="container" style="padding:16px 0 32px">
-      <p class="error">JavaScript is required to view and order from the gallery.</p>
-    </div>
-  </noscript>
 </body>
 </html>
