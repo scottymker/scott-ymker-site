@@ -9,60 +9,73 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root{ --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9; --ok:#16a34a; --border:#e7e7e9; --nav-h:64px; }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow-x:hidden}
-    img{max-width:100%;height:auto;display:block}
-    a{color:inherit;text-decoration:none}
-    .wrap{width:min(960px,calc(100% - 32px));margin:24px auto}
+    *{ box-sizing:border-box }
+    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden }
+    img{ max-width:100%; height:auto; display:block }
+    a{ color:inherit; text-decoration:none }
+    .wrap{ width:min(960px, calc(100% - 32px)); margin:24px auto }
 
     /* Header with hamburger */
-    .sitebar{position:relative;z-index:10;background:var(--card);border-bottom:1px solid var(--border)}
-    .sitebar .inner{height:var(--nav-h);display:flex;align-items:center;justify-content:space-between;gap:16px;padding-inline:10px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:700;min-width:0}
-    .brand img{height:36px;width:auto}
-    .nav-links{display:flex;gap:18px;align-items:center}
-    .nav-links a{padding:6px 8px;border-radius:8px;font-weight:500}
-    .nav-links a[aria-current="page"]{background:#eef7ff;color:#0b77c5}
-    .nav-links a:hover{background:#eff2f6}
-    .nav-toggle{display:none;border:0;background:transparent;width:40px;height:40px;color:#111 !important;-webkit-appearance:none;appearance:none;padding:0;margin:0}
-    .nav-toggle svg{width:28px;height:28px;display:block}
+    .sitebar{ position:relative; z-index:10; background:var(--card); border-bottom:1px solid var(--border) }
+    .sitebar .inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:16px; padding-inline:10px }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; min-width:0 }
+    .brand img{ height:36px; width:auto }
+    .nav-links{ display:flex; gap:18px; align-items:center }
+    .nav-links a{ padding:6px 8px; border-radius:8px; font-weight:500 }
+    .nav-links a[aria-current="page"]{ background:#eef7ff; color:#0b77c5 }
+    .nav-links a:hover{ background:#eff2f6 }
+    .nav-toggle{ display:none; border:0; background:transparent; width:40px; height:40px; color:#111 !important; -webkit-appearance:none; appearance:none; padding:0; margin:0 }
+    .nav-toggle svg{ width:28px; height:28px; display:block }
     @media (max-width:768px){
-      .nav-toggle{display:inline-flex !important;align-items:center;justify-content:center}
+      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center }
       .nav-links{
-        position:fixed;left:0;right:0;top:var(--nav-h);
-        background:var(--card);border-top:1px solid var(--border);
-        flex-direction:column;padding:12px 16px;display:none;pointer-events:none
+        position:fixed; left:0; right:0; top:var(--nav-h);
+        background:var(--card); border-top:1px solid var(--border);
+        flex-direction:column; padding:12px 16px; display:none; pointer-events:none
       }
-      .nav-links.open{display:flex;pointer-events:auto}
+      .nav-links.open{ display:flex; pointer-events:auto }
     }
 
     /* Hero */
-    .hero{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;display:flex;align-items:center;gap:16px;margin-top:18px}
-    .check{height:36px;width:36px;border-radius:50%;display:grid;place-items:center;background:rgba(22,163,74,.1);color:var(--ok);font-size:20px}
-    h1{margin:0;font-size:24px}
-    .subtle{color:var(--muted);margin-top:4px}
+    .hero{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 24px; display:flex; align-items:center; gap:16px; margin-top:18px }
+    .check{ height:36px; width:36px; border-radius:50%; display:grid; place-items:center; background:rgba(22,163,74,.1); color:var(--ok); font-size:20px }
+    h1{ margin:0; font-size:24px }
+    .subtle{ color:var(--muted); margin-top:4px }
 
-    /* Two-column area: equal height */
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:18px;align-items:stretch}
-    @media (max-width:800px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;display:flex;flex-direction:column;min-height:100%}
-    .card h2{font-size:16px;margin:0 0 12px}
-    .grow{flex:1}
+    /* Equal-height grid */
+    .grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; margin-top:18px; align-items:stretch }
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; display:flex; flex-direction:column; min-width:0 }
+    .card h2{ font-size:16px; margin:0 0 12px }
+    .grow{ flex:1 } /* pushes actions to bottom so both columns align visually */
 
-    .keyvals{display:grid;grid-template-columns:180px 1fr;row-gap:8px;column-gap:12px}
-    .label{color:var(--muted)}
-    .total{font-weight:700;font-size:18px}
+    /* Items table: mobile-safe */
+    .tableWrap{ width:100%; overflow-x:auto } /* hard stop for any overflow */
+    .items{ width:100%; border-collapse:collapse; margin-top:6px; table-layout:fixed }
+    .items col.desc{ width:auto }
+    .items col.qty{ width:64px }
+    .items col.amt{ width:120px }
+    .items th, .items td{ padding:8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top }
+    .items th{ color:var(--muted); font-weight:600; font-size:13px }
+    .items td:nth-child(2), .items th:nth-child(2){ text-align:center }
+    .items td:nth-child(3), .items th:nth-child(3){ text-align:right }
+    .items td:first-child{ word-break:break-word; overflow-wrap:anywhere }
 
-    /* Table: mobile safe */
-    .items{width:100%;border-collapse:collapse;margin-top:6px;table-layout:fixed}
-    .items th,.items td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;word-break:break-word}
-    .items th{color:var(--muted);font-weight:600;font-size:13px}
+    /* Key/Value block: stack on narrow screens to avoid overflow */
+    .keyvals{ display:grid; grid-template-columns:180px 1fr; row-gap:8px; column-gap:12px; min-width:0 }
+    .label{ color:var(--muted) }
+    @media (max-width:520px){
+      .keyvals{ grid-template-columns:1fr }
+      .keyvals .label{ font-weight:600 }
+      .keyvals .label + div{ margin-bottom:6px }
+    }
 
-    .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;cursor:pointer}
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-    .muted{color:var(--muted)}
-    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+    .total{ font-weight:700; font-size:18px }
+    .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap }
+    .btn{ appearance:none; border:1px solid var(--border); background:#fff; padding:10px 14px; border-radius:999px; cursor:pointer }
+    .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff }
+    .muted{ color:var(--muted) }
+    footer{ margin:24px 0 40px; color:var(--muted); font-size:13px }
   </style>
 </head>
 <body>
@@ -101,13 +114,18 @@
       <div class="card" id="summary">
         <h2>Order summary</h2>
         <div class="grow">
-          <table class="items" id="itemsTable" aria-live="polite">
-            <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
-            <tbody id="itemsBody"></tbody>
-            <tfoot>
-              <tr><td colspan="2" class="label">Total</td><td class="total" id="totalCell">$0.00</td></tr>
-            </tfoot>
-          </table>
+          <div class="tableWrap">
+            <table class="items" id="itemsTable" aria-live="polite">
+              <colgroup>
+                <col class="desc"><col class="qty"><col class="amt">
+              </colgroup>
+              <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
+              <tbody id="itemsBody"></tbody>
+              <tfoot>
+                <tr><td colspan="2" class="label">Total</td><td class="total" id="totalCell">$0.00</td></tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
         <div class="actions">
           <button class="btn" onclick="window.print()">Print receipt</button>
@@ -164,9 +182,7 @@
 
     // Money formatter
     const fmtMoney = (cents, currency='usd') =>
-      (Number(cents || 0)/100).toLocaleString(undefined, {
-        style:'currency', currency:(currency||'USD').toUpperCase()
-      });
+      (Number(cents || 0)/100).toLocaleString(undefined, { style:'currency', currency:(currency||'USD').toUpperCase() });
 
     // Read session id from URL
     function getSessionId() {
@@ -180,23 +196,20 @@
       return sid || '';
     }
 
-    // Friendly fallback order number (if not provided by backend)
+    // Fallback order number if backend didn't set metadata.order_number
     function makeOrderNumber(data){
       let base = '';
       const pi = data.payment_intent;
       if (typeof pi === 'string') base = pi;
       else if (pi && typeof pi === 'object' && pi.id) base = pi.id;
       else base = data.id || '';
-
       const tail = ((base.match(/[a-z0-9]+$/i) || [''])[0]).slice(-6).toUpperCase().padStart(6,'X');
-      const ts = typeof data.created === 'number' ? data.created * 1000
-               : data.created ? Date.parse(data.created) : Date.now();
+      const ts = typeof data.created === 'number' ? data.created * 1000 : (data.created ? Date.parse(data.created) : Date.now());
       const d  = new Date(ts);
       const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
       return `SYP-${yyyy}${mm}${dd}-${tail}`;
     }
 
-    // Build list helpers for multi-student metadata
     function listFromMeta(md, keyFmt){
       const n = parseInt(md.students_count || '0', 10) || 0;
       if (!n) return [];
@@ -221,11 +234,10 @@
 
         sub.textContent = `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
 
-        // Prefer backend-stored order number; else compute
         const md = data.metadata || {};
         const orderNo = md.order_number || makeOrderNumber(data);
 
-        // Top-right details
+        // Details
         document.getElementById('kvOrder').textContent  = orderNo;
         document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
         document.getElementById('kvEmail').textContent  = (data.customer_email || '—');
@@ -243,8 +255,8 @@
         });
         document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
 
-        // Multi-student details
-        const names = listFromMeta(md, i => md[`s${i}_name`]) ;
+        // Multi-student metadata
+        const names = listFromMeta(md, i => md[`s${i}_name`]);
         const tgs   = listFromMeta(md, i => {
           const t = md[`s${i}_teacher`] || '';
           const g = md[`s${i}_grade`] || '';
