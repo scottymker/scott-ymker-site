@@ -18,6 +18,10 @@
     .panel{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:16px;padding:18px}
     .panel h2{font-size:18px;margin:0 0 12px}
 
+    /* Header brand (fix) */
+    .brand img{height:36px;display:block}
+    @media (max-width:520px){.brand img{height:30px}}
+
     /* Student info card (above photo) */
     .student-card{
       display:grid;gap:10px;padding:16px;border:1px solid var(--border,#e6e7ea);
@@ -38,6 +42,7 @@
       width:auto;height:auto;
       object-fit:contain; /* show the entire image */
       display:block;
+      background:#f7f7f8;
     }
     .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:12px}
     .thumb{position:relative;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#fff}
@@ -45,7 +50,7 @@
     .thumb[aria-current="true"]{border-color:var(--accent,#0ea5e9)}
     .error{color:#b42318}.hidden{display:none}
 
-    /* Order form (right) — card list style */
+    /* Order form (right) */
     .stack{display:grid;gap:12px}
     .field{display:grid;gap:8px}
     .select{appearance:none;width:100%;padding:12px 14px;border:1px solid var(--border,#e6e7ea);border-radius:12px;background:#fff;font:inherit}
@@ -70,15 +75,16 @@
 <body>
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="/"><img src="/assets/logo.svg" alt="Scott Ymker Photography" height="36"></a>
+      <a class="brand" href="/">
+        <img id="brandLogo" src="/2020Logo_black.png" alt="Scott Ymker Photography"
+             onerror="this.onerror=null;this.src='/assets/logo.svg'">
+      </a>
       <nav class="site-nav">
         <a href="/order.html">Order Forms</a>
         <a class="active" href="/access.html">Access Event</a>
       </nav>
     </div>
   </header>
-
-  <!-- (Removed the top “bar” with event + name) -->
 
   <main class="container" style="padding:18px 0 32px">
     <div class="layout">
@@ -87,7 +93,6 @@
         <div class="student-card">
           <h2 class="student-name" id="studentName">Student Name</h2>
           <div class="meta-row">
-            <!-- Event chip now lives with the other chips -->
             <span class="chip" id="metaEvent"   style="display:none"></span>
             <span class="chip" id="metaGrade"   style="display:none"></span>
             <span class="chip" id="metaTeacher" style="display:none"></span>
@@ -153,7 +158,6 @@
     <div class="container">© <span id="y"></span> Scott Ymker Photography</div>
   </footer>
 
-  <!-- If you have a catalog file, this page will auto-use it -->
   <script src="/js/packages-data.js"></script>
 
   <script>
@@ -162,7 +166,7 @@
     const SHIPPING_FEE_CENTS = 1000; // $10 flat
     const fmt = c => `$${(c/100).toFixed(2)}`;
 
-    // Try to resolve your real catalog; otherwise fallback
+    /* ---------- Catalog helpers ---------- */
     function resolveCatalog(){
       const cat =
         window.OrderCatalog ||
@@ -248,7 +252,54 @@
       renderTotals();
     }
 
-    /* ---------- Load gallery & fill student meta ---------- */
+    /* ---------- Helpers to normalize image fields ---------- */
+    function normalizeToUrl(val){
+      if (!val) return null;
+      if (typeof val === 'string') return val.startsWith('http') || val.startsWith('/') ? val : '/' + val.replace(/^\/+/, '');
+      if (typeof val === 'object'){
+        return val.previewUrl || val.url || val.src || null;
+      }
+      return null;
+    }
+
+    function extractPreviews(data){
+      const urls = [];
+
+      // images: [{previewUrl}|{url}|string]
+      if (Array.isArray(data.images)) {
+        data.images.forEach(it=>{
+          const u = normalizeToUrl(it);
+          if (u) urls.push(u);
+        });
+      }
+
+      // previewUrls: [string]
+      if (Array.isArray(data.previewUrls)) {
+        data.previewUrls.forEach(u=>{
+          const n = normalizeToUrl(u);
+          if (n) urls.push(n);
+        });
+      }
+
+      // previewKeys: [string] -> '/key'
+      if (Array.isArray(data.previewKeys)) {
+        data.previewKeys.forEach(k=>{
+          const n = normalizeToUrl(k);
+          if (n) urls.push(n);
+        });
+      }
+
+      // single key
+      if (data.previewKey) {
+        const n = normalizeToUrl(data.previewKey);
+        if (n) urls.push(n);
+      }
+
+      // de-dupe, keep order
+      return [...new Set(urls)];
+    }
+
+    /* ---------- Load gallery ---------- */
     (async function init(){
       const loadMsg = document.getElementById('loadMsg');
       const errMsg  = document.getElementById('errMsg');
@@ -257,7 +308,6 @@
       attachOrderEvents();
 
       try {
-        // NOTE: Use the route that matches your function file name
         const res = await fetch('/api/get-gallery', { credentials: 'include' });
         if (res.status === 401) { location.href = '/access.html?expired=1'; return; }
         if (!res.ok) throw new Error('fetch failed');
@@ -265,44 +315,43 @@
         const data = await res.json();
         loadMsg.classList.add('hidden');
 
-        // Student name
+        // Student header
         document.getElementById('studentName').textContent = data.studentLabel || 'Student';
+        const eventBadge = document.getElementById('metaEvent');
+        const gEl = document.getElementById('metaGrade');
+        const tEl = document.getElementById('metaTeacher');
+        const sEl = document.getElementById('metaSchool');
 
-        // Chips
-        const s = data || {};
-        const eEl  = document.getElementById('metaEvent');
-        const gEl  = document.getElementById('metaGrade');
-        const tEl  = document.getElementById('metaTeacher');
-        const schEl= document.getElementById('metaSchool');
-
-        // Event chip (fallback text if you prefer a default)
-        const eventText = s.eventName || 'Fall School Pictures';
-        if (eventText){ eEl.textContent = eventText; eEl.style.display='inline-block'; }
-
-        if (s.grade){   gEl.textContent = `Grade: ${s.grade}`;       gEl.style.display='inline-block'; }
-        if (s.teacher){ tEl.textContent = `Teacher: ${s.teacher}`;   tEl.style.display='inline-block'; }
-        if (s.school){  schEl.textContent = `School: ${s.school}`;   schEl.style.display='inline-block'; }
+        if (data.eventName){ eventBadge.textContent = data.eventName; eventBadge.style.display='inline-block'; }
+        if (data.grade){ gEl.textContent = `Grade: ${data.grade}`; gEl.style.display='inline-block'; }
+        if (data.teacher){ tEl.textContent = `Teacher: ${data.teacher}`; tEl.style.display='inline-block'; }
+        if (data.school){ sEl.textContent = `School: ${data.school}`; sEl.style.display='inline-block'; }
 
         // Viewer & thumbs
         const hero = document.getElementById('heroImg');
         const thumbsWrap = document.getElementById('thumbs');
-        const images = Array.isArray(s.images) ? s.images : [];
+        const previews = extractPreviews(data);
 
-        if (images.length) hero.src = images[0].previewUrl;
+        if (previews.length) hero.src = previews[0];
 
-        images.forEach((img, idx) => {
+        previews.forEach((url, idx) => {
           const b = document.createElement('button');
           b.type = 'button'; b.className='thumb';
           b.setAttribute('aria-current', idx===0 ? 'true' : 'false');
           b.addEventListener('click', () => {
-            hero.src = img.previewUrl;
+            hero.src = url;
             [...thumbsWrap.children].forEach(el => el.setAttribute('aria-current','false'));
             b.setAttribute('aria-current','true');
           });
           const i = document.createElement('img');
-          i.alt = 'Photo thumbnail'; i.loading='lazy'; i.src = img.previewUrl;
+          i.alt = 'Photo thumbnail'; i.loading='lazy'; i.src = url;
           b.appendChild(i); thumbsWrap.appendChild(b);
         });
+
+        if (!previews.length){
+          errMsg.textContent = 'No preview images were found for this code.';
+          errMsg.classList.remove('hidden');
+        }
       } catch (e) {
         errMsg.classList.remove('hidden');
         setTimeout(()=>location.href='/access.html', 1500);
@@ -321,7 +370,7 @@
           credentials:'include',
           body: JSON.stringify({
             source: 'reorder',
-            shippingFeeCents: 1000,
+            shippingFeeCents: SHIPPING_FEE_CENTS,
             packageId: cart.pkg,
             addons: cart.addons
           })
