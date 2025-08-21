@@ -43,10 +43,8 @@
 
     /* === Hero & layout === */
     .hero{margin-top:18px}
-    .hero-card{
-      background:var(--card);border:1px solid var(--border);border-radius:14px;
-      padding:18px;display:flex;justify-content:space-between;gap:16px;align-items:center
-    }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+    .hero-card{display:flex;justify-content:space-between;gap:16px;align-items:center}
     .hero h1{margin:0 0 4px;font-size:22px}
     .hero p{margin:0;color:var(--muted)}
     .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;border-radius:999px;padding:10px 14px;font-weight:600;cursor:pointer}
@@ -55,7 +53,6 @@
     .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:18px;margin-top:14px}
     @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
     .section-title{font-weight:600;margin:10px 0 8px}
     select,input[type="text"],input[type="tel"],input[type="email"]{ width:100%;height:44px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit }
     input,select,textarea{font-size:16px} /* prevent iOS zoom */
@@ -64,6 +61,7 @@
     .muted{color:var(--muted)}
     .actions{margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 
+    /* === Student blocks === */
     .student{border:1px solid var(--border);border-radius:12px;margin-top:12px;background:#fff}
     .student summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:600;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
     .student summary::-webkit-details-marker{display:none}
@@ -71,18 +69,22 @@
     .summ-right{flex:1 1 auto;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
     .student .content{padding:12px 14px}
     .student .row{margin-top:10px}
-
     .addon{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff}
     .addon input{width:18px;height:18px}
+    .btn.small{padding:8px 12px;font-weight:600}
+    .btn.rm{color:#ef4444;border-color:#ef4444}
 
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+    /* === Summary (stop horizontal overflow on phones) === */
+    #summaryCard{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;table-layout:fixed} /* fixed layout prevents overflow */
+    th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;word-break:break-word}
     th{color:var(--muted);font-size:13px}
     .total-row td{font-weight:700}
+    .subrow td{padding-top:0}
+    .sub{color:var(--muted);font-size:13px;line-height:1.35}
     .kv{display:grid;grid-template-columns:140px 1fr;row-gap:6px;column-gap:8px;margin-top:10px}
     .kv .k{color:var(--muted)}
-    .subrow td{padding-top:0}
-    .sub{color:var(--muted);font-size:13px;padding-left:24px;line-height:1.35}
+    @media (max-width:420px){ .kv{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -108,10 +110,10 @@
     </div>
   </div>
 
-  <!-- Hero -->
+  <!-- Hero (same width & style as cards) -->
   <div class="wrap">
     <section class="hero">
-      <div class="hero-card">
+      <div class="card hero-card">
         <div>
           <h1>Multi-Student Order</h1>
           <p>Add each student below. Parent info is shared for one simple checkout.</p>
@@ -179,7 +181,7 @@
     });
   </script>
 
-  <!-- Your existing logic -->
+  <!-- Page logic -->
   <script src="multi-order.js"></script>
 </body>
 </html>
