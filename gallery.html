@@ -8,38 +8,46 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="/2020Logo_black.png">
 
   <style>
-    /* Page shell */
-    :root{--border:#e6e7ea;--muted:#6b7280;--accent:#0ea5e9}
-    .muted{color:var(--muted)}
+    :root { --ink:#0f172a; --muted:#64748b; --border:#e6e7ea; --accent:#0ea5e9; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:var(--ink) }
+
+    /* Header */
+    .site-header { border-bottom:1px solid var(--border); background:#fff }
+    .site-header .container { display:flex; align-items:center; gap:16px; padding:10px 0 }
+    .brand img { display:block; height:30px }
+    .site-nav { margin-left:auto; display:flex; gap:18px }
+    .site-nav a { text-decoration:none; color:var(--ink); font-weight:600; opacity:.85 }
+    .site-nav a.active { color:var(--accent) }
+
+    /* Top: Name + chips centered */
+    .header-box{padding:18px 0;border-bottom:1px solid var(--border)}
+    .title-wrap{ text-align:center }
+    .title{ font-weight:800; font-size:22px; margin:0 0 10px }
+    .chips{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px }
+    .chip{ padding:6px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; font-size:12px; color:#0f172a; }
+    .muted{ color:var(--muted) }
+    .hidden{ display:none }
+
+    /* Layout */
     .layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);gap:24px;align-items:start}
     @media (max-width:980px){.layout{grid-template-columns:1fr}}
 
     .panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px}
     .panel h2{font-size:18px;margin:0 0 12px}
 
-    /* Compact page header */
-    .bar{padding:14px 0;border-bottom:1px solid var(--border)}
-    .brand img{height:36px;display:block}
-
-    /* Student header */
-    .student-card{display:grid;gap:10px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;margin-bottom:12px}
-    .student-name{font-weight:700;font-size:20px;margin:0;text-align:center}
-    .chip-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-    .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#fafafa}
-
-    /* Viewer (fit-to-size image) */
+    /* Viewer */
     .viewer figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:#fff}
-    .hero-wrap{display:flex;align-items:center;justify-content:center;background:#fff;height:clamp(420px,72vh,780px)}
-    .hero{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+    .hero-wrap{ display:flex;align-items:center;justify-content:center;background:#fff; height: clamp(420px, 72vh, 780px); }
+    .hero{ width:100%; height:100%; object-fit:contain; display:block; background:#f8fafc; }
     .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:12px}
     .thumb{position:relative;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#fff}
     .thumb img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:3/4}
     .thumb[aria-current="true"]{border-color:var(--accent)}
-    .error{color:#b42318}.hidden{display:none}
 
-    /* Order form */
+    /* Order form (right) */
     .stack{display:grid;gap:12px}
     .field{display:grid;gap:8px}
     .select{appearance:none;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font:inherit}
@@ -53,14 +61,15 @@
     .total .val{font-weight:700}
     .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
     .btn[disabled]{opacity:.6;cursor:not-allowed}
-    .btn.secondary{background:transparent;border-color:var(--border);color:#111}
+    .btn.secondary{background:transparent;border-color:var(--border);color:var(--ink)}
     .actions{display:flex;gap:12px;margin-top:12px}
     .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef6ff;color:#0369a1;font-weight:600;font-size:12px}
+    .error{color:#b42318}
   </style>
 </head>
 <body>
   <header class="site-header">
-    <div class="container" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div class="container">
       <a class="brand" href="/"><img src="/2020Logo_black.png" alt="Scott Ymker Photography"></a>
       <nav class="site-nav">
         <a href="/order.html">Order Forms</a>
@@ -69,27 +78,34 @@
     </div>
   </header>
 
-  <div class="bar"></div>
+  <!-- Centered name + chips -->
+  <div class="header-box">
+    <div class="container">
+      <div class="title-wrap">
+        <p class="title" id="studentName">Student</p>
+        <div class="chips">
+          <span class="chip" id="chipEvent"   style="display:none"></span>
+          <span class="chip" id="chipGrade"   style="display:none"></span>
+          <span class="chip" id="chipTeacher" style="display:none"></span>
+          <span class="chip" id="chipSchool"  style="display:none"></span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <main class="container" style="padding:18px 0 32px">
     <div class="layout">
-      <!-- LEFT: Student info + viewer -->
+      <!-- LEFT: viewer -->
       <div>
-        <div class="student-card">
-          <h2 class="student-name" id="studentName">Student Name</h2>
-          <div class="chip-row">
-            <span class="chip" id="chipEvent"   style="display:none"></span>
-            <span class="chip" id="chipGrade"   style="display:none"></span>
-            <span class="chip" id="chipTeacher" style="display:none"></span>
-            <span class="chip" id="chipSchool"  style="display:none"></span>
-          </div>
-        </div>
-
         <div class="panel viewer">
           <figure>
-            <div class="hero-wrap"><img id="heroImg" class="hero" alt="Student photo" src=""></div>
+            <div class="hero-wrap">
+              <img id="heroImg" class="hero" alt="Student photo" src="">
+            </div>
           </figure>
+
           <div id="thumbs" class="thumbs" aria-label="Select photo"></div>
+
           <p class="muted" style="margin-top:10px">Previews are watermarked. Purchased digitals are delivered without watermarks.</p>
           <p id="loadMsg" class="muted">Loading your images…</p>
           <p id="errMsg" class="error hidden">We couldn't load your gallery. Please try again.</p>
@@ -139,8 +155,8 @@
     <div class="container">© <span id="y"></span> Scott Ymker Photography</div>
   </footer>
 
-  <!-- Optional catalog; we fall back gracefully if it's missing -->
-  <script src="/js/packages-data.js" defer></script>
+  <!-- optional catalog loader -->
+  <script src="/js/packages-data.js"></script>
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
@@ -148,26 +164,7 @@
     const SHIPPING_FEE_CENTS = 1000; // $10
     const fmt = c => `$${(c/100).toFixed(2)}`;
 
-    // Build the correct CDN URL for a gallery preview key.
-    function buildGalleryCdnUrl(key) {
-      if (!key) return '';
-      // normalize: strip leading slashes and "galleries/" prefix
-      const norm = String(key).replace(/^\/+/, '').replace(/^galleries\//, '');
-      return `/.netlify/blobs/site:galleries/${encodeURIComponent(norm)}`;
-    }
-
-    // Try three URL shapes in order: given -> fixed (site:galleries) -> /api/preview
-    function buildUrlCandidates(k, givenUrl) {
-      const fixed = buildGalleryCdnUrl(k);
-      const api = `/api/preview?key=${encodeURIComponent(k)}`;
-      const list = [];
-      if (givenUrl) list.push(givenUrl);
-      if (!list.includes(fixed)) list.push(fixed);
-      if (!list.includes(api)) list.push(api);
-      return list;
-    }
-
-    // Resolve your catalog (or fallback)
+    /* ---------------- Catalog resolve ---------------- */
     function resolveCatalog(){
       const cat =
         window.OrderCatalog ||
@@ -175,12 +172,14 @@
         window.PACKAGES_DATA ||
         (window.Reorder && window.Reorder.catalog) ||
         null;
+
       if (cat && (cat.packages || cat.PACKAGES)) {
         return {
           packages: cat.packages || cat.PACKAGES,
           addons:   cat.addons   || cat.ADDONS   || []
         };
       }
+      // fallback demo catalog
       return {
         packages: [
           { id:'A', name:'Package A', price:3500 },
@@ -251,15 +250,46 @@
       renderTotals();
     }
 
-    // Load gallery + meta
-    (async function init(){
-      const loadMsg = document.getElementById('loadMsg');
-      const errMsg  = document.getElementById('errMsg');
-      const hero = document.getElementById('heroImg');
-      const thumbsWrap = document.getElementById('thumbs');
+    /* ---------------- Image helpers: CDN first, API fallback once ---------------- */
+    function cdnUrlForKey(key){ return `/.netlify/blobs/site:galleries/${encodeURIComponent(key)}` }
+    function apiPreviewForKey(key){ return `/api/preview?key=${encodeURIComponent(key)}` }
 
+    function normalizeImages(raw){
+      // Accept either: [{previewUrl}] or [{previewKey}] or ["galleries/THM239/Thomas_preview.jpg"]
+      const arr = Array.isArray(raw) ? raw : [];
+      return arr.map(x => {
+        if (typeof x === 'string') {
+          return { key: x, cdnUrl: cdnUrlForKey(x), apiUrl: apiPreviewForKey(x) };
+        }
+        const key = x.previewKey || x.key || x.path ||
+                    (typeof x.previewUrl === 'string' && x.previewUrl.replace(/^.*site:(?:galleries|meta)\//,''));
+        return {
+          key,
+          cdnUrl: x.cdnUrl || (key ? cdnUrlForKey(key) : x.previewUrl),
+          apiUrl: x.apiUrl || (key ? apiPreviewForKey(key) : '')
+        };
+      });
+    }
+
+    function setWithFallback(imgEl, imgObj){
+      if (!imgObj) return;
+      // guard so we only swap once
+      imgEl.dataset.fellback = '0';
+      imgEl.onerror = () => {
+        if (imgEl.dataset.fellback === '1') return;
+        imgEl.dataset.fellback = '1';
+        if (imgObj.apiUrl) imgEl.src = imgObj.apiUrl;
+      };
+      imgEl.src = imgObj.cdnUrl || imgObj.apiUrl || '';
+    }
+
+    /* ---------------- Init ---------------- */
+    (async function init(){
       buildOrderUI();
       attachOrderEvents();
+
+      const loadMsg = document.getElementById('loadMsg');
+      const errMsg  = document.getElementById('errMsg');
 
       try {
         const res = await fetch('/api/get-gallery', { credentials: 'include' });
@@ -269,65 +299,38 @@
         const data = await res.json();
         loadMsg.classList.add('hidden');
 
-        // Header & chips
+        // Name + chips
         document.getElementById('studentName').textContent = data.studentLabel || 'Student';
-        const setChip = (id, label, val) => {
-          if (!val) return;
-          const el = document.getElementById(id); el.textContent = `${label} ${val}`; el.style.display='inline-block';
-        };
-        setChip('chipEvent','Fall Picture Day', data.eventName || 'Fall Picture Day');
-        setChip('chipGrade','Grade:', data.grade);
-        setChip('chipTeacher','Teacher:', data.teacher);
-        setChip('chipSchool','School:', data.school);
+        const showChip = (id, text) => { if (text) { const el = document.getElementById(id); el.textContent = text; el.style.display='inline-block'; } }
+        showChip('chipEvent',   data.eventName || 'Fall Picture Day');
+        showChip('chipGrade',   data.grade   ? `Grade: ${data.grade}`     : '');
+        showChip('chipTeacher', data.teacher ? `Teacher: ${data.teacher}` : '');
+        showChip('chipSchool',  data.school  ? `School: ${data.school}`   : '');
 
-        // Build images list from either images[] or previewKeys[]
-        let images = Array.isArray(data.images) ? data.images.slice() : [];
-        if (!images.length && Array.isArray(data.previewKeys)) {
-          images = data.previewKeys.map(k => ({ key: k, previewUrl: buildGalleryCdnUrl(k) }));
-        } else {
-          // fix any bad store slugs the API may have returned
-          images = images.map(img => {
-            const k = img.key || img.previewKey || '';
-            const fixed = buildGalleryCdnUrl(k);
-            const u = img.previewUrl || '';
-            return { key:k, previewUrl: u.includes('site:galleries/') ? u : fixed };
-          });
-        }
+        // Images
+        const images = normalizeImages(data.images);
+        const hero = document.getElementById('heroImg');
+        const thumbsWrap = document.getElementById('thumbs');
 
-        if (!images.length) throw new Error('no images');
+        if (images.length) setWithFallback(hero, images[0]);
 
-        // Install a robust loader that tries multiple URL candidates
-        function setHeroFromKey(key, preferredUrl) {
-          const candidates = buildUrlCandidates(key, preferredUrl);
-          let idx = 0;
-          const tryNext = () => {
-            if (idx >= candidates.length) return; // give up
-            hero.src = candidates[idx++];
-          };
-          hero.onerror = tryNext;
-          tryNext();
-        }
-
-        // First image
-        setHeroFromKey(images[0].key || images[0].previewKey || images[0].previewUrl, images[0].previewUrl);
-
-        // Thumbs
-        images.forEach((img, i) => {
-          const k = img.key || img.previewKey || img.previewUrl;
-          const thumbUrl = buildGalleryCdnUrl(k);
+        images.forEach((img, idx) => {
           const b = document.createElement('button');
           b.type = 'button'; b.className='thumb';
-          b.setAttribute('aria-current', i===0 ? 'true' : 'false');
+          b.setAttribute('aria-current', idx===0 ? 'true' : 'false');
           b.addEventListener('click', () => {
+            setWithFallback(hero, img);
             [...thumbsWrap.children].forEach(el => el.setAttribute('aria-current','false'));
             b.setAttribute('aria-current','true');
-            setHeroFromKey(k, img.previewUrl);
           });
-          const iEl = document.createElement('img');
-          iEl.alt = 'Photo thumbnail'; iEl.loading='lazy'; iEl.src = thumbUrl;
-          iEl.onerror = () => { iEl.src = `/api/preview?key=${encodeURIComponent(k)}`; };
-          b.appendChild(iEl); thumbsWrap.appendChild(b);
+          const i = document.createElement('img');
+          i.alt = 'Photo thumbnail'; i.loading='lazy';
+          // thumbs can use CDN only (lighter), with a single fallback
+          i.onerror = () => { if (i.dataset.fellback!=='1' && img.apiUrl){ i.dataset.fellback='1'; i.src = img.apiUrl; } };
+          i.src = img.cdnUrl || img.apiUrl || '';
+          b.appendChild(i); thumbsWrap.appendChild(b);
         });
+
       } catch (e) {
         console.error(e);
         errMsg.classList.remove('hidden');
@@ -335,7 +338,7 @@
       }
     })();
 
-    // Checkout
+    /* ---------------- Checkout ---------------- */
     document.getElementById('checkoutBtn').addEventListener('click', async () => {
       const checkoutErr = document.getElementById('checkoutErr');
       checkoutErr.classList.add('hidden');
@@ -347,7 +350,7 @@
           credentials:'include',
           body: JSON.stringify({
             source: 'reorder',
-            shippingFeeCents: SHIPPING_FEE_CENTS,
+            shippingFeeCents: 1000,
             packageId: cart.pkg,
             addons: cart.addons
           })
