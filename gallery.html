@@ -10,73 +10,58 @@
   <link rel="stylesheet" href="/style.css" />
 
   <style>
-    .muted{color:var(--muted,#6b7280)}
+    /* Page shell */
+    :root{--border:#e6e7ea;--muted:#6b7280;--accent:#0ea5e9}
+    .muted{color:var(--muted)}
     .layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);gap:24px;align-items:start}
     @media (max-width:980px){.layout{grid-template-columns:1fr}}
 
-    .panel{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:16px;padding:18px}
+    .panel{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px}
     .panel h2{font-size:18px;margin:0 0 12px}
 
-    /* Brand logo (with fallback) */
+    /* Compact page header */
+    .bar{padding:14px 0;border-bottom:1px solid var(--border)}
     .brand img{height:36px;display:block}
-    @media (max-width:520px){.brand img{height:30px}}
 
     /* Student header */
-    .student-card{
-      display:grid;gap:10px;padding:16px;border:1px solid var(--border,#e6e7ea);
-      border-radius:12px;background:#fff;margin-bottom:12px;text-align:center;
-    }
-    .student-name{font-weight:700;font-size:20px;margin:0}
-    .meta-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-    .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--border,#e6e7ea);font-size:12px;background:#fafafa}
+    .student-card{display:grid;gap:10px;padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;margin-bottom:12px}
+    .student-name{font-weight:700;font-size:20px;margin:0;text-align:center}
+    .chip-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+    .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#fafafa}
 
-    /* Viewer */
-    .viewer figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--border,#e6e7ea);background:#fff}
-    .hero-wrap{
-      display:flex;align-items:center;justify-content:center;background:#fff;
-      height: clamp(420px, 72vh, 780px);
-    }
-    .hero{
-      max-width:100%;max-height:100%;
-      width:auto;height:auto;
-      object-fit:contain;
-      display:block;background:#f7f7f8;
-    }
+    /* Viewer (fit-to-size image) */
+    .viewer figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:#fff}
+    .hero-wrap{display:flex;align-items:center;justify-content:center;background:#fff;height:clamp(420px,72vh,780px)}
+    .hero{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
     .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:12px}
     .thumb{position:relative;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#fff}
     .thumb img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:3/4}
-    .thumb[aria-current="true"]{border-color:var(--accent,#0ea5e9)}
+    .thumb[aria-current="true"]{border-color:var(--accent)}
     .error{color:#b42318}.hidden{display:none}
 
     /* Order form */
     .stack{display:grid;gap:12px}
     .field{display:grid;gap:8px}
-    .select{appearance:none;width:100%;padding:12px 14px;border:1px solid var(--border,#e6e7ea);border-radius:12px;background:#fff;font:inherit}
+    .select{appearance:none;width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;font:inherit}
     .group-title{font-weight:700;margin:12px 0 6px}
     .option-list{display:grid;gap:10px}
-    .option-card{
-      display:flex;align-items:center;gap:12px;
-      padding:12px 14px;border:1px solid var(--border,#e6e7ea);border-radius:12px;background:#fff
-    }
+    .option-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff}
     .option-card label{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer}
     .price{color:#6b7280;font-weight:600}
-    .summary{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border,#e6e7ea);display:grid;gap:6px}
+    .summary{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);display:grid;gap:6px}
     .sum-row{display:flex;justify-content:space-between}
     .total .val{font-weight:700}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent,#0ea5e9);color:#fff;font-weight:600;cursor:pointer}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
     .btn[disabled]{opacity:.6;cursor:not-allowed}
-    .btn.secondary{background:transparent;border-color:var(--border,#e6e7ea);color:var(--ink,#111)}
+    .btn.secondary{background:transparent;border-color:var(--border);color:#111}
     .actions{display:flex;gap:12px;margin-top:12px}
     .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef6ff;color:#0369a1;font-weight:600;font-size:12px}
   </style>
 </head>
 <body>
   <header class="site-header">
-    <div class="container">
-      <a class="brand" href="/">
-        <img id="brandLogo" src="/2020Logo_black.png" alt="Scott Ymker Photography"
-             onerror="this.onerror=null;this.src='/assets/logo.svg'">
-      </a>
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <a class="brand" href="/"><img src="/2020Logo_black.png" alt="Scott Ymker Photography"></a>
       <nav class="site-nav">
         <a href="/order.html">Order Forms</a>
         <a class="active" href="/access.html">Access Event</a>
@@ -84,17 +69,19 @@
     </div>
   </header>
 
+  <div class="bar"></div>
+
   <main class="container" style="padding:18px 0 32px">
     <div class="layout">
       <!-- LEFT: Student info + viewer -->
       <div>
         <div class="student-card">
           <h2 class="student-name" id="studentName">Student Name</h2>
-          <div class="meta-row">
-            <span class="chip" id="metaEvent"   style="display:none"></span>
-            <span class="chip" id="metaGrade"   style="display:none"></span>
-            <span class="chip" id="metaTeacher" style="display:none"></span>
-            <span class="chip" id="metaSchool"  style="display:none"></span>
+          <div class="chip-row">
+            <span class="chip" id="chipEvent"   style="display:none"></span>
+            <span class="chip" id="chipGrade"   style="display:none"></span>
+            <span class="chip" id="chipTeacher" style="display:none"></span>
+            <span class="chip" id="chipSchool"  style="display:none"></span>
           </div>
         </div>
 
@@ -120,7 +107,6 @@
         </p>
 
         <div class="stack" id="orderRoot">
-          <!-- Package select -->
           <div class="field">
             <label class="group-title" for="pkgSelect">Select a Package</label>
             <select id="pkgSelect" class="select">
@@ -128,20 +114,17 @@
             </select>
           </div>
 
-          <!-- Add-ons -->
           <div class="field">
             <div class="group-title">Select Add-Ons</div>
             <div id="addonsList" class="option-list"></div>
           </div>
 
-          <!-- Summary -->
           <div class="summary">
             <div class="sum-row"><span>Subtotal</span><span id="sumSubtotal">$0.00</span></div>
             <div class="sum-row"><span>Shipping</span><span id="sumShipping">$10.00</span></div>
             <div class="sum-row total"><span>Total</span><span id="sumTotal" class="val">$10.00</span></div>
           </div>
 
-          <!-- Actions -->
           <div class="actions">
             <button id="checkoutBtn" class="btn" disabled>Checkout</button>
             <a href="/access.html" class="btn secondary">Use a different code</a>
@@ -156,14 +139,35 @@
     <div class="container">© <span id="y"></span> Scott Ymker Photography</div>
   </footer>
 
-  <script src="/js/packages-data.js"></script>
+  <!-- Optional catalog; we fall back gracefully if it's missing -->
+  <script src="/js/packages-data.js" defer></script>
 
   <script>
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    const SHIPPING_FEE_CENTS = 1000;
+    const SHIPPING_FEE_CENTS = 1000; // $10
     const fmt = c => `$${(c/100).toFixed(2)}`;
 
+    // Build the correct CDN URL for a gallery preview key.
+    function buildGalleryCdnUrl(key) {
+      if (!key) return '';
+      // normalize: strip leading slashes and "galleries/" prefix
+      const norm = String(key).replace(/^\/+/, '').replace(/^galleries\//, '');
+      return `/.netlify/blobs/site:galleries/${encodeURIComponent(norm)}`;
+    }
+
+    // Try three URL shapes in order: given -> fixed (site:galleries) -> /api/preview
+    function buildUrlCandidates(k, givenUrl) {
+      const fixed = buildGalleryCdnUrl(k);
+      const api = `/api/preview?key=${encodeURIComponent(k)}`;
+      const list = [];
+      if (givenUrl) list.push(givenUrl);
+      if (!list.includes(fixed)) list.push(fixed);
+      if (!list.includes(api)) list.push(api);
+      return list;
+    }
+
+    // Resolve your catalog (or fallback)
     function resolveCatalog(){
       const cat =
         window.OrderCatalog ||
@@ -171,7 +175,6 @@
         window.PACKAGES_DATA ||
         (window.Reorder && window.Reorder.catalog) ||
         null;
-
       if (cat && (cat.packages || cat.PACKAGES)) {
         return {
           packages: cat.packages || cat.PACKAGES,
@@ -248,56 +251,12 @@
       renderTotals();
     }
 
-    /* ---------- Image helpers ---------- */
-
-    // Convert a blob key to the preview function URL
-    const keyToPreview = key => `/api/preview?key=${encodeURIComponent(key)}`;
-
-    function normalizeToUrl(val){
-      if (!val) return null;
-      if (typeof val === 'string') {
-        // If it's already an absolute URL or a /.netlify/* path, use it as-is.
-        if (val.startsWith('http') || val.startsWith('/.netlify/')) return val;
-        // Otherwise treat it as a blob key.
-        return keyToPreview(val);
-      }
-      if (typeof val === 'object'){
-        // Prefer explicit previewUrl/url/src. If still just a key, convert.
-        return val.previewUrl || val.url || val.src || (val.previewKey ? keyToPreview(val.previewKey) : null);
-      }
-      return null;
-    }
-
-    function extractPreviews(data){
-      const urls = [];
-
-      if (Array.isArray(data.images)) {
-        data.images.forEach(it=>{
-          const u = normalizeToUrl(it);
-          if (u) urls.push(u);
-        });
-      }
-      if (Array.isArray(data.previewUrls)) {
-        data.previewUrls.forEach(u=>{
-          const n = normalizeToUrl(u);
-          if (n) urls.push(n);
-        });
-      }
-      if (Array.isArray(data.previewKeys)) {
-        data.previewKeys.forEach(k=>{
-          const n = keyToPreview(k);
-          if (n) urls.push(n);
-        });
-      }
-      if (data.previewKey) urls.push(keyToPreview(data.previewKey));
-
-      return [...new Set(urls)];
-    }
-
-    /* ---------- Load gallery ---------- */
+    // Load gallery + meta
     (async function init(){
       const loadMsg = document.getElementById('loadMsg');
       const errMsg  = document.getElementById('errMsg');
+      const hero = document.getElementById('heroImg');
+      const thumbsWrap = document.getElementById('thumbs');
 
       buildOrderUI();
       attachOrderEvents();
@@ -310,50 +269,73 @@
         const data = await res.json();
         loadMsg.classList.add('hidden');
 
-        // Student header
+        // Header & chips
         document.getElementById('studentName').textContent = data.studentLabel || 'Student';
-        const eventBadge = document.getElementById('metaEvent');
-        const gEl = document.getElementById('metaGrade');
-        const tEl = document.getElementById('metaTeacher');
-        const sEl = document.getElementById('metaSchool');
+        const setChip = (id, label, val) => {
+          if (!val) return;
+          const el = document.getElementById(id); el.textContent = `${label} ${val}`; el.style.display='inline-block';
+        };
+        setChip('chipEvent','Fall Picture Day', data.eventName || 'Fall Picture Day');
+        setChip('chipGrade','Grade:', data.grade);
+        setChip('chipTeacher','Teacher:', data.teacher);
+        setChip('chipSchool','School:', data.school);
 
-        if (data.eventName){ eventBadge.textContent = data.eventName; eventBadge.style.display='inline-block'; }
-        if (data.grade){ gEl.textContent = `Grade: ${data.grade}`; gEl.style.display='inline-block'; }
-        if (data.teacher){ tEl.textContent = `Teacher: ${data.teacher}`; tEl.style.display='inline-block'; }
-        if (data.school){ sEl.textContent = `School: ${data.school}`; sEl.style.display='inline-block'; }
+        // Build images list from either images[] or previewKeys[]
+        let images = Array.isArray(data.images) ? data.images.slice() : [];
+        if (!images.length && Array.isArray(data.previewKeys)) {
+          images = data.previewKeys.map(k => ({ key: k, previewUrl: buildGalleryCdnUrl(k) }));
+        } else {
+          // fix any bad store slugs the API may have returned
+          images = images.map(img => {
+            const k = img.key || img.previewKey || '';
+            const fixed = buildGalleryCdnUrl(k);
+            const u = img.previewUrl || '';
+            return { key:k, previewUrl: u.includes('site:galleries/') ? u : fixed };
+          });
+        }
 
-        // Viewer & thumbs
-        const hero = document.getElementById('heroImg');
-        const thumbsWrap = document.getElementById('thumbs');
-        const previews = extractPreviews(data);
+        if (!images.length) throw new Error('no images');
 
-        if (previews.length) hero.src = previews[0];
+        // Install a robust loader that tries multiple URL candidates
+        function setHeroFromKey(key, preferredUrl) {
+          const candidates = buildUrlCandidates(key, preferredUrl);
+          let idx = 0;
+          const tryNext = () => {
+            if (idx >= candidates.length) return; // give up
+            hero.src = candidates[idx++];
+          };
+          hero.onerror = tryNext;
+          tryNext();
+        }
 
-        previews.forEach((url, idx) => {
+        // First image
+        setHeroFromKey(images[0].key || images[0].previewKey || images[0].previewUrl, images[0].previewUrl);
+
+        // Thumbs
+        images.forEach((img, i) => {
+          const k = img.key || img.previewKey || img.previewUrl;
+          const thumbUrl = buildGalleryCdnUrl(k);
           const b = document.createElement('button');
           b.type = 'button'; b.className='thumb';
-          b.setAttribute('aria-current', idx===0 ? 'true' : 'false');
+          b.setAttribute('aria-current', i===0 ? 'true' : 'false');
           b.addEventListener('click', () => {
-            hero.src = url;
             [...thumbsWrap.children].forEach(el => el.setAttribute('aria-current','false'));
             b.setAttribute('aria-current','true');
+            setHeroFromKey(k, img.previewUrl);
           });
-          const i = document.createElement('img');
-          i.alt = 'Photo thumbnail'; i.loading='lazy'; i.src = url;
-          b.appendChild(i); thumbsWrap.appendChild(b);
+          const iEl = document.createElement('img');
+          iEl.alt = 'Photo thumbnail'; iEl.loading='lazy'; iEl.src = thumbUrl;
+          iEl.onerror = () => { iEl.src = `/api/preview?key=${encodeURIComponent(k)}`; };
+          b.appendChild(iEl); thumbsWrap.appendChild(b);
         });
-
-        if (!previews.length){
-          errMsg.textContent = 'No preview images were found for this code.';
-          errMsg.classList.remove('hidden');
-        }
       } catch (e) {
+        console.error(e);
         errMsg.classList.remove('hidden');
         setTimeout(()=>location.href='/access.html', 1500);
       }
     })();
 
-    /* ---------- Checkout ---------- */
+    // Checkout
     document.getElementById('checkoutBtn').addEventListener('click', async () => {
       const checkoutErr = document.getElementById('checkoutErr');
       checkoutErr.classList.add('hidden');
