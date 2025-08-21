@@ -11,19 +11,22 @@
   <link rel="stylesheet" href="index.css" />
 </head>
 <body>
-  <header class="sitebar">
-    <div class="wrap row">
-      <div class="brand">
-        <img src="2020Logo_black.png" alt="Scott Ymker Photography logo">
-        <div>Scott Ymker Photography</div>
-      </div>
-      <nav aria-label="main">
-        <a href="index.html" aria-current="page">Home</a>
-        <a href="order.html">Order</a>
-        <a href="contact.html">Contact</a>
+  <header class="header">
+    <div class="navbar container">
+      <a class="logo" href="/">Scott Ymker Photography</a>
+
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav id="site-nav" class="nav-links">
+        <a href="/">Home</a>
+        <a href="/order">Order</a>
+        <a href="/contact">Contact</a>
       </nav>
     </div>
   </header>
+
 
   <main class="wrap">
     <section class="hero">
