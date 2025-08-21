@@ -1,32 +1,45 @@
 // netlify/functions/preview.mjs
 import { getStore } from '@netlify/blobs';
 
-// Optional: simple auth via session cookie if you want it. For now, public.
+const TYPES = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.avif': 'image/avif',
+};
+
+function guessType(key) {
+  const m = key.toLowerCase().match(/\.(jpg|jpeg|png|webp|gif|avif)$/);
+  if (!m) return 'application/octet-stream';
+  const ext = `.${m[1]}`;
+  return TYPES[ext] || 'application/octet-stream';
+}
+
 export default async (req) => {
-  const url = new URL(req.url);
-  const key = url.searchParams.get('key') || '';
-  if (!key || key.includes('..')) {
-    return new Response('Bad key', { status: 400 });
+  try {
+    const url = new URL(req.url);
+    let key = (url.searchParams.get('key') || '').trim();
+    if (!key) return new Response('Missing key', { status: 400 });
+
+    // Normalize: the store name is "galleries", so the key should NOT start with "galleries/"
+    key = key.replace(/^\/+/, '').replace(/^galleries\//, '');
+
+    const galleries = getStore('galleries');
+    const bytes = await galleries.get(key, { type: 'bytes' });
+
+    if (!bytes) return new Response('Not found', { status: 404 });
+
+    return new Response(bytes, {
+      status: 200,
+      headers: {
+        'Content-Type': guessType(key),
+        'Cache-Control': 'public, max-age=300',
+      },
+    });
+  } catch (e) {
+    console.error('preview error:', e);
+    return new Response('Server error', { status: 500 });
   }
-
-  // Your image bytes live in the "galleries" store (metadata is in "meta")
-  const galleries = getStore('galleries');
-
-  // Stream the image; falls back to 404 if not present
-  const stream = await galleries.get(key, { type: 'stream', consistency: 'strong' });
-  if (!stream) return new Response('Not found', { status: 404 });
-
-  // Best-effort content-type
-  const ct = key.endsWith('.jpg') || key.endsWith('.jpeg') ? 'image/jpeg'
-          : key.endsWith('.png') ? 'image/png'
-          : key.endsWith('.webp') ? 'image/webp'
-          : 'application/octet-stream';
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': ct,
-      // small cache—feel free to adjust
-      'Cache-Control': 'public, max-age=300'
-    }
-  });
 };
