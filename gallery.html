@@ -18,27 +18,25 @@
     .panel{background:#fff;border:1px solid var(--border,#e6e7ea);border-radius:16px;padding:18px}
     .panel h2{font-size:18px;margin:0 0 12px}
 
-    /* Compact page header */
-    .bar{padding:14px 0;border-bottom:1px solid var(--border,#e6e7ea)}
-    .bar .title{font-weight:700;font-size:18px;margin:0}
-    .bar .sub{font-size:14px}
-
     /* Student info card (above photo) */
-    .student-card{display:grid;gap:6px;padding:14px;border:1px solid var(--border,#e6e7ea);border-radius:12px;background:#fff;margin-bottom:12px}
-    .student-name{font-weight:700;font-size:18px;margin:0}
-    .meta-row{display:flex;flex-wrap:wrap;gap:8px}
-    .chip{padding:3px 8px;border-radius:999px;border:1px solid var(--border,#e6e7ea);font-size:12px;background:#fafafa}
+    .student-card{
+      display:grid;gap:10px;padding:16px;border:1px solid var(--border,#e6e7ea);
+      border-radius:12px;background:#fff;margin-bottom:12px;text-align:center;
+    }
+    .student-name{font-weight:700;font-size:20px;margin:0}
+    .meta-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+    .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--border,#e6e7ea);font-size:12px;background:#fafafa}
 
     /* Viewer (fit-to-size image) */
     .viewer figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--border,#e6e7ea);background:#fff}
     .hero-wrap{
       display:flex;align-items:center;justify-content:center;background:#fff;
-      height: clamp(420px, 72vh, 780px); /* keeps whole image visible, see .hero below */
+      height: clamp(420px, 72vh, 780px);
     }
     .hero{
       max-width:100%;max-height:100%;
       width:auto;height:auto;
-      object-fit:contain; /* ✅ show the entire image */
+      object-fit:contain; /* show the entire image */
       display:block;
     }
     .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-top:12px}
@@ -47,7 +45,7 @@
     .thumb[aria-current="true"]{border-color:var(--accent,#0ea5e9)}
     .error{color:#b42318}.hidden{display:none}
 
-    /* Order form (right) — matches your card list style */
+    /* Order form (right) — card list style */
     .stack{display:grid;gap:12px}
     .field{display:grid;gap:8px}
     .select{appearance:none;width:100%;padding:12px 14px;border:1px solid var(--border,#e6e7ea);border-radius:12px;background:#fff;font:inherit}
@@ -80,13 +78,7 @@
     </div>
   </header>
 
-  <!-- Compact page header to preserve vertical space -->
-  <div class="bar">
-    <div class="container">
-      <p class="title" id="pageTitle">Your Gallery</p>
-      <p class="muted sub" id="eventLine">Event</p>
-    </div>
-  </div>
+  <!-- (Removed the top “bar” with event + name) -->
 
   <main class="container" style="padding:18px 0 32px">
     <div class="layout">
@@ -95,6 +87,8 @@
         <div class="student-card">
           <h2 class="student-name" id="studentName">Student Name</h2>
           <div class="meta-row">
+            <!-- Event chip now lives with the other chips -->
+            <span class="chip" id="metaEvent"   style="display:none"></span>
             <span class="chip" id="metaGrade"   style="display:none"></span>
             <span class="chip" id="metaTeacher" style="display:none"></span>
             <span class="chip" id="metaSchool"  style="display:none"></span>
@@ -263,6 +257,7 @@
       attachOrderEvents();
 
       try {
+        // NOTE: Use the route that matches your function file name
         const res = await fetch('/api/get-gallery', { credentials: 'include' });
         if (res.status === 401) { location.href = '/access.html?expired=1'; return; }
         if (!res.ok) throw new Error('fetch failed');
@@ -270,20 +265,23 @@
         const data = await res.json();
         loadMsg.classList.add('hidden');
 
-        // Page header + student card
-        document.getElementById('pageTitle').textContent   = data.studentLabel || 'Your Gallery';
-        document.getElementById('eventLine').textContent   = data.eventName || 'Event';
+        // Student name
         document.getElementById('studentName').textContent = data.studentLabel || 'Student';
 
-        // Optional details if present in your JSON
+        // Chips
         const s = data || {};
-        const gEl = document.getElementById('metaGrade');
-        const tEl = document.getElementById('metaTeacher');
+        const eEl  = document.getElementById('metaEvent');
+        const gEl  = document.getElementById('metaGrade');
+        const tEl  = document.getElementById('metaTeacher');
         const schEl= document.getElementById('metaSchool');
 
-        if (s.grade){ gEl.textContent = `Grade: ${s.grade}`; gEl.style.display='inline-block'; }
-        if (s.teacher){ tEl.textContent = `Teacher: ${s.teacher}`; tEl.style.display='inline-block'; }
-        if (s.school){ schEl.textContent = `School: ${s.school}`; schEl.style.display='inline-block'; }
+        // Event chip (fallback text if you prefer a default)
+        const eventText = s.eventName || 'Fall School Pictures';
+        if (eventText){ eEl.textContent = eventText; eEl.style.display='inline-block'; }
+
+        if (s.grade){   gEl.textContent = `Grade: ${s.grade}`;       gEl.style.display='inline-block'; }
+        if (s.teacher){ tEl.textContent = `Teacher: ${s.teacher}`;   tEl.style.display='inline-block'; }
+        if (s.school){  schEl.textContent = `School: ${s.school}`;   schEl.style.display='inline-block'; }
 
         // Viewer & thumbs
         const hero = document.getElementById('heroImg');
@@ -323,7 +321,7 @@
           credentials:'include',
           body: JSON.stringify({
             source: 'reorder',
-            shippingFeeCents: SHIPPING_FEE_CENTS,
+            shippingFeeCents: 1000,
             packageId: cart.pkg,
             addons: cart.addons
           })
