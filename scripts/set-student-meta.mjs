@@ -6,15 +6,15 @@
 //   node scripts/set-student-meta.mjs CODE [grade] [teacher] [school ...] \
 //     --site SITE_ID --token NETLIFY_AUTH_TOKEN [--debug]
 
-import { getStore } from '@netlify/blobs';
+import { createClient } from '@netlify/blobs';
 
 const argv = process.argv.slice(2);
 
-// pick up env by default, override with flags
+// read from env by default; can be overridden by flags
 let siteID = process.env.NETLIFY_SITE_ID || '';
-let token  = process.env.NETLIFY_AUTH_TOKEN || process.env.NETLIFY_API_TOKEN || '';
-
+let token  = process.env.NETLIFY_AUTH_TOKEN || '';
 let debug = false;
+
 const positionals = [];
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
@@ -33,43 +33,30 @@ if (!code) {
 }
 
 if (!siteID || !token) {
-  console.error('Missing NETLIFY_SITE_ID and/or NETLIFY_AUTH_TOKEN (or NETLIFY_API_TOKEN). Export them or pass --site/--token.');
+  console.error('Missing NETLIFY_SITE_ID and/or NETLIFY_AUTH_TOKEN. Export them or pass --site/--token.');
   process.exit(1);
 }
 
 if (debug) {
-  console.error('DEBUG site present?', Boolean(siteID), 'len', siteID.length);
-  console.error('DEBUG token present?', Boolean(token), 'len', token.length);
+  console.error('DEBUG site len', siteID.length, 'token len', token.length);
 }
 
-// ---- create store (support BOTH signatures) ----
-let meta;
-let usedShape = '';
 try {
-  // Newer API: single object
-  meta = getStore({ name: 'meta', siteID, token });
-  usedShape = 'object';
-} catch (e1) {
-  try {
-    // Older API: name + options
-    meta = getStore('meta', { siteID, token });
-    usedShape = 'two-arg';
-  } catch (e2) {
-    console.error('Failed to create store with both signatures.');
-    console.error('First error:', e1?.message || e1);
-    console.error('Second error:', e2?.message || e2);
-    process.exit(1);
-  }
+  // IMPORTANT: create a client explicitly when running outside Netlify Functions
+  const client = createClient({ siteID, token });        // <-- this is the fix
+  const meta = client.getStore({ name: 'meta' });        // site-scoped store
+
+  const key = `students/${code.toUpperCase()}.json`;
+
+  const current = (await meta.get(key, { type: 'json', consistency: 'strong' })) || {};
+  const updated = { ...current };
+  if (typeof grade   !== 'undefined' && grade !== '') updated.grade   = grade;
+  if (typeof teacher !== 'undefined' && teacher)      updated.teacher = teacher;
+  if (typeof school  !== 'undefined' && school)       updated.school  = school;
+
+  await meta.set(key, JSON.stringify(updated), { contentType: 'application/json' });
+  console.log('Updated', key, updated);
+} catch (err) {
+  console.error('Failed to update meta:', err?.message || err);
+  process.exit(1);
 }
-if (debug) console.error('getStore shape used:', usedShape);
-
-// ---- read, update, write ----
-const key = `students/${code}.json`;
-const current = (await meta.get(key, { type: 'json', consistency: 'strong' })) || {};
-const updated = { ...current };
-if (typeof grade   !== 'undefined' && grade !== '') updated.grade   = grade;
-if (typeof teacher !== 'undefined' && teacher)      updated.teacher = teacher;
-if (typeof school  !== 'undefined' && school)       updated.school  = school;
-
-await meta.set(key, JSON.stringify(updated), { contentType: 'application/json' });
-console.log('Updated', key, updated);
