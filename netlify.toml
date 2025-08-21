@@ -1,27 +1,28 @@
 [build]
-  publish = "."
+  publish   = "."
   functions = "netlify/functions"
 
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["stripe"]
-  included_files = ["netlify/functions/_lib/**"]   # ✅ correct path
+  # Include the shared server lib and the local images you want to seed
+  included_files = [
+    "netlify/functions/_lib/**",
+    "Thomas.jpg",
+    "Avery.jpg"
+  ]
 
-# Pretty /api/* routes to functions
+# Pretty /api/* to Functions (so /api/get-gallery, /api/preview, etc.)
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to   = "/.netlify/functions/:splat"
   status = 200
-  force = true
+  force  = true
 
-# Serve preview images from the preview function
+# Optional: path-style preview URL support in addition to /api/preview?key=...
+# Keep this only if you want to hit /preview/<key> directly.
 [[redirects]]
   from = "/preview/*"
-  to = "/.netlify/functions/preview/:splat"
+  to   = "/.netlify/functions/preview/:splat"
   status = 200
-  force = true
-
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["stripe"]
-  included_files = ["_lib/**", "Thomas.jpg", "Avery.jpg"]  # <-- add your local images here
+  force  = true
