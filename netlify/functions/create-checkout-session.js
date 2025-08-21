@@ -1,4 +1,6 @@
 // netlify/functions/create-checkout-session.js
+const crypto = require("crypto");
+
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") {
@@ -10,19 +12,38 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "Missing or invalid line_items" }) };
     }
 
+    // Base URL for success/cancel
     const origin =
       event.headers?.origin ||
       (event.headers?.host ? `https://${event.headers.host}` : "https://schools.scottymkerphotos.com");
+
+    // ----- Generate friendly Order # (searchable in Stripe) -----
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm   = String(now.getMonth() + 1).padStart(2, "0");
+    const dd   = String(now.getDate()).padStart(2, "0");
+    const rand = (crypto.randomBytes ? crypto.randomBytes(3).toString("hex") : Math.random().toString(36).slice(-6))
+      .slice(-6) // ensure 6 chars
+      .toUpperCase();
+    const order_number = `SYP-${yyyy}${mm}${dd}-${rand}`;
 
     // Build form body
     const form = new URLSearchParams();
     form.set("mode", "payment");
     form.set("success_url", `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`);
-    form.set("cancel_url", `${origin}/order.html`);
+    form.set("cancel_url", `${origin}/multi-order.html`);
 
     // Prefill email + show phone field
     if (email) form.set("customer_email", String(email));
     form.set("phone_number_collection[enabled]", "true");
+
+    // Make Order # searchable:
+    // - client_reference_id
+    // - metadata.order_number on Session
+    // - payment_intent_data.metadata.order_number on PI
+    form.set("client_reference_id", order_number);
+    form.set("metadata[order_number]", order_number);
+    form.set("payment_intent_data[metadata][order_number]", order_number);
 
     // Encode line_items
     line_items.forEach((li, i) => {
@@ -34,7 +55,8 @@ exports.handler = async (event) => {
       form.set(`line_items[${i}][price_data][product_data][name]`, String(p.product_data?.name || "Item"));
     });
 
-    // Mirror metadata to BOTH the Checkout Session and the PaymentIntent
+    // Mirror ALL provided metadata to both the Session and the PaymentIntent
+    // (Order # already set above; this adds the rest.)
     for (const [k, v] of Object.entries(metadata || {})) {
       if (v != null && String(v).trim() !== "") {
         form.set(`metadata[${k}]`, String(v));
@@ -42,6 +64,10 @@ exports.handler = async (event) => {
       }
     }
 
+    // (Optional but nice): a human description on the PI
+    form.set("payment_intent_data[description]", `School Photos Order ${order_number}`);
+
+    // Create Checkout Session via Stripe API (using form-encoded POST)
     const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
