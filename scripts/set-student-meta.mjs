@@ -32,27 +32,44 @@ if (!code) {
   process.exit(1);
 }
 
-if (debug) {
-  console.error('DEBUG site present?', Boolean(siteID), 'len', siteID?.length ?? 0);
-  console.error('DEBUG token present?', Boolean(token), 'len', token?.length ?? 0);
-}
-
 if (!siteID || !token) {
   console.error('Missing NETLIFY_SITE_ID and/or NETLIFY_AUTH_TOKEN (or NETLIFY_API_TOKEN). Export them or pass --site/--token.');
   process.exit(1);
 }
 
-// IMPORTANT: pass creds directly (don’t rely on env in a local shell)
-const meta = getStore({ name: 'meta', siteID, token });
+if (debug) {
+  console.error('DEBUG site present?', Boolean(siteID), 'len', siteID.length);
+  console.error('DEBUG token present?', Boolean(token), 'len', token.length);
+}
 
+// ---- create store (support BOTH signatures) ----
+let meta;
+let usedShape = '';
+try {
+  // Newer API: single object
+  meta = getStore({ name: 'meta', siteID, token });
+  usedShape = 'object';
+} catch (e1) {
+  try {
+    // Older API: name + options
+    meta = getStore('meta', { siteID, token });
+    usedShape = 'two-arg';
+  } catch (e2) {
+    console.error('Failed to create store with both signatures.');
+    console.error('First error:', e1?.message || e1);
+    console.error('Second error:', e2?.message || e2);
+    process.exit(1);
+  }
+}
+if (debug) console.error('getStore shape used:', usedShape);
+
+// ---- read, update, write ----
 const key = `students/${code}.json`;
 const current = (await meta.get(key, { type: 'json', consistency: 'strong' })) || {};
 const updated = { ...current };
-
 if (typeof grade   !== 'undefined' && grade !== '') updated.grade   = grade;
 if (typeof teacher !== 'undefined' && teacher)      updated.teacher = teacher;
 if (typeof school  !== 'undefined' && school)       updated.school  = school;
 
 await meta.set(key, JSON.stringify(updated), { contentType: 'application/json' });
-
 console.log('Updated', key, updated);
