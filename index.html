@@ -20,25 +20,33 @@
 
     /* --- Header + hamburger nav --- */
     :root { --nav-h: 64px; --border:#e6e7ea; --ink:#111; --card:#fff; }
-    /* MAKE HEADER NON-STICKY (scrolls away, no iOS stripe) */
+    /* NON-STICKY header so it scrolls away and no iOS stripe */
     .sitebar { position: relative; z-index: 10; background: var(--card); border-bottom: 1px solid var(--border); }
     .sitebar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--nav-h); }
     .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .brand img { height: 32px; width: auto; }
-    .nav-links { display: flex; gap: 20px; align-items: center; }
+
+    .nav-links { display: flex; gap: 20px; align-items: center; } /* desktop default */
     .nav-toggle { display: none; border: 0; background: transparent; width: 40px; height: 40px; color: var(--ink); }
-    /* force visible bars even if base CSS sets white */
-    .nav-toggle span { display: block; height: 2px; background: currentColor !important; margin: 7px 0; border-radius: 2px; }
+    /* Force visible dark bars regardless of base styles */
+    .nav-toggle span { display: block; height: 2px; background: #111 !important; margin: 7px 0; border-radius: 2px; }
 
     @media (max-width: 768px){
       .nav-toggle { display: inline-flex; align-items: center; justify-content: center; }
+
+      /* IMPORTANT: menu is fully hidden when closed (no border/stripe) */
       .nav-links {
         position: fixed; left: 0; right: 0; top: var(--nav-h);
-        background: var(--card); border-top: 1px solid var(--border);
+        background: var(--card);
+        border-top: 1px solid var(--border);
         flex-direction: column; padding: 12px 16px;
-        max-height: 0; overflow: hidden; transition: max-height .25s ease;
+        display: none;               /* closed: not rendered */
+        pointer-events: none;        /* no taps leak through */
       }
-      .nav-links.open { max-height: 50vh; }
+      .nav-links.open {
+        display: flex;               /* open: visible */
+        pointer-events: auto;
+      }
     }
 
     /* --- Sections/cards --- */
@@ -56,7 +64,6 @@
     .kvs { display: grid; grid-template-columns: 120px 1fr; gap: 10px 12px; align-items: start; }
     .kvs .key { color:#6b7280; }
     .kvs a, .kvs div { min-width: 0; overflow-wrap: break-word; word-break: break-word; }
-    /* On narrow phones, stack label/value to avoid ugly wrapping */
     @media (max-width: 420px){
       .kvs { grid-template-columns: 1fr; }
       .kvs .key { font-weight: 600; margin-top: 8px; }
