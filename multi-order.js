@@ -7,16 +7,47 @@ const ADDON_NAMES    = {
 };
 
 const PACKAGE_BREAKDOWN = {
+  // Base packages (unchanged)
   A:  ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets"],
-  A1: ["Package A","1 × Digital File"],
   B:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 5x7","16 × wallets"],
-  B1: ["Package B","2 × extra 5x7"],
   C:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 3.5x5","4 × wallets","16 × mini wallets"],
-  C1: ["Package C","2 × 5x7"],
   D:  ["1 × 8x10 Class Composite","2 × 5x7","8 × wallets"],
-  D1: ["Package D","16 × mini wallets"],
   E:  ["2 × 5x7","2 × 3.5x5","4 × wallets"],
-  E1: ["Package E","8 × extra wallets"]
+
+  // Updated “*1” descriptions
+  A1: [
+    "1 × 8x10 Class Composite",
+    "2 × 8x10",
+    "2 × 5x7",
+    "8 × wallets",
+    "16 × mini wallets",
+    "1 × Digital File"
+  ],
+  B1: [
+    "1 × 8x10 Class Composite",
+    "1 × 8x10",
+    "4 × 5x7",
+    "16 × wallets"
+  ],
+  C1: [
+    "1 × 8x10 Class Composite",
+    "1 × 8x10",
+    "2 × 3.5x5",
+    "2 × 5x7",
+    "4 × wallets",
+    "16 × mini wallets"
+  ],
+  D1: [
+    "1 × 8x10 Class Composite",
+    "2 × 5x7",
+    "8 × wallets",
+    "16 × mini wallets"
+  ],
+  E1: [
+    "2 × 5x7",
+    "2 × 3.5x5",
+    "12 × wallets"
+  ]
 };
 
 const MAX_STUDENTS = 6;
