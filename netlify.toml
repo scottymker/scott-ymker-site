@@ -20,3 +20,8 @@
   to = "/.netlify/functions/preview/:splat"
   status = 200
   force = true
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["stripe"]
+  included_files = ["_lib/**", "Thomas.jpg", "Avery.jpg"]  # <-- add your local images here
