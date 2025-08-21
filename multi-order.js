@@ -1,330 +1,268 @@
-// ---------- price tables (cents) ----------
-const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
-const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
-const ADDON_NAMES    = {
-  F:"8x10 Print", G:"2x 5x7 Prints", H:"4x 3½x5 Prints", I:"24 Wallets",
-  J:"8 Wallets", K:"16 Mini Wallets", L:"Retouching", M:"8x10 Class Composite", N:"Digital File"
+// --------- Config (edit to match your actual contents/prices) ----------
+const PACKAGE_CONTENTS = {
+  // Example for A based on your note; update B–E to your real contents
+  A: ["1 8x10 Class Composite", "2 8x10", "2 5x7", "8 wallets", "16 mini wallets"],
+  B: ["2 8x10", "4 5x7", "8 wallets", "16 mini wallets"],
+  C: ["1 8x10", "4 5x7", "8 wallets"],
+  D: ["1 8x10", "2 5x7", "8 wallets"],
+  E: ["1 8x10"]
+};
+// If a package has a “*1” add-on (A1/B1/…): what it adds
+const UPGRADE_CONTENT = { A1: "Digital file", B1: "Digital file", C1: "Digital file", D1: "Digital file", E1: "Digital file" };
+
+// (Optional) pricing for Stripe summary display; fill in later if desired
+const PRICES = { pkg: { A: 0, B: 0, C: 0, D: 0, E: 0 }, addon: { A1: 0, B1: 0, C1: 0, D1: 0, E1: 0 } };
+
+// --------- State ----------
+const STATE = {
+  parent: { name: "", email: "", phone: "" },
+  students: []
 };
 
-const PACKAGE_BREAKDOWN = {
-  A:  ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets"],
-  A1: ["Package A","1 × Digital File"],
-  B:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 5x7","16 × wallets"],
-  B1: ["Package B","2 × extra 5x7"],
-  C:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 3.5x5","4 × wallets","16 × mini wallets"],
-  C1: ["Package C","2 × 5x7"],
-  D:  ["1 × 8x10 Class Composite","2 × 5x7","8 × wallets"],
-  D1: ["Package D","16 × mini wallets"],
-  E:  ["2 × 5x7","2 × 3.5x5","4 × wallets"],
-  E1: ["Package E","8 × extra wallets"]
-};
-
-const MAX_STUDENTS = 6;
-
-const $  = (s)=>document.querySelector(s);
-const $$ = (s)=>Array.from(document.querySelectorAll(s));
-const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
-const fmtMoney = (c)=> fmt(c);
-const safeCode = (v)=> (v||'').toString().trim().toUpperCase();
-
-const studentsEl = $('#students');
-const addBtn = $('#addStudent');
-
-function studentTemplate(i){
-  return `
-  <details class="student" data-i="${i}" ${i<=2?'open':''}>
-    <summary>
-      <span class="summ-left">Student ${i}</span>
-      <span class="summ-right muted" data-summ="${i}">Click to expand</span>
-    </summary>
-    <div class="content">
-      <div class="section-title">Student information</div>
-      <div class="row">
-        <input type="text" name="s${i}_first"   placeholder="First name" required oninput="window.renderSummary()">
-        <input type="text" name="s${i}_last"    placeholder="Last name" required oninput="window.renderSummary()">
-      </div>
-      <div class="row" style="margin-top:10px">
-        <input type="text" name="s${i}_teacher" placeholder="Teacher" required oninput="window.renderSummary()">
-        <input type="text" name="s${i}_grade"   placeholder="Grade" required oninput="window.renderSummary()">
-      </div>
-
-      <div class="section-title" style="margin-top:14px">Package</div>
-      <select name="s${i}_package" onchange="window.renderSummary()">
-        <option value="">— Select a Package —</option>
-        <option value="A">Package A — $32</option>
-        <option value="A1">Package A1 — $41</option>
-        <option value="B">Package B — $27</option>
-        <option value="B1">Package B1 — $32</option>
-        <option value="C">Package C — $22</option>
-        <option value="C1">Package C1 — $27</option>
-        <option value="D">Package D — $18</option>
-        <option value="D1">Package D1 — $23</option>
-        <option value="E">Package E — $12</option>
-        <option value="E1">Package E1 — $17</option>
-      </select>
-
-      <div class="section-title" style="margin-top:14px">Add-ons (optional)</div>
-      <div>
-        ${Object.entries(ADDON_NAMES).map(([code, name])=>(
-          `<label class="addon">
-             <input type="checkbox" name="s${i}_addons" value="${code}" disabled onchange="window.renderSummary()">
-             ${code} — ${name} <span class="muted">($${(ADDON_PRICES[code]/100).toFixed(2)})</span>
-           </label>`
-        )).join('')}
-      </div>
-
-      <div class="section-title" style="margin-top:14px">Background</div>
-      <select name="s${i}_background" onchange="window.renderSummary()">
-        <option value="F1" selected>F1 (Default)</option>
-        <option value="F2">F2</option>
-        <option value="F3">F3</option>
-        <option value="F4">F4</option>
-        <option value="F5">F5</option>
-        <option value="F6">F6</option>
-      </select>
-
-      <div class="actions" style="justify-content:flex-end;margin-top:14px">
-        <button type="button" class="btn small rm" data-remove="${i}" onclick="window.__removeStudent(${i})">Remove student</button>
-      </div>
-    </div>
-  </details>`;
-}
-
-function renumberStudents(){
-  [...studentsEl.children].forEach((det, idx)=>{
-    const i = idx+1;
-    det.dataset.i = i;
-    det.querySelector('.summ-left').textContent = `Student ${i}`;
-    det.querySelectorAll('[name]').forEach(inp=>{
-      inp.name = inp.name.replace(/s\d+_/,'s'+i+'_');
-    });
-    const rm = det.querySelector('[data-remove]');
-    if (rm) rm.dataset.remove = i;
-    const span = det.querySelector('[data-summ]');
-    if (span) span.setAttribute('data-summ', i);
+// Utility
+const $ = (sel, root=document) => root.querySelector(sel);
+const el = (tag, props={}, children=[]) => {
+  const n = document.createElement(tag);
+  Object.entries(props).forEach(([k,v]) => {
+    if (k === "class") n.className = v;
+    else if (k === "html") n.innerHTML = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
   });
-  updateSummaryHeaders();
+  children.forEach(c => n.appendChild(c));
+  return n;
+};
+
+// --------- Student UI ----------
+function studentTemplate(idx, data={}) {
+  const s = {
+    first: data.first || "",
+    last: data.last || "",
+    grade: data.grade || "",
+    teacher: data.teacher || "",
+    background: data.background || "F1",
+    pkg: data.pkg || "",
+    addon1: data.addon1 || false // “*1” upgrade (Digital file)
+  };
+
+  const details = el("details", { class: "student", open: true });
+  const summary = el("summary");
+  const left = el("div", { class: "summ-left", html: `Student ${idx+1}` });
+  const right = el("div", { class: "summ-right", html: nameLabel(s) });
+  summary.append(left, right);
+  details.appendChild(summary);
+
+  // Content
+  const content = el("div", { class: "content" });
+
+  // Identity row
+  const row1 = el("div", { class: "row" }, [
+    field("First name", "text", s.first, v => { s.first = v; STATE.students[idx] = s; right.textContent = nameLabel(s); renderSummary(); }),
+    field("Last name",  "text", s.last,  v => { s.last  = v; STATE.students[idx] = s; right.textContent = nameLabel(s); renderSummary(); }),
+  ]);
+
+  // School row
+  const row2 = el("div", { class: "row" }, [
+    field("Grade", "text", s.grade, v => { s.grade = v; renderSummary(); }),
+    field("Teacher", "text", s.teacher, v => { s.teacher = v; renderSummary(); }),
+  ]);
+
+  // Background + Package
+  const bgSelect = selectField("Background", ["F1","F2","F3","F4","F5","F6"], s.background, v => { s.background = v; renderSummary(); });
+
+  const pkgSelect = selectField("Package", ["","A","B","C","D","E"], s.pkg, v => {
+    s.pkg = v;
+    // enable/rename upgrade checkbox based on package
+    if (upgradeBox) {
+      upgradeBox.querySelector("input").disabled = !s.pkg;
+      const code = s.pkg ? `${s.pkg}1` : "—";
+      upgradeBox.querySelector("span").textContent = s.pkg ? `${code} — Digital file` : "Select a package to enable upgrade";
+    }
+    renderSummary();
+  });
+
+  const row3 = el("div", { class: "row" }, [bgSelect, pkgSelect]);
+
+  // Add-on (package-specific *1)
+  const upgradeBox = el("label", { class: "addon" });
+  const upgradeInput = el("input", {
+    type: "checkbox",
+    onchange: e => { s.addon1 = e.target.checked; renderSummary(); }
+  });
+  const upgradeText = el("span", {}, []);
+  upgradeBox.append(upgradeInput, upgradeText);
+  // initialize addon label / disabled state
+  if (s.pkg) {
+    upgradeInput.disabled = false;
+    upgradeText.textContent = `${s.pkg}1 — Digital file`;
+  } else {
+    upgradeInput.disabled = true;
+    upgradeText.textContent = "Select a package to enable upgrade";
+  }
+
+  // Remove student
+  const removeBtn = el("button", {
+    class: "btn rm small",
+    type: "button",
+    onclick: () => removeStudent(idx)
+  }, []);
+  removeBtn.textContent = "Remove student";
+
+  content.append(row1, row2, row3, upgradeBox, removeBtn);
+  details.appendChild(content);
+
+  // Persist to state
+  STATE.students[idx] = s;
+  return details;
 }
 
-function addStudent(){
-  const count = studentsEl.children.length;
-  if (count>=MAX_STUDENTS) { alert(`Limit ${MAX_STUDENTS} students per order.`); return; }
-  const i = count+1;
-  studentsEl.insertAdjacentHTML('beforeend', studentTemplate(i));
-  updateSummaryHeaders();
+function field(labelText, type, value, oninput) {
+  const wrap = el("div", {}, []);
+  const label = el("label", { html: labelText });
+  const input = el("input", { type, value });
+  input.addEventListener("input", e => oninput(e.target.value));
+  wrap.append(label, input);
+  return wrap;
+}
+function selectField(labelText, options, value, onchange) {
+  const wrap = el("div", {}, []);
+  const label = el("label", { html: labelText });
+  const sel = el("select", {}, []);
+  options.forEach(opt => sel.appendChild(el("option", { value: opt, html: opt || "Select…" })));
+  sel.value = value;
+  sel.addEventListener("change", e => onchange(e.target.value));
+  wrap.append(label, sel);
+  return wrap;
+}
+function nameLabel(s){ return (s.first || s.last) ? `${s.first} ${s.last}`.trim() : "New student"; }
+
+function addStudent(prefill={}) {
+  const idx = STATE.students.length;
+  const node = studentTemplate(idx, prefill);
+  $("#students").appendChild(node);
+  // Only allow removal if >1 students
+  updateRemoveButtons();
+}
+
+function removeStudent(idx){
+  STATE.students.splice(idx, 1);
+  // Rebuild the list with corrected numbering
+  $("#students").innerHTML = "";
+  STATE.students.forEach((s, i) => { const n = studentTemplate(i, s); $("#students").appendChild(n); });
+  updateRemoveButtons();
   renderSummary();
 }
 
-function removeStudent(i){
-  const el = studentsEl.querySelector(`details[data-i="${i}"]`);
-  if (el){ el.remove(); renumberStudents(); renderSummary(); }
+function updateRemoveButtons(){
+  const buttons = Array.from(document.querySelectorAll(".btn.rm"));
+  buttons.forEach(b => b.disabled = (STATE.students.length <= 1));
+  buttons.forEach(b => b.style.opacity = (STATE.students.length <= 1 ? 0.5 : 1));
 }
 
-// expose for inline handlers
-window.__removeStudent = removeStudent;
+// --------- Summary ----------
+window.renderSummary = function renderSummary(){
+  // Parent KV
+  const pn = $('input[name="parent_name"]').value.trim();
+  const pe = $('input[name="parent_email"]').value.trim();
+  const pp = $('input[name="parent_phone"]').value.trim();
+  $('#kvParent').textContent = pn || "—";
+  $('#kvEmail').textContent  = pe || "—";
+  $('#kvPhone').textContent  = pp || "—";
 
-// seed with 2 students
-addStudent(); addStudent();
-
-// -------- Header helpers ----------
-function studentName(det){
-  const first = det.querySelector('[name$="_first"]')?.value.trim() || '';
-  const last  = det.querySelector('[name$="_last"]')?.value.trim()  || '';
-  if (first || last) return `${first} ${last}`.trim();
-  const i = det.dataset.i || '';
-  return `Student ${i}`.trim();
-}
-function studentSubLabel(det){
-  const t = det.querySelector('[name$="_teacher"]')?.value.trim() || '';
-  const g = det.querySelector('[name$="_grade"]')?.value.trim()   || '';
-  const pkg = safeCode(det.querySelector('[name$="_package"]')?.value);
-  const pkgTxt = pkg ? `Pkg ${pkg}` : '';
-  const parts = [t, g, pkgTxt].filter(Boolean);
-  return parts.join(' / ');
-}
-function updateSummaryHeaders(){
-  [...studentsEl.children].forEach((det)=>{
-    const i = det.dataset.i || '';
-    const name = studentName(det);
-    const extra = studentSubLabel(det);
-    const span = det.querySelector('[data-summ]');
-    const left = det.querySelector('.summ-left');
-    const base = `Student ${i}`;
-
-    if (left){
-      if (/^Student \d+$/.test(name)) left.textContent = base;
-      else left.textContent = `${base}: ${name}`;
-    }
-    if (!span) return;
-    if (extra){
-      span.textContent = `${name} — ${extra}`;
-      span.classList.remove('muted');
-    }else if (!/^Student \d+$/.test(name)){
-      span.textContent = name;
-      span.classList.remove('muted');
-    }else{
-      span.textContent = 'Click to expand';
-      span.classList.add('muted');
-    }
-  });
-}
-
-// -------- Collect + Summary ----------
-function enforceAddonRules(det){
-  const hasPkg = !!safeCode(det.querySelector('[name$="_package"]')?.value);
-  det.querySelectorAll('[name$="_addons"]').forEach(cb=>{
-    cb.disabled = !hasPkg;
-    if (!hasPkg && cb.checked) cb.checked = false;
-  });
-}
-
-function collect(){
-  const parent = {
-    name: $('[name="parent_name"]')?.value.trim() || '',
-    phone: $('[name="parent_phone"]')?.value.trim() || '',
-    email: $('[name="parent_email"]')?.value.trim() || ''
-  };
-
-  const students = [...studentsEl.querySelectorAll('details')].map((det)=>{
-    enforceAddonRules(det);
-    const pkgSel = det.querySelector('[name$="_package"]');
-    const bgSel  = det.querySelector('[name$="_background"]');
-    const addons = [...det.querySelectorAll('[name$="_addons"]:checked')].map(x=>safeCode(x.value));
-    return {
-      det,
-      name: studentName(det),
-      teacher: det.querySelector('[name$="_teacher"]')?.value.trim() || '',
-      grade:   det.querySelector('[name$="_grade"]')?.value.trim()   || '',
-      pkg:     safeCode(pkgSel?.value),
-      bg:      safeCode(bgSel?.value) || 'F1',
-      addons
-    };
-  });
-
-  return { parent, students };
-}
-
-function renderSummary(){
-  const { parent, students } = collect();
-  $('#kvParent').textContent = parent.name || '—';
-  $('#kvEmail').textContent  = parent.email || '—';
-  $('#kvPhone').textContent  = parent.phone || '—';
-
-  const body = $('#sumItems'); if (!body) return;
-  body.innerHTML='';
+  // Table
+  const body = $('#sumItems');
+  body.innerHTML = "";
   let total = 0;
 
-  students.forEach((s)=>{
-    if (!s.pkg && !s.addons.length) return;
+  STATE.students.forEach((s, idx) => {
+    if (!s) return;
+    // Main row for the package (only if selected)
+    if (s.pkg) {
+      const pkgPrice = PRICES.pkg[s.pkg] || 0;
+      total += pkgPrice;
 
-    if (s.pkg){
-      const amt = PACKAGE_PRICES[s.pkg] ?? 0;
-      total += amt;
-      body.insertAdjacentHTML('beforeend',
-        `<tr><td>${s.name} — Package ${s.pkg}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
-      const breakdown = PACKAGE_BREAKDOWN[s.pkg] || [];
-      if (breakdown.length){
-        body.insertAdjacentHTML('beforeend',
-          `<tr class="subrow"><td colspan="3"><div class="sub">• ${breakdown.join('<br>• ')}</div></td></tr>`);
+      const tr = el("tr", {}, [
+        el("td", { html: `${s.first || "Student"} ${s.last || ""} — Package ${s.pkg}` }),
+        el("td", { html: "1" }),
+        el("td", { html: pkgPrice ? `$${pkgPrice.toFixed(2)}` : "—" })
+      ]);
+      body.appendChild(tr);
+
+      // Subrow: show detailed contents (A + A1, etc.)
+      const contents = [...(PACKAGE_CONTENTS[s.pkg] || [])];
+
+      // Add upgrade contents if chosen
+      if (s.addon1) {
+        const code = `${s.pkg}1`;
+        if (UPGRADE_CONTENT[code]) contents.push(UPGRADE_CONTENT[code]);
+        const addPrice = PRICES.addon[code] || 0;
+        total += addPrice;
+        const trAdd = el("tr", { class: "subrow" }, [
+          el("td", { class: "sub", html: `<strong>${code}</strong> — ${UPGRADE_CONTENT[code] || ""}` }),
+          el("td", { class: "sub", html: "" }),
+          el("td", { class: "sub", html: addPrice ? `$${addPrice.toFixed(2)}` : "—" })
+        ]);
+        body.appendChild(trAdd);
       }
+
+      // Show package contents line (always)
+      if (contents.length){
+        const trSub = el("tr", { class: "subrow" }, [
+          el("td", { class: "sub", html: contents.join(", ") }),
+          el("td", { class: "sub", html: "" }),
+          el("td", { class: "sub", html: "" })
+        ]);
+        body.appendChild(trSub);
+      }
+
+      // Optional: show background
+      const trBg = el("tr", { class: "subrow" }, [
+        el("td", { class: "sub", html: `Background: ${s.background || "F1"}` }),
+        el("td", { class: "sub", html: "" }),
+        el("td", { class: "sub", html: "" })
+      ]);
+      body.appendChild(trBg);
     }
-    s.addons.forEach(code=>{
-      const amt = ADDON_PRICES[code] ?? 0;
-      total += amt;
-      body.insertAdjacentHTML('beforeend',
-        `<tr><td>${s.name} — Add-on ${code} — ${ADDON_NAMES[code]||''}</td><td>1</td><td>${fmtMoney(amt)}</td></tr>`);
-    });
   });
 
-  if (!body.children.length){
-    body.insertAdjacentHTML('beforeend',
-      `<tr><td class="muted">Select a package/add-ons to build your order…</td><td></td><td></td></tr>`);
-  }
+  $('#sumTotal').textContent = `$${total.toFixed(2)}`;
+};
 
-  $('#sumTotal').textContent = fmtMoney(total);
-  updateSummaryHeaders();
-}
+// --------- Init & events ----------
+document.addEventListener("DOMContentLoaded", () => {
+  // Hook parent inputs into state so summary updates instantly
+  $('input[name="parent_name"]').addEventListener('input', () => renderSummary());
+  $('input[name="parent_email"]').addEventListener('input', () => renderSummary());
+  $('input[name="parent_phone"]').addEventListener('input', () => renderSummary());
 
-window.renderSummary = renderSummary; // expose globally for inline handlers
-renderSummary();
+  // Default: 1 student
+  addStudent({ background: "F1" });
 
-// -------- Submit ----------
-document.getElementById('multiForm').addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const { parent, students } = collect();
+  // “Add another student”
+  const addBtn = document.getElementById('addStudent');
+  addBtn.addEventListener('click', () => addStudent({ background: "F1" }));
 
-  if (!parent.name || !parent.phone || !parent.email){
-    alert('Please complete parent name, phone, and email.'); return;
-  }
-  if (!students.some(s=>!!s.pkg)){
-    alert('Pick a package for at least one student.'); return;
-  }
-
-  const line_items = [];
-  students.forEach(s=>{
-    if (s.pkg){
-      line_items.push({
-        price_data: {
-          currency:"usd",
-          product_data:{ name:`${s.name} — Package ${s.pkg}` },
-          unit_amount: PACKAGE_PRICES[s.pkg] ?? 0
-        },
-        quantity:1
-      });
+  // Form submit (wire to your Netlify Function / Stripe later)
+  document.getElementById('multiForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    // client-side required check
+    const missingPkg = STATE.students.findIndex(s => !s.pkg);
+    if (!STATE.parent?.email && !$('input[name="parent_email"]').value) {
+      alert("Please enter a parent email.");
+      return;
     }
-    s.addons.forEach(code=>{
-      line_items.push({
-        price_data:{
-          currency:"usd",
-          product_data:{ name:`${s.name} — Add-on ${code} — ${ADDON_NAMES[code]||''}` },
-          unit_amount: ADDON_PRICES[code] ?? 0
-        },
-        quantity:1
-      });
-    });
+    if (missingPkg !== -1) {
+      alert(`Student ${missingPkg+1}: please select a package.`);
+      return;
+    }
+    // TODO: call your /api/create-checkout-session here with STATE
+    console.log("Payload ready:", { parent: {
+      name: $('input[name="parent_name"]').value.trim(),
+      email: $('input[name="parent_email"]').value.trim(),
+      phone: $('input[name="parent_phone"]').value.trim(),
+    }, students: STATE.students });
+    alert("Test mode: checkout call not wired in this QA build.");
   });
 
-  const metadata = {
-    parent_name: parent.name,
-    parent_phone: parent.phone,
-    parent_email: parent.email,
-    students_count: String(students.length)
-  };
-  students.forEach((s, idx)=>{
-    const k = idx+1;
-    metadata[`s${k}_name`] = s.name;
-    metadata[`s${k}_teacher`] = s.teacher;
-    metadata[`s${k}_grade`] = s.grade;
-    metadata[`s${k}_bg`] = s.bg;
-    metadata[`s${k}_pkg`] = s.pkg || '';
-    metadata[`s${k}_addons`] = s.addons.join(', ');
-  });
-
-  const email = parent.email;
-  const btn = $('#checkout'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Processing…';
-
-  try{
-    const res = await fetch('/.netlify/functions/create-checkout-session', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify({
-        line_items,
-        email,
-        metadata,
-        students: students.map(s=>({package:s.pkg, addons:s.addons, name:s.name, background:s.bg}))
-      })
-    });
-    const json = await res.json();
-    if(!res.ok){
-      console.error(json);
-      alert(json?.details?.error?.message || json?.error || 'Stripe error');
-      btn.disabled=false; btn.textContent=orig; return;
-    }
-    if(json.url){ window.location.href=json.url; }
-    else{ alert('No checkout URL returned.'); btn.disabled=false; btn.textContent=orig; }
-  }catch(err){
-    console.error(err);
-    alert('Network error. Please try again.');
-    btn.disabled=false; btn.textContent=orig;
-  }
+  renderSummary();
 });
