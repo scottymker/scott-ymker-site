@@ -1,359 +1,195 @@
-// netlify/functions/stripe-webhook.js
-'use strict';
+// netlify/functions/stripe-webhook.js (CommonJS)
+const crypto = require("crypto");
+const { modernReceipt2, PACKAGE_BREAKDOWN, ADDON_NAMES } = require("./_emails/templates");
+const fetch = global.fetch || require("node-fetch");
 
-/**
- * ENV required:
- *  - SHEETS_WEB_APP_URL      (Apps Script Web App endpoint that accepts JSON POST)
- *  - RESEND_API_KEY          (Resend API key)
- *  - EMAIL_FROM              (e.g. 'Scott Ymker Photography <scott@scottymkerphotos.com>')
- * Optional:
- *  - EMAIL_BCC               (e.g. 'scott@scottymkerphotos.com')
- *  - REPLY_TO_EMAIL          (e.g. 'scott@scottymkerphotos.com')
- */
+// ---- env ----
+const STRIPE_SECRET = process.env.STRIPE_SECRET_KEY;
+const STRIPE_SIGNING_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const EMAIL_FROM = process.env.EMAIL_FROM || "Scott Ymker Photography <scott@scottymkerphotos.com>";
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || "scott@scottymkerphotos.com";
+const EMAIL_BCC = process.env.EMAIL_BCC || ""; // optional
+
+// ---- helpers ----
+const money = (c = 0) => Number(c || 0);
+const fmtOrderNum = (id) => String(id || "").replace(/^cs_/i, "SYP-").toUpperCase();
+
+// Mirror of your price tables (cents)
+const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
+const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
+
+// Verify Stripe signature (raw body)
+function verifyStripeSig(raw, sig, secret) {
+  // Using Stripe's recommended scheme v1 signature check
+  // Accept any timestamp; Netlify cold starts can shift a bit
+  if (!sig || !secret) return false;
+  const parts = Object.fromEntries(sig.split(",").map(p => p.trim().split("=")));
+  if (!parts.t || !parts.v1) return false;
+  const signed = `${parts.t}.${raw}`;
+  const expected = crypto.createHmac("sha256", secret).update(signed).digest("hex");
+  return crypto.timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected));
+}
+
+// Send email via Resend
+async function sendEmail({ to, subject, html }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      reply_to: REPLY_TO_EMAIL,
+      bcc: EMAIL_BCC ? [EMAIL_BCC] : undefined,
+    }),
+  });
+  if (!res.ok) {
+    const j = await res.text().catch(() => "");
+    throw new Error(`Resend error ${res.status}: ${j}`);
+  }
+}
+
+// (Optional) Append to Google Sheet if webhook app URL is set
+async function appendToSheet({ webAppUrl, row }) {
+  if (!webAppUrl) return;
+  const r = await fetch(webAppUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(row),
+  });
+  // don’t throw on sheets; log only
+  if (!r.ok) console.warn("Sheets append failed", await r.text().catch(()=>("")));
+}
 
 exports.handler = async (event) => {
   try {
-    if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, body: 'Method Not Allowed' };
+    if (event.httpMethod !== "POST") {
+      return { statusCode: 405, body: "Method Not Allowed" };
     }
 
-    const payload = JSON.parse(event.body || '{}');
-    // Stripe sends the whole event wrapper; we only care about completed Checkout Session
-    const type = payload.type || payload.event || '';
-    const session = payload.data && payload.data.object ? payload.data.object : payload;
+    const rawBody = event.body || "";
+    const sig = event.headers["stripe-signature"];
 
-    if ((type && type !== 'checkout.session.completed') &&
-        (session.object !== 'checkout.session')) {
-      // Ignore unrelated events
-      return json(200, { ok: true, ignored: true });
+    if (!verifyStripeSig(rawBody, sig, STRIPE_SIGNING_SECRET)) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Invalid signature" }) };
     }
 
-    // ----- Extract values from the Checkout Session -----
-    const sessionId     = session.id || '';
-    const created       = session.created || Math.floor(Date.now()/1000);
-    const currency      = (session.currency || 'usd').toLowerCase();
-    const total         = session.amount_total || 0;
-    const parentEmail   = session.customer_email || (session.customer_details && session.customer_details.email) || '';
-    const parentPhone   = (session.customer_details && session.customer_details.phone) || '';
-    const paymentStatus = session.payment_status || 'paid';
-    const receiptUrl    = (session.latest_charge && session.latest_charge.receipt_url) || '';
-    const pmBrand       = (session.payment_method_types && session.payment_method_types[0]) || '';
-    const pmLast4       = (session.payment_method && session.payment_method.card && session.payment_method.card.last4) || '';
+    const wrapper = JSON.parse(rawBody);
+    if (wrapper.type !== "checkout.session.completed") {
+      return { statusCode: 200, body: JSON.stringify({ ok: true, ignored: wrapper.type }) };
+    }
 
+    const session = wrapper.data?.object || {};
     const md = session.metadata || {};
+    const parentEmail =
+      session.customer_details?.email ||
+      session.customer_email ||
+      md.parent_email ||
+      "";
 
-    // Friendly order number from session id
-    const orderNumber = buildOrderNumber(sessionId, created);
+    // Reconstruct students from metadata s1_*, s2_* ...
+    const students = [];
+    for (let i = 1; i <= 12; i++) {
+      const name = md[`s${i}_name`] || "";
+      const pkg = (md[`s${i}_pkg`] || "").toUpperCase();
+      const addons = (md[`s${i}_addons`] || "")
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean);
 
-    // Collect students from metadata (s1_*, s2_* …)
-    const students = collectStudentsFromMetadata(md, currency);
+      if (!name && !pkg && !addons.length) continue;
 
-    // ---- Append to Google Sheets (same columns you already had working) ----
-    // We keep: Timestamp, Order #, First, Last, Grade, Teacher, Packages, Background, Parent Email
-    try {
-      if (process.env.SHEETS_WEB_APP_URL) {
-        const rows = students.map((s) => ([
-          new Date().toISOString(),
-          orderNumber,
-          s.first,
-          s.last,
-          s.grade,
-          s.teacher,
-          s.packageLine,      // e.g. "B1, H"
-          s.background || '',
-          parentEmail
-        ]));
-        await appendToSheets(process.env.SHEETS_WEB_APP_URL, rows);
-        console.log('Sheets appended', rows.length, 'row(s) for order', orderNumber);
-      } else {
-        console.warn('SHEETS_WEB_APP_URL not set; skipping Sheets append');
-      }
-    } catch (err) {
-      console.error('Sheets append error:', err);
+      // per-student total
+      let amount = 0;
+      if (pkg && PACKAGE_PRICES[pkg] != null) amount += PACKAGE_PRICES[pkg];
+      addons.forEach((code) => {
+        if (ADDON_PRICES[code] != null) amount += ADDON_PRICES[code];
+      });
+
+      students.push({
+        name,
+        pkg,
+        addons,
+        amountCents: amount,
+      });
     }
 
-    // ---- Send receipt email via Resend (inline template) ----
-    try {
-      const hasResend = !!process.env.RESEND_API_KEY && !!process.env.EMAIL_FROM;
-      console.log('webhook.ok {');
-      console.log('  orderNumber:', `'${orderNumber}',`);
-      console.log('  parentEmail:', `'${parentEmail}',`);
-      console.log('  hasProvider:', hasResend);
-      console.log('}');
+    // Order number + times + totals
+    const orderNumber = fmtOrderNum(session.id);
+    const totalCents = money(session.amount_total);
+    const currency = session.currency || "usd";
+    const paidAtISO = new Date((session.created || Math.floor(Date.now()/1000)) * 1000).toISOString();
 
-      if (hasResend && parentEmail) {
-        const emailProps = {
-          brandName: 'Scott Ymker Photography',
-          logoUrl: absoluteLogoUrl(event),
+    // Receipt URL (your success page)
+    const origin =
+      process.env.PUBLIC_BASE_URL ||
+      `https://${event.headers.host}`;
+    const receiptUrl = `${origin.replace(/\/+$/,"")}/success.html?session_id=${encodeURIComponent(session.id)}`;
+
+    // Build & send email
+    const html = modernReceipt2({
+      businessName: "Scott Ymker Photography",
+      logoUrl: `${origin.replace(/\/+$/,"")}/2020Logo_black.png`,
+      orderNumber,
+      paidAtISO,
+      totalCents,
+      currency,
+      receiptUrl,
+      parentEmail,
+      students,
+      contact: {
+        email: "scott@scottymkerphotos.com",
+        phone: "605-550-0828",
+        site: "https://scottymkerphotos.com",
+      },
+    });
+
+    await sendEmail({
+      to: parentEmail || EMAIL_BCC || REPLY_TO_EMAIL, // always send somewhere
+      subject: `Receipt • ${orderNumber} • Scott Ymker Photography`,
+      html,
+    });
+
+    // Optional Google Sheets append (single row summary)
+    // NOTE: If you want every student on its own row, loop here.
+    const SHEETS_WEB_APP_URL = process.env.SHEETS_WEB_APP_URL || "";
+    if (SHEETS_WEB_APP_URL) {
+      const packagesJoined = students
+        .map((s) => [s.pkg, ...(s.addons || [])].filter(Boolean).join(", "))
+        .join(" | ");
+
+      await appendToSheet({
+        webAppUrl: SHEETS_WEB_APP_URL,
+        row: {
           orderNumber,
-          created,
-          total,
-          currency,
           parentEmail,
-          receiptUrl,
-          viewOrderUrl: successPageUrl(event, sessionId),
-          students,
-          pmBrand,
-          pmLast4
-        };
-        const msg = modernReceipt(emailProps);
-
-        await sendResendEmail({
-          subject: msg.subject,
-          html: msg.html,
-          text: msg.text,
-          to: parentEmail,
-          from: process.env.EMAIL_FROM,
-          bcc: process.env.EMAIL_BCC || '',
-          replyTo: process.env.REPLY_TO_EMAIL || ''
-        });
-        console.log('email.sent { to:', parentEmail, '}');
-      } else {
-        console.warn('Resend not configured or no parentEmail; skipping email send');
-      }
-    } catch (err) {
-      console.error('Email send error:', err);
-      // Don’t fail the webhook because of email issues
+          packages: packagesJoined,
+          // If you want first student name/grade/teacher from metadata:
+          firstName: (md["s1_name"] || "").split(" ").slice(0, -1).join(""),
+          lastName:  (md["s1_name"] || "").split(" ").slice(-1).join(""),
+          grade: md["s1_grade"] || "",
+          teacher: md["s1_teacher"] || "",
+          background: md["s1_bg"] || "",
+          total: (totalCents/100).toFixed(2),
+          paidAt: paidAtISO,
+        },
+      });
     }
 
-    return json(200, { ok: true });
+    console.info("webhook.ok {");
+    console.info("  orderNumber:", `'${orderNumber}',`);
+    console.info("  parentEmail:", `'${parentEmail}',`);
+    console.info("  hasProvider:", !!RESEND_API_KEY);
+    console.info("}");
+
+    return { statusCode: 200, body: JSON.stringify({ ok: true }) };
   } catch (err) {
-    console.error('webhook.fatal', err);
-    return json(200, { ok: false, error: String(err && err.message || err) });
+    console.error("webhook.error:", err);
+    return { statusCode: 500, body: JSON.stringify({ error: String(err) }) };
   }
 };
-
-/* ----------------------- Helpers ----------------------- */
-
-function json(status, obj) {
-  return { statusCode: status, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) };
-}
-
-function buildOrderNumber(sessionId, createdEpoch) {
-  // Format: SYP-YYYYMMDD-XXXXXX  (6 from the tail of the id)
-  const d = new Date((createdEpoch || Date.now()/1000) * 1000);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth()+1).padStart(2,'0');
-  const day = String(d.getUTCDate()).padStart(2,'0');
-  const tail = (sessionId || '').replace(/^cs_/, '').replace(/[^a-zA-Z0-9]/g,'').slice(-6).toUpperCase() || 'XXXXXX';
-  return `SYP-${y}${m}${day}-${tail}`;
-}
-
-function collectStudentsFromMetadata(md, currency) {
-  const out = [];
-  const count = parseInt(md.students_count || md.student_count || md.count || '0', 10) || guessStudentCount(md);
-  for (let i=1;i<=count;i++){
-    const first = (md[`s${i}_name`] || md[`s${i}_first`] || '').split(' ')[0] || '';
-    const last  = md[`s${i}_last`] || (md[`s${i}_name`] ? md[`s${i}_name`].split(' ').slice(1).join(' ') : '');
-    const grade = md[`s${i}_grade`] || '';
-    const teacher = md[`s${i}_teacher`] || '';
-    const pkg  = (md[`s${i}_pkg`] || '').toUpperCase();
-    const addons = (md[`s${i}_addons`] || '')
-      .split(',')
-      .map(s=>s.trim())
-      .filter(Boolean)
-      .join(', ');
-    const background = md[`s${i}_bg`] || md[`s${i}_background`] || '';
-
-    const packageLine = [pkg, addons].filter(Boolean).join(', '); // e.g. "B1, H"
-
-    // If amounts per-student were not included, leave undefined
-    const amount = md[`s${i}_amount`] ? Number(md[`s${i}_amount`]) : undefined;
-
-    out.push({
-      index:i, first, last,
-      name: [first,last].filter(Boolean).join(' '),
-      grade, teacher, pkg, addons,
-      background, packageLine, amount, currency
-    });
-  }
-  return out;
-}
-
-function guessStudentCount(md) {
-  const keys = Object.keys(md||{});
-  const set = new Set();
-  keys.forEach(k=>{
-    const m = k.match(/^s(\d+)_/);
-    if (m) set.add(Number(m[1]));
-  });
-  return set.size || 1;
-}
-
-async function appendToSheets(webAppUrl, rows) {
-  await fetch(webAppUrl, {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ rows })
-  });
-}
-
-async function sendResendEmail({ subject, html, text, to, from, bcc, replyTo }) {
-  const payload = {
-    from,
-    to: Array.isArray(to) ? to : [to],
-    subject,
-    html,
-    text
-  };
-  if (bcc) payload.bcc = Array.isArray(bcc) ? bcc : [bcc];
-  if (replyTo) payload.reply_to = replyTo;
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(()=> '');
-    throw new Error(`Resend error ${res.status}: ${body}`);
-  }
-}
-
-/* ------------- Inline email template (no imports) ------------- */
-
-const money = (cents = 0, currency = 'usd') =>
-  (Number(cents) / 100).toLocaleString(undefined, {
-    style: 'currency',
-    currency: String(currency || 'USD').toUpperCase(),
-  });
-
-function modernReceipt(props = {}) {
-  const {
-    brandName = 'Scott Ymker Photography',
-    logoUrl = '',
-    orderNumber = '',
-    created,
-    total = 0,
-    currency = 'usd',
-    parentEmail = '',
-    receiptUrl = '',
-    viewOrderUrl = '',
-    students = [],
-    pmBrand = '',
-    pmLast4 = '',
-  } = props;
-
-  const createdStr = created
-    ? new Date(created * 1000).toLocaleString()
-    : new Date().toLocaleString();
-
-  const subject = `Receipt ${orderNumber} — ${brandName}`;
-
-  const studentRows = (students && students.length ? students : []).map((s) => {
-    const line = s.packageLine || [s.pkg, s.addons].filter(Boolean).join(', ');
-    const amt = s.amount != null ? money(s.amount, currency) : '';
-    return `
-      <tr>
-        <td style="padding:8px 0;font-weight:600;">${escapeHtml(s.name || '')}</td>
-        <td style="padding:8px 0;color:#555;">${escapeHtml(line || '')}</td>
-        <td style="padding:8px 0;text-align:right;white-space:nowrap;">${amt}</td>
-      </tr>`;
-  }).join('');
-
-  const pm = [pmBrand ? pmBrand.toUpperCase() : '', pmLast4 ? `•••• ${pmLast4}` : '']
-    .filter(Boolean).join(' · ');
-
-  const html = `<!doctype html>
-<html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>${escapeHtml(subject)}</title></head>
-<body style="margin:0;background:#f6f7f9;padding:24px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#f6f7f9;">
-    <tr><td style="padding:0 8px 16px 8px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        ${logoUrl ? `<img src="${escapeAttr(logoUrl)}" alt="${escapeAttr(brandName)}" style="height:36px;width:auto;border:0;display:block;" />` : ''}
-        <div style="font-weight:700;font-size:16px;color:#111;">${escapeHtml(brandName)}</div>
-      </div>
-    </td></tr>
-
-    <tr><td style="padding:0 8px 16px 8px;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #e7e7e9;border-radius:14px;">
-        <tr><td style="padding:20px;">
-          <div style="font-size:20px;font-weight:700;color:#111;margin:0 0 6px 0;">Receipt • ${escapeHtml(brandName)}</div>
-          <div style="color:#68707a;font-size:14px;margin:0 0 10px 0;">Paid ${escapeHtml(createdStr)}</div>
-          <div style="font-size:28px;font-weight:800;margin:10px 0;">${money(total, currency)}</div>
-          <div style="margin-top:14px;">
-            ${viewOrderUrl ? `<a href="${escapeAttr(viewOrderUrl)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:10px 14px;border-radius:999px;font-weight:600;">View receipt</a>` : ''}
-            ${receiptUrl ? `<a href="${escapeAttr(receiptUrl)}" style="display:inline-block;margin-left:8px;color:#0ea5e9;text-decoration:none;padding:10px 14px;border-radius:999px;border:1px solid #0ea5e9;font-weight:600;">Card receipt</a>` : ''}
-          </div>
-        </td></tr>
-      </table>
-    </td></tr>
-
-    <tr><td style="padding:0 8px;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #e7e7e9;border-radius:14px;">
-        <tr><td style="padding:18px 20px;">
-          <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Order ${escapeHtml(orderNumber)}</div>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-            <thead>
-              <tr>
-                <th align="left" style="text-align:left;color:#68707a;font-size:13px;padding:6px 0;">Student</th>
-                <th align="left" style="text-align:left;color:#68707a;font-size:13px;padding:6px 0;">Items</th>
-                <th align="right" style="text-align:right;color:#68707a;font-size:13px;padding:6px 0;">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${studentRows || `<tr><td colspan="3" style="padding:8px 0;color:#68707a;">Thank you for your order.</td></tr>`}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="2" style="padding-top:10px;color:#68707a;">Payment ${pm ? `• ${escapeHtml(pm)}` : ''}</td>
-                <td align="right" style="padding-top:10px;font-weight:800;">${money(total, currency)}</td>
-              </tr>
-            </tfoot>
-          </table>
-          <div style="margin-top:12px;color:#68707a;font-size:13px;">
-            A copy has been sent to ${escapeHtml(parentEmail || 'your email')}.
-          </div>
-        </td></tr>
-      </table>
-    </td></tr>
-
-    <tr><td style="padding:12px 8px 0 8px;color:#68707a;font-size:12px;">
-      Questions? Reply to this email and we’ll help.
-    </td></tr>
-  </table>
-</body></html>`;
-
-  const text = [
-    `${brandName} — Receipt ${orderNumber}`,
-    `Paid: ${createdStr}`,
-    `Total: ${money(total, currency)}`,
-    parentEmail ? `Email: ${parentEmail}` : '',
-    students && students.length ? '\nItems:' : '',
-    ...(students || []).map((s) => {
-      const line = s.packageLine || [s.pkg, s.addons].filter(Boolean).join(', ');
-      const amt = s.amount != null ? money(s.amount, currency) : '';
-      return `• ${s.name}${line ? ` — ${line}` : ''}${amt ? ` — ${amt}` : ''}`;
-    }),
-    viewOrderUrl ? `\nView receipt: ${viewOrderUrl}` : '',
-    receiptUrl ? `Card receipt: ${receiptUrl}` : '',
-  ].filter(Boolean).join('\n');
-
-  return { subject, html, text };
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
-
-function absoluteLogoUrl(event) {
-  // Build absolute base from request (works for both *.netlify.app and custom domain)
-  const protoHost = event.headers['x-forwarded-proto'] && event.headers['x-forwarded-host']
-    ? `${event.headers['x-forwarded-proto']}://${event.headers['x-forwarded-host']}`
-    : (`https://${event.headers.host}`);
-  return `${protoHost}/2020Logo_black.png`;
-}
-
-function successPageUrl(event, sessionId) {
-  const protoHost = event.headers['x-forwarded-proto'] && event.headers['x-forwarded-host']
-    ? `${event.headers['x-forwarded-proto']}://${event.headers['x-forwarded-host']}`
-    : (`https://${event.headers.host}`);
-  return `${protoHost}/success.html?session_id=${encodeURIComponent(sessionId || '')}`;
-}
