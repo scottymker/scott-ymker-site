@@ -7,15 +7,16 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const SHEETS_WEBAPP_URL     = process.env.SHEETS_WEBAPP_URL;
 
 // ===== Optional (email + extras) =====
-const RESEND_API_KEY   = process.env.RESEND_API_KEY;
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const EMAIL_FROM       = process.env.EMAIL_FROM || "orders@example.com";
-const REPLY_TO         = process.env.REPLY_TO || "";
-const SITE_URL         = (process.env.SITE_URL || "").replace(/\/+$/,""); // no trailing slash
-const BRAND_NAME       = "Scott Ymker Photography";
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY; // optional (for enrich fetches)
+const RESEND_API_KEY     = process.env.RESEND_API_KEY;
+const SENDGRID_API_KEY   = process.env.SENDGRID_API_KEY;
+const EMAIL_FROM         = process.env.EMAIL_FROM || "orders@example.com";
+const REPLY_TO           = process.env.REPLY_TO || "";
+const SITE_URL           = (process.env.SITE_URL || "").replace(/\/+$/,""); // no trailing slash
+const BRAND_NAME         = "Scott Ymker Photography";
+const STRIPE_SECRET_KEY  = process.env.STRIPE_SECRET_KEY; // optional enrichment
+const DEBUG_EMAIL_TO     = process.env.DEBUG_EMAIL_TO || ""; // optional fallback for testing
 
-// ---------- utilities ----------
+// ---------- utils ----------
 const money = (cents, cur="usd") =>
   (Number(cents||0)/100).toLocaleString(undefined,{style:"currency",currency:cur.toUpperCase()});
 
@@ -35,7 +36,7 @@ function secureCompare(a, b) {
   return crypto.timingSafeEqual(A, B);
 }
 function verifyStripeSignature(rawBody, sigHeader, secret, toleranceSec = 300) {
-  const parsed = parseStripeSig(sigHeader);
+  const parsed = parseStripeSig(sigHeader || "");
   const t = parsed.t?.[0];
   const v1s = parsed.v1 || [];
   if (!t || !v1s.length) return false;
@@ -43,7 +44,6 @@ function verifyStripeSignature(rawBody, sigHeader, secret, toleranceSec = 300) {
   const expected = crypto.createHmac("sha256", secret).update(`${t}.${rawBody}`).digest("hex");
   const ts = Number(t);
   if (!Number.isFinite(ts) || Math.abs(Date.now()/1000 - ts) > toleranceSec) return false;
-
   return v1s.some(v1 => secureCompare(v1, expected));
 }
 function splitFirstLast(full) {
@@ -65,11 +65,11 @@ function fallbackOrderNumber(session) {
   const base = (session.payment_intent && session.payment_intent.id) || session.payment_intent || session.id || "";
   const tail = ((base.match(/[a-z0-9]+$/i) || [""])[0]).slice(-6).toUpperCase().padStart(6, "X");
   const d = new Date((session.created || 0) * 1000);
-  const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2, "0"), dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
   return `SYP-${yyyy}${mm}${dd}-${tail}`;
 }
 
-// Stripe REST (for enrichment)
+// Stripe REST fetch (for enrichment)
 async function fetchStripe(path) {
   if (!STRIPE_SECRET_KEY) return null;
   const res = await fetch(`https://api.stripe.com${path}`, {
@@ -106,10 +106,10 @@ async function sendEmail({ to, subject, html, text }) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        personalizations: [{ to: [{ email: to }], ...(REPLY_TO ? { reply_to: { email: REPLY_TO } } : {}) }],
+        personalizations: [{ to: [{ email: Array.isArray(to) ? to[0] : to }], ...(REPLY_TO ? { reply_to: { email: REPLY_TO } } : {}) }],
         from: { email: EMAIL_FROM.replace(/.*<|>.*/g,"") || EMAIL_FROM, name: EMAIL_FROM.includes("<") ? EMAIL_FROM.split("<")[0].trim() : BRAND_NAME },
         subject,
-        content: [{ type: "text/html", value: html }]
+        content: [{ type: "text/html", value: html }],
       })
     });
     if (!resp.ok) throw new Error(`SendGrid error: ${await resp.text()}`);
@@ -121,6 +121,7 @@ async function sendEmail({ to, subject, html, text }) {
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") {
+      // Stripe uses POST. Hitting this URL in a browser is a GET and will show 405; that's expected.
       return { statusCode: 405, body: "Method Not Allowed" };
     }
     if (!STRIPE_WEBHOOK_SECRET) return { statusCode: 500, body: "Missing STRIPE_WEBHOOK_SECRET" };
@@ -144,9 +145,15 @@ exports.handler = async (event) => {
     const md = session.metadata || {};
 
     const orderNumber = md.order_number || fallbackOrderNumber(session);
-    const parentEmail = session.customer_email || md.parent_email || "";
+    const parentEmail = (session.customer_email || md.parent_email || "").trim();
 
-    // ----- Build rows & email students summary -----
+    console.log("webhook.ok", {
+      orderNumber,
+      parentEmail,
+      hasProvider: !!(RESEND_API_KEY || SENDGRID_API_KEY)
+    });
+
+    // ----- Build rows & students summary -----
     const rows = [];
     const students = [];
     const count = getStudentCount(md);
@@ -164,7 +171,7 @@ exports.handler = async (event) => {
         .split(/[,; ]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
       const packageCombined = [pkg, ...addonCodes].filter(Boolean).join(", ");
 
-      // Sheet row
+      // Append to Google Sheet
       rows.push({
         Package: packageCombined,
         LastName: last,
@@ -176,7 +183,7 @@ exports.handler = async (event) => {
         ParentEmail: parentEmail
       });
 
-      // For email display
+      // For the receipt email table
       students.push({
         name: fullName || `Student ${i}`,
         teacher, grade, bg,
@@ -185,7 +192,7 @@ exports.handler = async (event) => {
       });
     }
 
-    // ----- Append to Google Sheets (best-effort; don't block Stripe) -----
+    // ----- Append to Google Sheets (best-effort) -----
     if (rows.length) {
       try {
         const resp = await fetch(SHEETS_WEBAPP_URL, {
@@ -197,15 +204,15 @@ exports.handler = async (event) => {
           const text = await resp.text();
           console.error("Sheets error:", text);
         } else {
-          console.log(`Appended ${rows.length} row(s) to sheet for order ${orderNumber}`);
+          console.log(`Sheets appended ${rows.length} row(s) for order ${orderNumber}`);
         }
       } catch (e) {
         console.error("Sheets request failed:", e);
       }
     }
 
-    // ----- Send receipt email (best-effort) -----
-    if (parentEmail && (RESEND_API_KEY || SENDGRID_API_KEY)) {
+    // ----- Email receipt (best-effort) -----
+    if ((parentEmail || DEBUG_EMAIL_TO) && (RESEND_API_KEY || SENDGRID_API_KEY)) {
       try {
         let amountTotal = session.amount_total || 0;
         let currency    = session.currency || "usd";
@@ -228,7 +235,7 @@ exports.handler = async (event) => {
           }
         }
 
-        // Try to apportion amounts by line item name "<Student> — ..."
+        // Try to apportion amounts by matching line item names "<Student> — ..."
         if (s?.line_items?.data?.length && students.length) {
           const map = new Map(students.map((st, i) => [st.name, i]));
           s.line_items.data.forEach(li => {
@@ -242,8 +249,8 @@ exports.handler = async (event) => {
           });
         }
 
-        const logoUrl     = SITE_URL ? `${SITE_URL}/2020Logo_black.png` : "";
-        const viewOrderUrl= SITE_URL ? `${SITE_URL}/success.html?session_id=${encodeURIComponent(session.id)}` : "";
+        const logoUrl      = SITE_URL ? `${SITE_URL}/2020Logo_black.png` : "";
+        const viewOrderUrl = SITE_URL ? `${SITE_URL}/success.html?session_id=${encodeURIComponent(session.id)}` : "";
 
         const { subject, html, text } = modernReceipt({
           brandName: BRAND_NAME,
@@ -260,8 +267,10 @@ exports.handler = async (event) => {
           pmLast4
         });
 
-        await sendEmail({ to: parentEmail, subject, html, text });
-        console.log(`Email sent to ${parentEmail}`);
+        const target = parentEmail || DEBUG_EMAIL_TO; // fallback for testing
+        console.log("email.sending", { to: target, orderNumber });
+        await sendEmail({ to: target, subject, html, text });
+        console.log("email.sent", { to: target });
       } catch (e) {
         console.error("Email send error:", e);
       }
@@ -270,7 +279,7 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };
   } catch (err) {
     console.error("Webhook error:", err);
-    // Return 200 so Stripe doesn't endlessly retry; logs will show the error.
+    // Return 200 so Stripe doesn't endlessly retry; logs will show details.
     return { statusCode: 200, body: "ok" };
   }
 };
