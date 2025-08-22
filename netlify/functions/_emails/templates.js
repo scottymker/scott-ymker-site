@@ -1,150 +1,112 @@
 // netlify/functions/_emails/templates.js
-const money = (cents, cur="usd") =>
-  (Number(cents || 0) / 100).toLocaleString(undefined, { style:"currency", currency: cur.toUpperCase() });
-
-const shortDate = (unix) => {
-  const d = new Date(unix * 1000);
-  return d.toLocaleDateString(undefined, { year:"numeric", month:"short", day:"numeric" });
-};
 
 /**
- * Modern “receipt card” email (logo + amount + links + itemized table)
- * Inputs:
- *  - brandName, logoUrl, orderNumber, created
- *  - total, currency, parentEmail
- *  - students: [{ name, packageLine, teacher, grade, bg, amount }]
- *  - receiptUrl, viewOrderUrl
- *  - pmBrand, pmLast4  (optional; e.g., "VISA", "4242")
+ * Generates a clean, mobile-friendly receipt email (HTML + text).
+ * Exported via CommonJS to work with `require()` inside Netlify Functions.
  */
-exports.modernReceipt = function modernReceipt(opts = {}) {
-  const {
-    brandName = "Scott Ymker Photography",
-    logoUrl = "",
-    orderNumber = "",
-    created = Math.floor(Date.now()/1000),
-    total = 0,
-    currency = "usd",
-    parentEmail = "",
-    receiptUrl = "",
-    viewOrderUrl = "",
-    students = [],
-    pmBrand = "",
-    pmLast4 = "",
-  } = opts;
+function modernReceipt({
+  brandName,
+  logoUrl = "",
+  orderNumber,
+  created,
+  total = 0,
+  currency = "usd",
+  parentEmail = "",
+  receiptUrl = "",
+  viewOrderUrl = "",
+  students = [],
+  pmBrand = "",
+  pmLast4 = ""
+}) {
+  const when = new Date((created || Date.now() / 1000) * 1000)
+    .toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
-  const headerLogo = logoUrl ? `<img src="${logoUrl}" alt="${brandName}" style="height:36px">` : "";
-  const paidLine = `Paid ${shortDate(created)}`;
+  const currencyFmt = (c) =>
+    (Number(c || 0) / 100).toLocaleString(undefined, {
+      style: "currency",
+      currency: (currency || "USD").toUpperCase(),
+    });
 
-  const payMethod = pmBrand && pmLast4
-    ? `${pmBrand.toUpperCase()} • • • • ${pmLast4}`
-    : "—";
+  const rows = (students || [])
+    .map((s) => {
+      const amt = s.amount != null ? currencyFmt(s.amount) : "";
+      const meta = [s.teacher, s.grade, s.bg].filter(Boolean).join(" • ");
+      const pkg = s.packageLine || "";
+      return `
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #eef2f7">
+            <div style="font-weight:600">${s.name || "Student"}</div>
+            <div style="color:#6b7280;font-size:13px">${meta || "&nbsp;"}</div>
+            <div style="color:#111827;font-size:13px">${pkg}</div>
+          </td>
+          <td style="padding:8px 12px;border-bottom:1px solid #eef2f7;text-align:right">${amt}</td>
+        </tr>`;
+    })
+    .join("");
 
-  const studentsRows = students.map(s => `
-    <tr>
-      <td style="padding:10px 12px;border-bottom:1px solid #eef2f7">
-        <div style="font-weight:600">${s.name}</div>
-        <div style="color:#6b7280;font-size:13px;line-height:1.35">
-          ${s.packageLine ? `Package: ${s.packageLine}` : ""}
-          ${s.teacher || s.grade || s.bg ? `<br>Teacher: ${s.teacher || "—"} • Grade: ${s.grade || "—"} • Background: ${s.bg || "—"}` : ""}
-        </div>
-      </td>
-      <td style="padding:10px 0;border-bottom:1px solid #eef2f7;text-align:right;white-space:nowrap">
-        ${s.amount != null ? money(s.amount, currency) : ""}
-      </td>
-    </tr>
-  `).join("");
+  const card = pmBrand ? pmBrand.toUpperCase() : "";
+  const masked = pmLast4 ? `•••• •••• •••• ${pmLast4}` : "";
 
-  const html = `
-  <div style="font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f6f7f9;color:#111;padding:24px">
-    <table role="presentation" width="100%" style="max-width:720px;margin:0 auto">
+  const subject = `${brandName} receipt • ${orderNumber}`;
+
+  const html = `<!doctype html><html><body style="margin:0;background:#f6f7f9">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f9;padding:24px 0">
+  <tr><td align="center">
+    <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;padding:0 16px">
       <tr><td>
-
-        <!-- Top receipt card -->
-        <table role="presentation" width="100%" style="background:#fff;border:1px solid #e8ebef;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px">
           <tr>
-            <td style="padding:18px 20px;border-bottom:1px solid #e8ebef;display:flex;gap:10px;align-items:center">
-              ${headerLogo}
-              <span style="font-weight:700">${brandName}</span>
+            <td style="display:flex;align-items:center;gap:10px">
+              ${logoUrl ? `<img src="${logoUrl}" alt="${brandName}" style="height:36px;width:auto">` : ""}
+              <div style="font-weight:700">${brandName}</div>
             </td>
           </tr>
+          <tr><td style="height:12px"></td></tr>
+          <tr><td style="font-size:22px;font-weight:700">${currencyFmt(total)}</td></tr>
+          <tr><td style="color:#6b7280">Paid ${when}</td></tr>
+          <tr><td style="height:12px"></td></tr>
           <tr>
-            <td style="padding:20px 20px 8px">
-              <div style="font-size:34px;font-weight:800">${money(total, currency)}</div>
-              <div style="color:#6b7280;margin-top:2px">${paidLine}</div>
-              <hr style="border:none;border-top:1px solid #e8ebef;margin:16px 0">
-              <div style="display:flex;gap:14px;flex-wrap:wrap">
-                ${receiptUrl ? `<a href="${receiptUrl}" style="text-decoration:none;color:#0b77c5">↓ Download receipt</a>` : ""}
-                ${viewOrderUrl ? `<a href="${viewOrderUrl}" style="text-decoration:none;color:#0b77c5">View order</a>` : ""}
-              </div>
-
-              <table role="presentation" style="margin-top:14px;width:100%">
-                <tr>
-                  <td style="color:#6b7280">Receipt number</td>
-                  <td style="text-align:right">${orderNumber || "—"}</td>
-                </tr>
-                <tr>
-                  <td style="color:#6b7280">Payment method</td>
-                  <td style="text-align:right">${payMethod}</td>
-                </tr>
-                <tr>
-                  <td style="color:#6b7280">Email</td>
-                  <td style="text-align:right">${parentEmail || "—"}</td>
-                </tr>
-              </table>
+            <td style="color:#6b7280;font-size:14px">
+              <div><strong>Receipt #</strong> ${orderNumber}</div>
+              ${card || masked ? `<div><strong>Payment</strong> ${card} ${masked}</div>` : ""}
             </td>
           </tr>
         </table>
-
-        <!-- Items card -->
-        <table role="presentation" width="100%" style="background:#fff;border:1px solid #e8ebef;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-top:16px">
+        <div style="height:14px"></div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px">
+          <tr><td style="font-weight:600;padding:6px 8px 12px">Items</td><td></td></tr>
+          ${rows || `<tr><td style="padding:8px 12px;color:#6b7280">No line items</td><td></td></tr>`}
           <tr>
-            <td style="padding:16px 20px 8px;font-weight:700">Receipt #${orderNumber || "—"}</td>
-          </tr>
-          <tr>
-            <td style="padding:0 20px 20px">
-              <table role="presentation" width="100%" style="border-collapse:collapse">
-                <thead>
-                  <tr>
-                    <th align="left" style="color:#6b7280;font-size:12px;text-transform:uppercase;padding:0 12px 8px">Description</th>
-                    <th align="right" style="color:#6b7280;font-size:12px;text-transform:uppercase;padding-bottom:8px">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${studentsRows || `<tr><td style="padding:10px 0;color:#6b7280">No items</td><td></td></tr>`}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td style="padding:10px 12px;text-transform:uppercase;color:#6b7280">Total</td>
-                    <td style="padding:10px 0;text-align:right;font-weight:700">${money(total, currency)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 12px;color:#6b7280">Amount paid</td>
-                    <td style="padding:6px 0;text-align:right;font-weight:700">${money(total, currency)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-              <div style="margin-top:16px;color:#6b7280;font-size:13px">
-                Questions? Contact us at <a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a>
-              </div>
-            </td>
+            <td style="padding:12px 12px 0;font-weight:700">Total</td>
+            <td style="padding:12px 12px 0;text-align:right;font-weight:700">${currencyFmt(total)}</td>
           </tr>
         </table>
-
+        <div style="height:12px"></div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px">
+          <tr><td style="font-weight:600;padding-bottom:6px">Need help?</td></tr>
+          <tr><td style="color:#6b7280;font-size:14px">
+            ${receiptUrl ? `<a href="${receiptUrl}">Download card receipt</a> &nbsp;•&nbsp;` : ""}
+            ${viewOrderUrl ? `<a href="${viewOrderUrl}">View order</a> &nbsp;•&nbsp;` : ""}
+            Questions? Reply to this email.
+          </td></tr>
+        </table>
       </td></tr>
     </table>
-  </div>`;
+  </td></tr>
+</table>
+</body></html>`;
 
-  const text =
-`${brandName}
-${money(total, currency)} — ${paidLine}
-Order #: ${orderNumber}
-${parentEmail ? `Email: ${parentEmail}\n` : ""}${pmBrand && pmLast4 ? `Payment method: ${pmBrand.toUpperCase()} •••• ${pmLast4}\n` : ""}
+  const text = [
+    `${brandName} receipt — ${orderNumber}`,
+    `Paid ${when}`,
+    `Total: ${currencyFmt(total)}`,
+    "",
+    ...(students || []).map((s) => `- ${s.name}: ${s.packageLine || ""}`).filter(Boolean),
+    receiptUrl ? `\nCard receipt: ${receiptUrl}` : "",
+    viewOrderUrl ? `Order: ${viewOrderUrl}` : "",
+  ].join("\n");
 
-Items:
-${students.map(s => `- ${s.name} — ${s.packageLine}${s.teacher||s.grade||s.bg ? ` (${s.teacher||"—"}/${s.grade||"—"}/${s.bg||"—"})` : ""}${s.amount!=null ? ` — ${money(s.amount, currency)}` : ""}`).join("\n")}
+  return { subject, html, text };
+}
 
-Total: ${money(total, currency)}
-${receiptUrl ? `Receipt: ${receiptUrl}\n` : ""}${viewOrderUrl ? `View order: ${viewOrderUrl}\n` : ""}`;
-
-  return { subject: `${brandName} • Receipt ${orderNumber}`, html, text };
-};
+module.exports = { modernReceipt };
