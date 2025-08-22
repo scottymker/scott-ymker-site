@@ -1,173 +1,184 @@
-// netlify/functions/_emails/templates.js
-'use strict';
+// netlify/functions/_emails/templates.js (CommonJS)
 
-// simple USD formatter (uses the currency passed in)
-const money = (cents = 0, currency = 'usd') =>
+const escapeHtml = (s = "") =>
+  String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const money = (cents = 0, currency = "usd") =>
   (Number(cents) / 100).toLocaleString(undefined, {
-    style: 'currency',
-    currency: String(currency || 'USD').toUpperCase(),
+    style: "currency",
+    currency: (currency || "USD").toUpperCase(),
   });
 
+/** Full package breakdowns */
+const PACKAGE_BREAKDOWN = {
+  A:  ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets"],
+  A1: ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets","1 × Digital File"],
+  B:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 5x7","16 × wallets"],
+  B1: ["1 × 8x10 Class Composite","1 × 8x10","4 × 5x7","16 × wallets"],
+  C:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 3.5x5","4 × wallets","16 × mini wallets"],
+  C1: ["1 × 8x10 Class Composite","1 × 8x10","2 × 3.5x5","2 × 5x7","4 × wallets","16 × mini wallets"],
+  D:  ["1 × 8x10 Class Composite","2 × 5x7","8 × wallets"],
+  D1: ["1 × 8x10 Class Composite","2 × 5x7","8 × wallets","16 × mini wallets"],
+  E:  ["2 × 5x7","2 × 3.5x5","4 × wallets"],
+  E1: ["2 × 5x7","2 × 3.5x5","12 × wallets"],
+};
+
+/** Add-on display names */
+const ADDON_NAMES = {
+  F:"8x10 Print",
+  G:"2 × 5x7 Prints",
+  H:"4 × 3.5x5 Prints",
+  I:"24 Wallets",
+  J:"8 Wallets",
+  K:"16 Mini Wallets",
+  L:"Retouching",
+  M:"8x10 Class Composite",
+  N:"Digital File",
+};
+
 /**
- * modernReceipt(props) -> { subject, html, text }
- *
- * Expected props from the webhook:
- *  brandName, logoUrl, orderNumber, created, total, currency,
- *  parentEmail, receiptUrl, viewOrderUrl,
- *  students:[{name, packageLine, amount}], pmBrand, pmLast4
+ * modernReceipt2
+ * @param {Object} payload
+ * {
+ *   businessName, logoUrl, orderNumber, paidAtISO, totalCents, currency,
+ *   receiptUrl, parentEmail,
+ *   students: [{ name, pkg, addons:[], amountCents }],
+ *   contact: { email, phone, site }
+ * }
  */
-function modernReceipt(props = {}) {
+function modernReceipt2(payload = {}) {
   const {
-    brandName = 'Scott Ymker Photography',
-    logoUrl = '',
-    orderNumber = '',
-    created,
-    total = 0,
-    currency = 'usd',
-    parentEmail = '',
-    receiptUrl = '',
-    viewOrderUrl = '',
+    businessName = "Scott Ymker Photography",
+    logoUrl = "",
+    orderNumber = "",
+    paidAtISO = new Date().toISOString(),
+    totalCents = 0,
+    currency = "usd",
+    receiptUrl = "#",
+    parentEmail = "",
     students = [],
-    pmBrand = '',
-    pmLast4 = '',
-  } = props;
+    contact = {
+      email: "scott@scottymkerphotos.com",
+      phone: "605-550-0828",
+      site: "https://scottymkerphotos.com",
+    },
+  } = payload;
 
-  const createdStr = created
-    ? new Date(created * 1000).toLocaleString()
-    : new Date().toLocaleString();
+  const paidPretty = new Date(paidAtISO).toLocaleString();
 
-  const subject = `Receipt ${orderNumber} — ${brandName}`;
+  const studentRows = students
+    .map((s) => {
+      const pkg = (s.pkg || "").toUpperCase();
+      const pkgLines = PACKAGE_BREAKDOWN[pkg] || [];
+      const addonLines = (s.addons || []).map((code) => {
+        const nm = ADDON_NAMES[code] || `Add-on ${code}`;
+        return nm;
+      });
 
-  // Build student rows (name / items / amount)
-  const studentRows =
-    students && students.length
-      ? students
-          .map((s) => {
-            const line = s.packageLine || [s.pkg, s.addons].filter(Boolean).join(', ');
-            const amt = s.amount != null ? money(s.amount, currency) : '';
-            return `
-          <tr>
-            <td style="padding:8px 0;font-weight:600;">${escapeHtml(s.name || '')}</td>
-            <td style="padding:8px 0;color:#555;">${escapeHtml(line || '')}</td>
-            <td style="padding:8px 0;text-align:right;white-space:nowrap;">${amt}</td>
-          </tr>`;
-          })
-          .join('')
-      : '';
+      // Build bullet list
+      const bullets = []
+        .concat(pkg ? [`Package ${escapeHtml(pkg)}`] : [])
+        .concat(pkgLines)
+        .concat(addonLines.length ? addonLines : []);
 
-  const pm = [pmBrand ? pmBrand.toUpperCase() : '', pmLast4 ? `•••• ${pmLast4}` : '']
-    .filter(Boolean)
-    .join(' · ');
+      const bulletsHtml = bullets
+        .map((b) => `<li>${escapeHtml(b)}</li>`)
+        .join("");
 
-  // --- HTML email (safe inline styles) ---
-  const html = `<!doctype html>
+      return `
+        <tr>
+          <td class="td-name">
+            <div class="student-name">${escapeHtml(s.name || "Student")}</div>
+            <ul class="bullets">${bulletsHtml}</ul>
+          </td>
+          <td class="td-items">${escapeHtml([s.pkg, ...(s.addons||[])].filter(Boolean).join(", ")) || "—"}</td>
+          <td class="td-amt">${money(s.amountCents || 0, currency)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `<!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(subject)}</title>
+  <meta charset="utf-8">
+  <title>Receipt • ${escapeHtml(businessName)}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{margin:0;padding:0;background:#0b0d10;color:#f6f7f9;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:#76c7ff}
+    .container{max-width:640px;margin:0 auto;padding:24px}
+    .card{background:#151a21;border:1px solid #253041;border-radius:16px;padding:20px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px;margin-bottom:16px}
+    .brand img{height:36px;width:auto}
+    .pill{display:inline-block;background:#0d2a3f;border:1px solid #29455f;color:#c1e8ff;padding:3px 10px;border-radius:999px;font-weight:700}
+    .total{font-size:36px;font-weight:800;margin:6px 0 10px}
+    .muted{color:#b3bcc7}
+    .btn{display:inline-block;background:#1b74ff;border-radius:999px;color:#fff;text-decoration:none;padding:12px 18px;font-weight:700}
+    .table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:10px;border-bottom:1px solid #253041;font-size:14px;vertical-align:top}
+    th{color:#a8b3bf;text-align:left}
+    .td-amt{text-align:right;white-space:nowrap}
+    .td-items{width:110px}
+    .student-name{font-weight:700}
+    .bullets{margin:6px 0 0 18px;padding:0}
+    .bullets li{margin:2px 0}
+    .footer{color:#a8b3bf;font-size:13px;margin-top:14px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media (min-width:700px){.grid{grid-template-columns:1.1fr .9fr}}
+  </style>
 </head>
-<body style="margin:0;background:#f6f7f9;padding:24px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#f6f7f9;">
-    <tr>
-      <td style="padding:0 8px 16px 8px;text-align:left;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          ${logoUrl ? `<img src="${escapeAttr(logoUrl)}" alt="${escapeAttr(brandName)}" style="height:36px;width:auto;border:0;display:block;" />` : ''}
-          <div style="font-weight:700;font-size:16px;color:#111;">${escapeHtml(brandName)}</div>
+<body>
+  <div class="container">
+    <div class="brand">
+      ${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(businessName)}">` : ""}
+      <div>${escapeHtml(businessName)}</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="pill">Receipt • ${escapeHtml(businessName)}</div>
+        <div class="total">${money(totalCents, currency)}</div>
+        <div class="muted">Paid ${escapeHtml(paidPretty)}</div>
+        <div style="margin-top:14px">
+          <a class="btn" href="${escapeHtml(receiptUrl)}" target="_blank" rel="noopener">View receipt</a>
         </div>
-      </td>
-    </tr>
+      </div>
 
-    <tr>
-      <td style="padding:0 8px 16px 8px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #e7e7e9;border-radius:14px;">
-          <tr>
-            <td style="padding:20px;">
-              <div style="font-size:20px;font-weight:700;color:#111;margin:0 0 6px 0;">Receipt • ${escapeHtml(brandName)}</div>
-              <div style="color:#68707a;font-size:14px;margin:0 0 10px 0;">Paid ${escapeHtml(createdStr)}</div>
-              <div style="font-size:28px;font-weight:800;margin:10px 0;">${money(total, currency)}</div>
-
-              <div style="margin-top:14px;">
-                ${viewOrderUrl ? `<a href="${escapeAttr(viewOrderUrl)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:10px 14px;border-radius:999px;font-weight:600;">View receipt</a>` : ''}
-                ${receiptUrl ? `<a href="${escapeAttr(receiptUrl)}" style="display:inline-block;margin-left:8px;color:#0ea5e9;text-decoration:none;padding:10px 14px;border-radius:999px;border:1px solid #0ea5e9;font-weight:600;">Card receipt</a>` : ''}
-              </div>
-            </td>
-          </tr>
+      <div class="card">
+        <div class="pill" style="background:#0d392f;border-color:#285347;color:#bff3d9">Order ${escapeHtml(orderNumber)}</div>
+        <table class="table" role="table" aria-label="Order items">
+          <thead><tr><th>Student</th><th>Items</th><th class="td-amt">Amount</th></tr></thead>
+          <tbody>
+            ${studentRows || `<tr><td colspan="3" class="muted">No items.</td></tr>`}
+          </tbody>
+          <tfoot>
+            <tr><td></td><td style="text-align:right;font-weight:700">Total</td><td class="td-amt" style="font-weight:800">${money(totalCents, currency)}</td></tr>
+          </tfoot>
         </table>
-      </td>
-    </tr>
+        <div class="footer">
+          A copy has been sent to ${escapeHtml(parentEmail || "your email")}.
+        </div>
+      </div>
+    </div>
 
-    <tr>
-      <td style="padding:0 8px;">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #e7e7e9;border-radius:14px;">
-          <tr>
-            <td style="padding:18px 20px;">
-              <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Order ${escapeHtml(orderNumber)}</div>
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
-                <thead>
-                  <tr>
-                    <th align="left" style="text-align:left;color:#68707a;font-size:13px;padding:6px 0;">Student</th>
-                    <th align="left" style="text-align:left;color:#68707a;font-size:13px;padding:6px 0;">Items</th>
-                    <th align="right" style="text-align:right;color:#68707a;font-size:13px;padding:6px 0;">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${studentRows || `<tr><td colspan="3" style="padding:8px 0;color:#68707a;">Thank you for your order.</td></tr>`}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colspan="2" style="padding-top:10px;color:#68707a;">Payment ${pm ? `• ${escapeHtml(pm)}` : ''}</td>
-                    <td align="right" style="padding-top:10px;font-weight:800;">${money(total, currency)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-
-              <div style="margin-top:12px;color:#68707a;font-size:13px;">
-                A copy has been sent to ${escapeHtml(parentEmail || 'your email')}.
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="padding:12px 8px 0 8px;color:#68707a;font-size:12px;">
-        Questions? Reply to this email and we’ll help.
-      </td>
-    </tr>
-  </table>
+    <div class="card" style="margin-top:16px">
+      <div style="font-weight:700;margin-bottom:6px">Questions or changes?</div>
+      <div class="footer">
+        Reply to this email and we’ll help. <br>
+        <strong>Email:</strong> <a href="mailto:${escapeHtml(contact.email)}">${escapeHtml(contact.email)}</a><br>
+        <strong>Phone:</strong> <a href="tel:+16055500828">${escapeHtml(contact.phone)}</a><br>
+        <strong>Website:</strong> <a href="${escapeHtml(contact.site)}">${escapeHtml(contact.site)}</a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>`;
-
-  const text = [
-    `${brandName} — Receipt ${orderNumber}`,
-    `Paid: ${createdStr}`,
-    `Total: ${money(total, currency)}`,
-    parentEmail ? `Email: ${parentEmail}` : '',
-    students && students.length ? '\nItems:' : '',
-    ...(students || []).map((s) => {
-      const line = s.packageLine || [s.pkg, s.addons].filter(Boolean).join(', ');
-      const amt = s.amount != null ? money(s.amount, currency) : '';
-      return `• ${s.name}${line ? ` — ${line}` : ''}${amt ? ` — ${amt}` : ''}`;
-    }),
-    viewOrderUrl ? `\nView receipt: ${viewOrderUrl}` : '',
-    receiptUrl ? `Card receipt: ${receiptUrl}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  return { subject, html, text };
 }
 
-// small escaping helpers
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-function escapeAttr(s) {
-  return escapeHtml(s).replace(/"/g, '&quot;');
-}
-
-module.exports = { modernReceipt };
+module.exports = { modernReceipt2, PACKAGE_BREAKDOWN, ADDON_NAMES };
