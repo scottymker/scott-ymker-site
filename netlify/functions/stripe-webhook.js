@@ -1,19 +1,15 @@
-// netlify/functions/stripe-webhook.js
-// ESM-only, exports a NAMED `handler` so Netlify can find it when "type":"module".
-
+// netlify/functions/stripe-webhook.mjs
 import crypto from "node:crypto";
 import { modernReceipt2, PACKAGE_BREAKDOWN, ADDON_NAMES } from "./_emails/templates.js";
 
-// ---------- env ----------
 const STRIPE_SIGNING_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const RESEND_API_KEY        = process.env.RESEND_API_KEY;
 const EMAIL_FROM            = process.env.EMAIL_FROM || "Scott Ymker Photography <scott@scottymkerphotos.com>";
 const REPLY_TO_EMAIL        = process.env.REPLY_TO_EMAIL || "scott@scottymkerphotos.com";
 const EMAIL_BCC             = process.env.EMAIL_BCC || "";
 const PUBLIC_BASE_URL       = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/,"");
-const SHEETS_WEB_APP_URL    = (process.env.SHEETS_WEB_APP_URL || "").trim(); // optional
+const SHEETS_WEB_APP_URL    = (process.env.SHEETS_WEB_APP_URL || "").trim();
 
-// ---------- helpers ----------
 const money = (c = 0) => Number(c || 0);
 const fmtOrderNum = (id = "") => String(id).replace(/^cs_/i, "SYP-").toUpperCase();
 
@@ -23,11 +19,8 @@ function verifyStripeSig(raw, sig, secret) {
   if (!parts.t || !parts.v1) return false;
   const signed = `${parts.t}.${raw}`;
   const expected = crypto.createHmac("sha256", secret).update(signed).digest("hex");
-  try {
-    return crypto.timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected));
-  } catch {
-    return false;
-  }
+  try { return crypto.timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected)); }
+  catch { return false; }
 }
 
 async function sendEmail({ to, subject, html }) {
@@ -46,26 +39,17 @@ async function sendEmail({ to, subject, html }) {
       bcc: EMAIL_BCC ? [EMAIL_BCC] : undefined,
     }),
   });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Resend error ${res.status}: ${txt}`);
-  }
+  if (!res.ok) throw new Error(`Resend error ${res.status}: ${await res.text().catch(()=> "")}`);
 }
 
 async function appendToSheets(row) {
-  if (!SHEETS_WEB_APP_URL) {
-    console.warn("SHEETS_WEB_APP_URL not set; skipping Sheets append");
-    return;
-  }
+  if (!SHEETS_WEB_APP_URL) { console.warn("SHEETS_WEB_APP_URL not set; skipping Sheets append"); return; }
   const res = await fetch(SHEETS_WEB_APP_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(row),
   });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    console.warn("Sheets append failed:", res.status, t);
-  }
+  if (!res.ok) console.warn("Sheets append failed:", res.status, await res.text().catch(()=> ""));
 }
 
 function collectStudentsFromMetadata(md) {
@@ -74,19 +58,14 @@ function collectStudentsFromMetadata(md) {
     const name   = (md[`s${i}_name`] || "").trim();
     const pkg    = (md[`s${i}_pkg`]  || "").trim().toUpperCase();
     const addons = (md[`s${i}_addons`] || "")
-      .split(",")
-      .map(s => s.trim().toUpperCase())
-      .filter(Boolean);
-
+      .split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
     if (!name && !pkg && addons.length === 0) continue;
 
+    const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
+    const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
+
     let amount = 0;
-    if (pkg && PACKAGE_BREAKDOWN[pkg]) {
-      // add the package price if known
-      const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
-      amount += PACKAGE_PRICES[pkg] ?? 0;
-    }
-    const ADDON_PRICES = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
+    if (pkg && PACKAGE_BREAKDOWN[pkg]) amount += PACKAGE_PRICES[pkg] ?? 0;
     addons.forEach(code => { amount += (ADDON_PRICES[code] ?? 0); });
 
     students.push({ name, pkg, addons, amountCents: amount });
@@ -94,16 +73,10 @@ function collectStudentsFromMetadata(md) {
   return students;
 }
 
-// ---------- handler ----------
 export async function handler(event) {
   try {
-    // Quick health check in a browser
-    if (event.httpMethod === "GET") {
-      return { statusCode: 200, body: "OK" };
-    }
-    if (event.httpMethod !== "POST") {
-      return { statusCode: 405, body: "Method Not Allowed" };
-    }
+    if (event.httpMethod === "GET") return { statusCode: 200, body: "OK" };
+    if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
 
     const raw = event.body || "";
     const sig = event.headers["stripe-signature"];
@@ -116,26 +89,20 @@ export async function handler(event) {
       return { statusCode: 200, body: JSON.stringify({ ok: true, ignored: evt.type }) };
     }
 
-    const session = evt.data?.object || {};
-    const md = session.metadata || {};
-
+    const session   = evt.data?.object || {};
+    const md        = session.metadata || {};
     const parentEmail =
-      session.customer_details?.email ||
-      session.customer_email ||
-      md.parent_email ||
-      "";
+      session.customer_details?.email || session.customer_email || md.parent_email || "";
 
-    const students = collectStudentsFromMetadata(md);
+    const students   = collectStudentsFromMetadata(md);
+    const orderNumber= fmtOrderNum(session.id);
+    const totalCents = money(session.amount_total);
+    const currency   = (session.currency || "usd").toLowerCase();
+    const paidAtISO  = new Date((session.created || Math.floor(Date.now()/1000)) * 1000).toISOString();
 
-    const orderNumber = fmtOrderNum(session.id);
-    const totalCents  = money(session.amount_total);
-    const currency    = (session.currency || "usd").toLowerCase();
-    const paidAtISO   = new Date((session.created || Math.floor(Date.now()/1000)) * 1000).toISOString();
-
-    const origin = PUBLIC_BASE_URL || `https://${(event.headers?.host || "").replace(/\/+$/,"")}`;
+    const origin     = (PUBLIC_BASE_URL || `https://${(event.headers?.host || "").replace(/\/+$/,"")}`);
     const receiptUrl = `${origin}/success.html?session_id=${encodeURIComponent(session.id)}`;
 
-    // Build HTML email with full package breakdown & contact block
     const html = modernReceipt2({
       businessName: "Scott Ymker Photography",
       logoUrl: `${origin}/2020Logo_black.png`,
@@ -153,14 +120,12 @@ export async function handler(event) {
       },
     });
 
-    // Send the email
     await sendEmail({
       to: parentEmail || EMAIL_BCC || REPLY_TO_EMAIL,
       subject: `Receipt • ${orderNumber} • Scott Ymker Photography`,
       html,
     });
 
-    // Optionally append one flattened row to Google Sheets
     const first = students[0] || { name: "", pkg: "", addons: [] };
     const pkgAndAddons = [first.pkg, ...(first.addons || [])].filter(Boolean).join(", ");
     await appendToSheets({
