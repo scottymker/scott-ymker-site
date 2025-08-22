@@ -1,285 +1,350 @@
 // netlify/functions/stripe-webhook.js
+// Plain Fetch + HMAC verification (no Stripe SDK) so it stays bundle-free.
+
 const crypto = require("crypto");
 const { modernReceipt } = require("./_emails/templates");
 
-// ===== Required env =====
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
-const SHEETS_WEBAPP_URL     = process.env.SHEETS_WEBAPP_URL;
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ""; // used to expand line items
+const SHEETS_WEBAPP_URL = process.env.SHEETS_WEBAPP_URL || "";
+const EMAIL_FROM = process.env.EMAIL_FROM || "Scott Ymker Photography <no-reply@scottymkerphotos.com>";
+const REPLY_TO = process.env.REPLY_TO || "";
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || "";
+const DEBUG_EMAIL_TO = process.env.DEBUG_EMAIL_TO || "";
+const SITE_URL = process.env.SITE_URL || "https://schools.scottymkerphotos.com";
 
-// ===== Optional (email + extras) =====
-const RESEND_API_KEY     = process.env.RESEND_API_KEY;
-const SENDGRID_API_KEY   = process.env.SENDGRID_API_KEY;
-const EMAIL_FROM         = process.env.EMAIL_FROM || "orders@example.com";
-const REPLY_TO           = process.env.REPLY_TO || "";
-const SITE_URL           = (process.env.SITE_URL || "").replace(/\/+$/,""); // no trailing slash
-const BRAND_NAME         = "Scott Ymker Photography";
-const STRIPE_SECRET_KEY  = process.env.STRIPE_SECRET_KEY; // optional enrichment
-const DEBUG_EMAIL_TO     = process.env.DEBUG_EMAIL_TO || ""; // optional fallback for testing
+const BRAND_NAME = "Scott Ymker Photography";
+const BRAND_LOGO = `${SITE_URL.replace(/\/$/,"")}/2020Logo_black.png`;
 
-// ---------- utils ----------
-const money = (cents, cur="usd") =>
-  (Number(cents||0)/100).toLocaleString(undefined,{style:"currency",currency:cur.toUpperCase()});
+// ---- helpers ----------------------------------------------------------------
 
-function parseStripeSig(header = "") {
-  const out = {};
-  header.split(",").forEach(kv => {
-    const [k, v] = kv.split("=");
-    if (!k || !v) return;
-    (out[k.trim()] ||= []).push(v.trim());
-  });
+function timedSafeEqual(a, b) {
+  const buffA = Buffer.from(a);
+  const buffB = Buffer.from(b);
+  if (buffA.length !== buffB.length) return false;
+  return crypto.timingSafeEqual(buffA, buffB);
+}
+
+// Verify Stripe signature header (v1) with 5 min tolerance
+function verifyStripeSignature(rawBody, sigHeader, secret, toleranceSec = 300) {
+  if (!sigHeader || !secret) return false;
+  const parts = Object.fromEntries(
+    sigHeader.split(",").map((kv) => kv.split("=").map((s) => s.trim()))
+  );
+  const t = parts.t;
+  const v1 = parts.v1;
+  if (!t || !v1) return false;
+
+  const payload = `${t}.${rawBody}`;
+  const expected = crypto.createHmac("sha256", secret).update(payload, "utf8").digest("hex");
+
+  // Time tolerance
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - Number(t)) > toleranceSec) return false;
+
+  return timedSafeEqual(v1, expected);
+}
+
+async function fetchJSON(url, opts = {}) {
+  const res = await fetch(url, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error?.message || data.error || res.statusText);
+    err.status = res.status;
+    err.body = data;
+    throw err;
+  }
+  return data;
+}
+
+function makeOrderNumber(sessionId, created) {
+  const d = new Date((created || Date.now() / 1000) * 1000);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const suffix = (sessionId || "").slice(-6).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return `SYP-${y}${m}${dd}-${suffix}`;
+}
+
+function pickParentEmail(session, md) {
+  return (
+    session.customer_details?.email ||
+    session.customer_email ||
+    md.parent_email ||
+    ""
+  );
+}
+
+function packageLineFrom(md, k) {
+  const pkg = (md[`s${k}_pkg`] || "").trim();
+  const addons = (md[`s${k}_addons`] || "").trim();
+  return [pkg, addons].filter(Boolean).join(", ");
+}
+
+function collectStudentsFromMetadata(md) {
+  const out = [];
+  const count = Number(md.students_count || "0") || 0;
+  for (let i = 1; i <= count; i++) {
+    const first = (md[`s${i}_name`] || md[`s${i}_first`] || "").toString().trim();
+    const last = (md[`s${i}_last`] || "").toString().trim();
+    const name = [first, last].filter(Boolean).join(" ").trim() || first || last || `Student ${i}`;
+    out.push({
+      index: i,
+      name,
+      first: first || "",
+      last: last || "",
+      teacher: (md[`s${i}_teacher`] || "").toString().trim(),
+      grade: (md[`s${i}_grade`] || "").toString().trim(),
+      bg: (md[`s${i}_bg`] || "").toString().trim(),
+      pkg: (md[`s${i}_pkg`] || "").toString().trim(),
+      addons: (md[`s${i}_addons`] || "").toString().trim(),
+      packageLine: packageLineFrom(md, i),
+      amount: null, // filled from line_items if we can
+    });
+  }
   return out;
 }
-function secureCompare(a, b) {
-  const A = Buffer.from(a || "", "utf8");
-  const B = Buffer.from(b || "", "utf8");
-  if (A.length !== B.length) return false;
-  return crypto.timingSafeEqual(A, B);
-}
-function verifyStripeSignature(rawBody, sigHeader, secret, toleranceSec = 300) {
-  const parsed = parseStripeSig(sigHeader || "");
-  const t = parsed.t?.[0];
-  const v1s = parsed.v1 || [];
-  if (!t || !v1s.length) return false;
 
-  const expected = crypto.createHmac("sha256", secret).update(`${t}.${rawBody}`).digest("hex");
-  const ts = Number(t);
-  if (!Number.isFinite(ts) || Math.abs(Date.now()/1000 - ts) > toleranceSec) return false;
-  return v1s.some(v1 => secureCompare(v1, expected));
-}
-function splitFirstLast(full) {
-  const parts = String(full || "").trim().split(/\s+/);
-  if (parts.length <= 1) return [parts[0] || "", ""];
-  const last = parts.pop();
-  return [parts.join(" "), last];
-}
-function getStudentCount(md) {
-  const n = parseInt(md?.students_count || "0", 10);
-  if (n > 0) return n;
-  const idxs = Object.keys(md || {})
-    .map(k => (k.match(/^s(\d+)_name$/) || [])[1])
-    .filter(Boolean)
-    .map(Number);
-  return idxs.length ? Math.max(...idxs) : 0;
-}
-function fallbackOrderNumber(session) {
-  const base = (session.payment_intent && session.payment_intent.id) || session.payment_intent || session.id || "";
-  const tail = ((base.match(/[a-z0-9]+$/i) || [""])[0]).slice(-6).toUpperCase().padStart(6, "X");
-  const d = new Date((session.created || 0) * 1000);
-  const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
-  return `SYP-${yyyy}${mm}${dd}-${tail}`;
-}
-
-// Stripe REST fetch (for enrichment)
-async function fetchStripe(path) {
-  if (!STRIPE_SECRET_KEY) return null;
-  const res = await fetch(`https://api.stripe.com${path}`, {
-    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` }
+function assignAmountsFromLineItems(students, lineItems) {
+  if (!Array.isArray(students) || !Array.isArray(lineItems)) return students;
+  // Your line item names were created as:
+  //  - `${studentName} — Package ${code}`
+  //  - `${studentName} — Add-on ${code} — ${prettyName}`
+  students.forEach((s) => (s.amount = 0));
+  lineItems.forEach((li) => {
+    const desc = li.description || li.price?.product || li.price?.nickname || li.display_name || li?.price?.id || "";
+    const name = li.description || li?.price?.product || "";
+    const full = (li?.description || li?.price?.product || li?.price?.nickname || "").toString();
+    const qty = li.quantity ?? 1;
+    const total = (li.amount_total != null ? li.amount_total : (li.amount_subtotal ?? 0)) * 1;
+    // Try to extract the student name prefix before " — "
+    const n = (li.description || "").split(" — ")[0].trim();
+    const target = students.find((s) => s.name === n);
+    if (target) {
+      target.amount = (target.amount || 0) + total;
+    }
   });
-  if (!res.ok) return null;
-  return await res.json();
+  return students;
 }
 
-// Email sender (Resend preferred, SendGrid fallback)
-async function sendEmail({ to, subject, html, text }) {
-  if (RESEND_API_KEY) {
-    const resp = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from: EMAIL_FROM,
-        to: Array.isArray(to) ? to : [to],
-        subject, html, text,
-        reply_to: REPLY_TO || undefined
-      })
-    });
-    if (!resp.ok) throw new Error(`Resend error: ${await resp.text()}`);
-    return;
-  }
-  if (SENDGRID_API_KEY) {
-    const resp = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${SENDGRID_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email: Array.isArray(to) ? to[0] : to }], ...(REPLY_TO ? { reply_to: { email: REPLY_TO } } : {}) }],
-        from: { email: EMAIL_FROM.replace(/.*<|>.*/g,"") || EMAIL_FROM, name: EMAIL_FROM.includes("<") ? EMAIL_FROM.split("<")[0].trim() : BRAND_NAME },
-        subject,
-        content: [{ type: "text/html", value: html }],
-      })
-    });
-    if (!resp.ok) throw new Error(`SendGrid error: ${await resp.text()}`);
-    return;
-  }
-  console.warn("No email provider configured; skipping email.");
+async function appendRowsToSheets(rows) {
+  if (!SHEETS_WEBAPP_URL) return { ok: false, skipped: true };
+  const res = await fetch(SHEETS_WEBAPP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ rows }),
+  });
+  const txt = await res.text();
+  if (!res.ok) throw new Error(`Sheets error ${res.status}: ${txt}`);
+  return { ok: true, body: txt };
 }
+
+// Resend
+async function sendWithResend({ to, subject, html, text }) {
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      to: [to],
+      subject,
+      html,
+      text,
+      reply_to: REPLY_TO || undefined,
+    }),
+  });
+  if (!r.ok) {
+    const b = await r.text();
+    throw new Error(`Resend ${r.status}: ${b}`);
+  }
+}
+
+// SendGrid
+async function sendWithSendgrid({ to, subject, html, text }) {
+  const r = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SENDGRID_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email: to }] }],
+      from: { email: EMAIL_FROM.match(/<([^>]+)>/)?.[1] || EMAIL_FROM, name: EMAIL_FROM.replace(/<[^>]+>/g, "").trim() || BRAND_NAME },
+      reply_to: REPLY_TO ? { email: REPLY_TO.match(/<([^>]+)>/)?.[1] || REPLY_TO } : undefined,
+      subject,
+      content: [
+        { type: "text/plain", value: text || "" },
+        { type: "text/html", value: html || "" },
+      ],
+    }),
+  });
+  if (!r.ok) {
+    const b = await r.text();
+    throw new Error(`SendGrid ${r.status}: ${b}`);
+  }
+}
+
+async function sendEmail(to, subject, html, text) {
+  if (!to) throw new Error("Missing recipient");
+  const hasResend = !!RESEND_API_KEY;
+  const hasSendgrid = !!SENDGRID_API_KEY;
+  if (!hasResend && !hasSendgrid) throw new Error("No email provider key set");
+  if (hasResend) return sendWithResend({ to, subject, html, text });
+  return sendWithSendgrid({ to, subject, html, text });
+}
+
+// ---- handler ----------------------------------------------------------------
 
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") {
-      // Stripe uses POST. Hitting this URL in a browser is a GET and will show 405; that's expected.
-      return { statusCode: 405, body: "Method Not Allowed" };
+      return {
+        statusCode: 405,
+        headers: { "Allow": "POST" },
+        body: "Method Not Allowed",
+      };
     }
-    if (!STRIPE_WEBHOOK_SECRET) return { statusCode: 500, body: "Missing STRIPE_WEBHOOK_SECRET" };
-    if (!SHEETS_WEBAPP_URL)     return { statusCode: 500, body: "Missing SHEETS_WEBAPP_URL" };
 
+    const raw = event.body || "";
     const sig = event.headers["stripe-signature"] || event.headers["Stripe-Signature"];
-    let raw = event.body || "";
-    if (event.isBase64Encoded) raw = Buffer.from(raw, "base64").toString("utf8");
 
     if (!verifyStripeSignature(raw, sig, STRIPE_WEBHOOK_SECRET)) {
-      console.error("Invalid signature");
-      return { statusCode: 400, body: "Invalid signature" };
+      return { statusCode: 400, body: JSON.stringify({ error: "Invalid signature" }) };
     }
 
-    const stripeEvent = JSON.parse(raw);
-    if (stripeEvent.type !== "checkout.session.completed") {
-      return { statusCode: 200, body: "Ignored" };
+    const payload = JSON.parse(raw);
+    const type = payload.type;
+    const session = payload.data?.object || {};
+
+    if (type !== "checkout.session.completed") {
+      return { statusCode: 200, body: JSON.stringify({ ok: true, skipped: true }) };
     }
 
-    const session = stripeEvent.data?.object || {};
-    const md = session.metadata || {};
-
-    const orderNumber = md.order_number || fallbackOrderNumber(session);
-    const parentEmail = (session.customer_email || md.parent_email || "").trim();
-
-    console.log("webhook.ok", {
-      orderNumber,
-      parentEmail,
-      hasProvider: !!(RESEND_API_KEY || SENDGRID_API_KEY)
-    });
-
-    // ----- Build rows & students summary -----
-    const rows = [];
-    const students = [];
-    const count = getStudentCount(md);
-
-    for (let i = 1; i <= count; i++) {
-      const fullName = md[`s${i}_name`] || "";
-      const [first, last] = splitFirstLast(fullName);
-      const grade   = md[`s${i}_grade`]   || "";
-      const teacher = md[`s${i}_teacher`] || "";
-      const pkg     = (md[`s${i}_pkg`]    || "").trim();
-      const bg      = md[`s${i}_bg`]      || (md.background || "");
-      const addonsRaw = md[`s${i}_addons`] || ""; // "F, H" etc.
-
-      const addonCodes = addonsRaw
-        .split(/[,; ]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
-      const packageCombined = [pkg, ...addonCodes].filter(Boolean).join(", ");
-
-      // Append to Google Sheet
-      rows.push({
-        Package: packageCombined,
-        LastName: last,
-        FirstName: first,
-        Grade: grade,
-        Teacher: teacher,
-        Background: bg,
-        OrderNumber: orderNumber,
-        ParentEmail: parentEmail
-      });
-
-      // For the receipt email table
-      students.push({
-        name: fullName || `Student ${i}`,
-        teacher, grade, bg,
-        packageLine: packageCombined,
-        amount: null // filled if we can apportion from line_items
-      });
+    // Pull expanded details (line items & PI) when possible
+    let expanded = session;
+    try {
+      if (STRIPE_SECRET_KEY) {
+        const se = await fetchJSON(
+          `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session.id)}?expand[]=line_items&expand[]=payment_intent`,
+          { headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` } }
+        );
+        expanded = se;
+      }
+    } catch (e) {
+      console.error("Expand fetch failed:", e.message);
+      // keep using session bare object
     }
 
-    // ----- Append to Google Sheets (best-effort) -----
-    if (rows.length) {
+    const md = expanded.metadata || session.metadata || {};
+    const parentEmail = pickParentEmail(expanded, md);
+    const toEmail = parentEmail || DEBUG_EMAIL_TO || "";
+
+    const orderNumber = makeOrderNumber(session.id, session.created);
+    const amountTotal = expanded.amount_total ?? session.amount_total ?? 0;
+    const currency = expanded.currency || session.currency || "usd";
+    const receiptUrl = expanded?.payment_intent?.charges?.data?.[0]?.receipt_url || "";
+    const viewOrderUrl = `${SITE_URL.replace(/\/$/,"")}/success.html?session_id=${encodeURIComponent(session.id)}`;
+
+    // Students: from metadata
+    let students = collectStudentsFromMetadata(md);
+
+    // Try to attach amounts from line_items (grouped by student name prefix)
+    const lineItems = expanded.line_items?.data || [];
+    if (lineItems.length && students.length) {
+      students = assignAmountsFromLineItems(students, lineItems);
+    }
+
+    // ----- Google Sheets (one row per student) -----
+    const rows = students.length ? students.map((s) => ({
+      order_number: orderNumber,
+      parent_email: parentEmail || "",
+      first: s.first || "",
+      last: s.last || "",
+      grade: s.grade || "",
+      teacher: s.teacher || "",
+      background: s.bg || "",
+      package: s.pkg || "",
+      addons: s.addons || "",
+      package_and_addons: s.packageLine || "",
+      student_display: s.name || "",
+      total_cents_for_student: s.amount != null ? s.amount : "",
+      session_id: session.id,
+      created: new Date((session.created || Date.now()/1000) * 1000).toISOString()
+    })) : [{
+      order_number: orderNumber,
+      parent_email: parentEmail || "",
+      first: "",
+      last: "",
+      grade: "",
+      teacher: "",
+      background: md.background || "",
+      package: md.package || "",
+      addons: md.addons || "",
+      package_and_addons: [md.package, md.addons].filter(Boolean).join(", "),
+      student_display: "",
+      total_cents_for_student: amountTotal || "",
+      session_id: session.id,
+      created: new Date((session.created || Date.now()/1000) * 1000).toISOString()
+    }];
+
+    if (SHEETS_WEBAPP_URL) {
       try {
-        const resp = await fetch(SHEETS_WEBAPP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rows })
-        });
-        if (!resp.ok) {
-          const text = await resp.text();
-          console.error("Sheets error:", text);
-        } else {
-          console.log(`Sheets appended ${rows.length} row(s) for order ${orderNumber}`);
-        }
-      } catch (e) {
-        console.error("Sheets request failed:", e);
+        const out = await appendRowsToSheets(rows);
+        console.log(`Sheets appended ${rows.length} row(s) for order ${orderNumber}`);
+      } catch (err) {
+        console.error("Sheets append error:", err.message);
       }
     }
 
-    // ----- Email receipt (best-effort) -----
-    if ((parentEmail || DEBUG_EMAIL_TO) && (RESEND_API_KEY || SENDGRID_API_KEY)) {
+    // ----- Email -----
+    const hasProvider = !!(RESEND_API_KEY || SENDGRID_API_KEY);
+    console.log("webhook.ok {");
+    console.log("  orderNumber:", `'${orderNumber}',`);
+    console.log("  parentEmail:", `'${parentEmail}',`);
+    console.log("  hasProvider:", hasProvider);
+    console.log("}");
+
+    if (hasProvider && toEmail) {
+      // Try to find card brand/last4 from PaymentIntent (if expanded)
+      let pmBrand = "";
+      let pmLast4 = "";
       try {
-        let amountTotal = session.amount_total || 0;
-        let currency    = session.currency || "usd";
-        let receiptUrl  = "";
-        let pmBrand = "", pmLast4 = "";
+        const ch = expanded?.payment_intent?.charges?.data?.[0];
+        pmBrand = ch?.payment_method_details?.card?.brand || "";
+        pmLast4 = ch?.payment_method_details?.card?.last4 || "";
+      } catch (_) {}
 
-        // Expand session line_items for totals; PI->charge for receipt + card brand/last4
-        const s = await fetchStripe(`/v1/checkout/sessions/${session.id}?expand[]=line_items`);
-        if (s) {
-          amountTotal = s.amount_total ?? amountTotal;
-          currency    = s.currency ?? currency;
-        }
-        if (session.payment_intent) {
-          const pi = await fetchStripe(`/v1/payment_intents/${session.payment_intent}?expand[]=charges.data.payment_method_details.card`);
-          const charge = pi?.charges?.data?.[0];
-          if (charge) {
-            receiptUrl = charge.receipt_url || receiptUrl;
-            const card = charge.payment_method_details?.card;
-            if (card) { pmBrand = card.brand || ""; pmLast4 = card.last4 || ""; }
-          }
-        }
+      const { subject, html, text } = modernReceipt({
+        brandName: BRAND_NAME,
+        logoUrl: BRAND_LOGO,
+        orderNumber,
+        created: session.created,
+        total: amountTotal,
+        currency,
+        parentEmail: toEmail,
+        receiptUrl,
+        viewOrderUrl,
+        students,
+        pmBrand,
+        pmLast4
+      });
 
-        // Try to apportion amounts by matching line item names "<Student> — ..."
-        if (s?.line_items?.data?.length && students.length) {
-          const map = new Map(students.map((st, i) => [st.name, i]));
-          s.line_items.data.forEach(li => {
-            const name = (li.description || li.price?.product || li.price?.nickname || li.price?.id || "");
-            const studentKey = (name.split(" — ")[0] || "").trim();
-            const idx = map.get(studentKey);
-            const liTotal = (li.amount_total != null ? li.amount_total : ((li.price?.unit_amount || 0) * (li.quantity || 1)));
-            if (idx != null) {
-              students[idx].amount = (students[idx].amount || 0) + liTotal;
-            }
-          });
-        }
-
-        const logoUrl      = SITE_URL ? `${SITE_URL}/2020Logo_black.png` : "";
-        const viewOrderUrl = SITE_URL ? `${SITE_URL}/success.html?session_id=${encodeURIComponent(session.id)}` : "";
-
-        const { subject, html, text } = modernReceipt({
-          brandName: BRAND_NAME,
-          logoUrl,
-          orderNumber,
-          created: session.created || Math.floor(Date.now()/1000),
-          total: amountTotal,
-          currency,
-          parentEmail,
-          receiptUrl,
-          viewOrderUrl,
-          students,
-          pmBrand,
-          pmLast4
-        });
-
-        const target = parentEmail || DEBUG_EMAIL_TO; // fallback for testing
-        console.log("email.sending", { to: target, orderNumber });
-        await sendEmail({ to: target, subject, html, text });
-        console.log("email.sent", { to: target });
-      } catch (e) {
-        console.error("Email send error:", e);
+      try {
+        console.log("email.sending", { to: toEmail });
+        await sendEmail(toEmail, subject, html, text);
+        console.log("email.sent", { to: toEmail });
+      } catch (err) {
+        console.error("Email send error:", err.message);
       }
     }
 
     return { statusCode: 200, body: JSON.stringify({ ok: true }) };
   } catch (err) {
-    console.error("Webhook error:", err);
-    // Return 200 so Stripe doesn't endlessly retry; logs will show details.
-    return { statusCode: 200, body: "ok" };
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ error: "Server error", details: String(err) }) };
   }
 };
