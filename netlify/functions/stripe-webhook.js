@@ -1,36 +1,21 @@
 // netlify/functions/stripe-webhook.js
-// Works in both CJS and ESM Netlify runtimes by guarding exports.
+// ESM-only, exports a NAMED `handler` so Netlify can find it when "type":"module".
 
-"use strict";
+import crypto from "node:crypto";
+import { modernReceipt2, PACKAGE_BREAKDOWN, ADDON_NAMES } from "./_emails/templates.js";
 
-const crypto = require ? require("crypto") : await import("node:crypto").then(m => m.default || m);
-
-// Safe dynamic import for our template (avoid build-time issues)
-let templates;
-try {
-  // CJS require if available
-  templates = require ? require("./_emails/templates") : null;
-} catch {}
-if (!templates) {
-  // ESM fallback
-  templates = await import("./_emails/templates.js").then(m => m.default || m);
-}
-const { modernReceipt2, PACKAGE_BREAKDOWN, ADDON_NAMES } = templates;
-
-// ---- env --------------------------------------------------------------------
+// ---------- env ----------
 const STRIPE_SIGNING_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 const RESEND_API_KEY        = process.env.RESEND_API_KEY;
 const EMAIL_FROM            = process.env.EMAIL_FROM || "Scott Ymker Photography <scott@scottymkerphotos.com>";
 const REPLY_TO_EMAIL        = process.env.REPLY_TO_EMAIL || "scott@scottymkerphotos.com";
 const EMAIL_BCC             = process.env.EMAIL_BCC || "";
-const PUBLIC_BASE_URL       = process.env.PUBLIC_BASE_URL;
+const PUBLIC_BASE_URL       = (process.env.PUBLIC_BASE_URL || "").replace(/\/+$/,"");
+const SHEETS_WEB_APP_URL    = (process.env.SHEETS_WEB_APP_URL || "").trim(); // optional
 
-// ---- helpers ----------------------------------------------------------------
+// ---------- helpers ----------
 const money = (c = 0) => Number(c || 0);
 const fmtOrderNum = (id = "") => String(id).replace(/^cs_/i, "SYP-").toUpperCase();
-
-const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
-const ADDON_PRICES   = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
 
 function verifyStripeSig(raw, sig, secret) {
   if (!sig || !secret) return false;
@@ -38,7 +23,11 @@ function verifyStripeSig(raw, sig, secret) {
   if (!parts.t || !parts.v1) return false;
   const signed = `${parts.t}.${raw}`;
   const expected = crypto.createHmac("sha256", secret).update(signed).digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected));
+  try {
+    return crypto.timingSafeEqual(Buffer.from(parts.v1), Buffer.from(expected));
+  } catch {
+    return false;
+  }
 }
 
 async function sendEmail({ to, subject, html }) {
@@ -63,9 +52,52 @@ async function sendEmail({ to, subject, html }) {
   }
 }
 
-async function handler(event, context) {
+async function appendToSheets(row) {
+  if (!SHEETS_WEB_APP_URL) {
+    console.warn("SHEETS_WEB_APP_URL not set; skipping Sheets append");
+    return;
+  }
+  const res = await fetch(SHEETS_WEB_APP_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(row),
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    console.warn("Sheets append failed:", res.status, t);
+  }
+}
+
+function collectStudentsFromMetadata(md) {
+  const students = [];
+  for (let i = 1; i <= 12; i++) {
+    const name   = (md[`s${i}_name`] || "").trim();
+    const pkg    = (md[`s${i}_pkg`]  || "").trim().toUpperCase();
+    const addons = (md[`s${i}_addons`] || "")
+      .split(",")
+      .map(s => s.trim().toUpperCase())
+      .filter(Boolean);
+
+    if (!name && !pkg && addons.length === 0) continue;
+
+    let amount = 0;
+    if (pkg && PACKAGE_BREAKDOWN[pkg]) {
+      // add the package price if known
+      const PACKAGE_PRICES = { A:3200, A1:4100, B:2700, B1:3200, C:2200, C1:2700, D:1800, D1:2300, E:1200, E1:1700 };
+      amount += PACKAGE_PRICES[pkg] ?? 0;
+    }
+    const ADDON_PRICES = { F:600, G:600, H:600, I:1800, J:600, K:600, L:700, M:800, N:1500 };
+    addons.forEach(code => { amount += (ADDON_PRICES[code] ?? 0); });
+
+    students.push({ name, pkg, addons, amountCents: amount });
+  }
+  return students;
+}
+
+// ---------- handler ----------
+export async function handler(event) {
   try {
-    // Stripe will POST; allow GET to return 200 for a quick health check in browser
+    // Quick health check in a browser
     if (event.httpMethod === "GET") {
       return { statusCode: 200, body: "OK" };
     }
@@ -73,18 +105,18 @@ async function handler(event, context) {
       return { statusCode: 405, body: "Method Not Allowed" };
     }
 
-    const rawBody = event.body || "";
+    const raw = event.body || "";
     const sig = event.headers["stripe-signature"];
-    if (!verifyStripeSig(rawBody, sig, STRIPE_SIGNING_SECRET)) {
+    if (!verifyStripeSig(raw, sig, STRIPE_SIGNING_SECRET)) {
       return { statusCode: 400, body: JSON.stringify({ error: "Invalid signature" }) };
     }
 
-    const wrapper = JSON.parse(rawBody);
-    if (wrapper.type !== "checkout.session.completed") {
-      return { statusCode: 200, body: JSON.stringify({ ok: true, ignored: wrapper.type }) };
+    const evt = JSON.parse(raw);
+    if (evt.type !== "checkout.session.completed") {
+      return { statusCode: 200, body: JSON.stringify({ ok: true, ignored: evt.type }) };
     }
 
-    const session = wrapper.data?.object || {};
+    const session = evt.data?.object || {};
     const md = session.metadata || {};
 
     const parentEmail =
@@ -93,31 +125,17 @@ async function handler(event, context) {
       md.parent_email ||
       "";
 
-    const students = [];
-    for (let i = 1; i <= 12; i++) {
-      const name   = md[`s${i}_name`] || "";
-      const pkg    = (md[`s${i}_pkg`] || "").toUpperCase();
-      const addons = (md[`s${i}_addons`] || "")
-        .split(",")
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
-      if (!name && !pkg && !addons.length) continue;
-
-      let amount = 0;
-      if (pkg && PACKAGE_PRICES[pkg] != null) amount += PACKAGE_PRICES[pkg];
-      addons.forEach(code => { if (ADDON_PRICES[code] != null) amount += ADDON_PRICES[code]; });
-
-      students.push({ name, pkg, addons, amountCents: amount });
-    }
+    const students = collectStudentsFromMetadata(md);
 
     const orderNumber = fmtOrderNum(session.id);
     const totalCents  = money(session.amount_total);
-    const currency    = session.currency || "usd";
+    const currency    = (session.currency || "usd").toLowerCase();
     const paidAtISO   = new Date((session.created || Math.floor(Date.now()/1000)) * 1000).toISOString();
 
-    const origin = (PUBLIC_BASE_URL || `https://${event.headers.host || ""}`).replace(/\/+$/,"");
+    const origin = PUBLIC_BASE_URL || `https://${(event.headers?.host || "").replace(/\/+$/,"")}`;
     const receiptUrl = `${origin}/success.html?session_id=${encodeURIComponent(session.id)}`;
 
+    // Build HTML email with full package breakdown & contact block
     const html = modernReceipt2({
       businessName: "Scott Ymker Photography",
       logoUrl: `${origin}/2020Logo_black.png`,
@@ -135,10 +153,26 @@ async function handler(event, context) {
       },
     });
 
+    // Send the email
     await sendEmail({
       to: parentEmail || EMAIL_BCC || REPLY_TO_EMAIL,
       subject: `Receipt • ${orderNumber} • Scott Ymker Photography`,
       html,
+    });
+
+    // Optionally append one flattened row to Google Sheets
+    const first = students[0] || { name: "", pkg: "", addons: [] };
+    const pkgAndAddons = [first.pkg, ...(first.addons || [])].filter(Boolean).join(", ");
+    await appendToSheets({
+      order_number: orderNumber,
+      parent_email: parentEmail,
+      student_name: first.name,
+      teacher: md.s1_teacher || "",
+      grade: md.s1_grade || "",
+      background: md.s1_bg || "",
+      package: pkgAndAddons,
+      paid_cents: totalCents,
+      paid_at: paidAtISO,
     });
 
     console.info("webhook.ok {");
@@ -152,8 +186,3 @@ async function handler(event, context) {
     return { statusCode: 500, body: JSON.stringify({ error: String(err) }) };
   }
 }
-
-// ---- export for both CJS and ESM -------------------------------------------
-if (typeof exports !== "undefined") exports.handler = handler;
-if (typeof module !== "undefined") module.exports = { handler };
-export default handler; // harmless if parsed as CJS; ESM will use this
