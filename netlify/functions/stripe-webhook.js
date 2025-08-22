@@ -1,279 +1,359 @@
+// netlify/functions/stripe-webhook.js
 'use strict';
 
-const crypto = require('crypto');
-const tpl = require('./_emails/templates');
+/**
+ * ENV required:
+ *  - SHEETS_WEB_APP_URL      (Apps Script Web App endpoint that accepts JSON POST)
+ *  - RESEND_API_KEY          (Resend API key)
+ *  - EMAIL_FROM              (e.g. 'Scott Ymker Photography <scott@scottymkerphotos.com>')
+ * Optional:
+ *  - EMAIL_BCC               (e.g. 'scott@scottymkerphotos.com')
+ *  - REPLY_TO_EMAIL          (e.g. 'scott@scottymkerphotos.com')
+ */
 
-// pick the renderer that exists (modernReceipt preferred)
-const renderReceipt = tpl.modernReceipt || tpl.modernReceipt2 || tpl.default;
-if (typeof renderReceipt !== 'function') {
-  throw new Error('No receipt renderer found in _emails/templates.js (need modernReceipt)');
-}
-
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
-const STRIPE_SECRET_KEY     = process.env.STRIPE_SECRET_KEY || '';
-const SHEETS_WEBAPP_URL     = process.env.SHEETS_WEBAPP_URL || '';
-
-const RESEND_API_KEY        = process.env.RESEND_API_KEY || '';
-const EMAIL_FROM            = process.env.EMAIL_FROM || 'Scott Ymker Photography <no-reply@scottymkerphotos.com>';
-const REPLY_TO              = process.env.REPLY_TO || '';
-const DEBUG_EMAIL_TO        = process.env.DEBUG_EMAIL_TO || '';
-const SITE_URL              = process.env.SITE_URL || 'https://schools.scottymkerphotos.com';
-
-const BRAND_NAME = 'Scott Ymker Photography';
-const BRAND_LOGO = `${SITE_URL.replace(/\/$/, '')}/2020Logo_black.png`;
-
-function timedSafeEqual(a, b) {
-  const A = Buffer.from(a || '');
-  const B = Buffer.from(b || '');
-  if (A.length !== B.length) return false;
-  return crypto.timingSafeEqual(A, B);
-}
-
-function verifyStripeSignature(rawBody, sigHeader, secret, tol = 300) {
-  if (!sigHeader || !secret) return false;
-  const parts = Object.fromEntries(sigHeader.split(',').map(s => s.split('=').map(x => x.trim())));
-  const t  = parts.t;
-  const v1 = parts.v1;
-  if (!t || !v1) return false;
-  const payload  = `${t}.${rawBody}`;
-  const expected = crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
-  const now = Math.floor(Date.now() / 1000);
-  if (Math.abs(now - Number(t)) > tol) return false;
-  return timedSafeEqual(v1, expected);
-}
-
-async function fetchJSON(url, opts = {}) {
-  const res = await fetch(url, opts);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data.error?.message || data.error || res.statusText);
-    err.status = res.status;
-    err.body   = data;
-    throw err;
-  }
-  return data;
-}
-
-function makeOrderNumber(sessionId, created) {
-  const d = new Date((created || Date.now()/1000) * 1000);
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const da= String(d.getDate()).padStart(2,'0');
-  const suffix = (sessionId || '').slice(-6).toUpperCase().replace(/[^A-Z0-9]/g,'');
-  return `SYP-${y}${m}${da}-${suffix}`;
-}
-
-const safe = (s)=> (s||'').toString().trim();
-
-function pickParentEmail(session, md) {
-  return session.customer_details?.email || session.customer_email || md.parent_email || '';
-}
-
-function packageLineFrom(md, k) {
-  const pkg    = safe(md[`s${k}_pkg`]);
-  const addons = safe(md[`s${k}_addons`]);
-  return [pkg, addons].filter(Boolean).join(', ');
-}
-
-function collectStudentsFromMetadata(md) {
-  const list = [];
-  const count = Number(md.students_count || '0') || 0;
-  for (let i=1;i<=count;i++){
-    const nameField = safe(md[`s${i}_name`]);
-    const first = safe(md[`s${i}_first`]);
-    const last  = safe(md[`s${i}_last`]);
-    const name = nameField || [first,last].filter(Boolean).join(' ') || `Student ${i}`;
-    list.push({
-      index:i,
-      name, first, last,
-      teacher: safe(md[`s${i}_teacher`]),
-      grade  : safe(md[`s${i}_grade`]),
-      bg     : safe(md[`s${i}_bg`]) || 'F1',
-      pkg    : safe(md[`s${i}_pkg`]),
-      addons : safe(md[`s${i}_addons`]),
-      packageLine: packageLineFrom(md, i),
-      amount : null,
-    });
-  }
-  return list;
-}
-
-function assignAmountsFromLineItems(students, lineItems) {
-  if (!Array.isArray(students) || !Array.isArray(lineItems)) return students;
-  students.forEach(s => (s.amount = 0));
-  lineItems.forEach(li => {
-    const desc = li.description || '';
-    const namePrefix = desc.split(' — ')[0].trim();
-    const total = (li.amount_total != null ? li.amount_total : (li.amount_subtotal ?? 0)) * 1;
-    const target = students.find(s => s.name === namePrefix);
-    if (target) target.amount += total;
-  });
-  return students;
-}
-
-async function appendRowsToSheets(rows) {
-  if (!SHEETS_WEBAPP_URL) return { ok:false, skipped:true };
-  const r = await fetch(SHEETS_WEBAPP_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ rows }),
-  });
-  const txt = await r.text();
-  if (!r.ok) throw new Error(`Sheets error ${r.status}: ${txt}`);
-  return { ok:true, body:txt };
-}
-
-// -------- RESEND ONLY --------
-async function sendEmail(to, subject, html, text) {
-  if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY missing');
-  const r = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: EMAIL_FROM,
-      to: [to],
-      subject,
-      html,
-      text,
-      reply_to: REPLY_TO || undefined,
-    }),
-  });
-  if (!r.ok) throw new Error(`Resend ${r.status}: ${await r.text()}`);
-}
-// --------------------------------
-
-async function handler(event) {
+exports.handler = async (event) => {
   try {
     if (event.httpMethod !== 'POST') {
-      return { statusCode: 405, headers: { Allow:'POST' }, body: 'Method Not Allowed' };
+      return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    const raw = event.body || '';
-    const sig = event.headers['stripe-signature'] || event.headers['Stripe-Signature'];
-    if (!verifyStripeSignature(raw, sig, STRIPE_WEBHOOK_SECRET)) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Invalid signature' }) };
+    const payload = JSON.parse(event.body || '{}');
+    // Stripe sends the whole event wrapper; we only care about completed Checkout Session
+    const type = payload.type || payload.event || '';
+    const session = payload.data && payload.data.object ? payload.data.object : payload;
+
+    if ((type && type !== 'checkout.session.completed') &&
+        (session.object !== 'checkout.session')) {
+      // Ignore unrelated events
+      return json(200, { ok: true, ignored: true });
     }
 
-    const payload = JSON.parse(raw);
-    if (payload.type !== 'checkout.session.completed') {
-      return { statusCode: 200, body: JSON.stringify({ ok:true, skipped:true }) };
-    }
+    // ----- Extract values from the Checkout Session -----
+    const sessionId     = session.id || '';
+    const created       = session.created || Math.floor(Date.now()/1000);
+    const currency      = (session.currency || 'usd').toLowerCase();
+    const total         = session.amount_total || 0;
+    const parentEmail   = session.customer_email || (session.customer_details && session.customer_details.email) || '';
+    const parentPhone   = (session.customer_details && session.customer_details.phone) || '';
+    const paymentStatus = session.payment_status || 'paid';
+    const receiptUrl    = (session.latest_charge && session.latest_charge.receipt_url) || '';
+    const pmBrand       = (session.payment_method_types && session.payment_method_types[0]) || '';
+    const pmLast4       = (session.payment_method && session.payment_method.card && session.payment_method.card.last4) || '';
 
-    const session = payload.data?.object || {};
+    const md = session.metadata || {};
 
-    // Expand for line items + charges
-    let expanded = session;
+    // Friendly order number from session id
+    const orderNumber = buildOrderNumber(sessionId, created);
+
+    // Collect students from metadata (s1_*, s2_* …)
+    const students = collectStudentsFromMetadata(md, currency);
+
+    // ---- Append to Google Sheets (same columns you already had working) ----
+    // We keep: Timestamp, Order #, First, Last, Grade, Teacher, Packages, Background, Parent Email
     try {
-      if (STRIPE_SECRET_KEY) {
-        expanded = await fetchJSON(
-          `https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(session.id)}?expand[]=line_items&expand[]=payment_intent`,
-          { headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` } }
-        );
+      if (process.env.SHEETS_WEB_APP_URL) {
+        const rows = students.map((s) => ([
+          new Date().toISOString(),
+          orderNumber,
+          s.first,
+          s.last,
+          s.grade,
+          s.teacher,
+          s.packageLine,      // e.g. "B1, H"
+          s.background || '',
+          parentEmail
+        ]));
+        await appendToSheets(process.env.SHEETS_WEB_APP_URL, rows);
+        console.log('Sheets appended', rows.length, 'row(s) for order', orderNumber);
+      } else {
+        console.warn('SHEETS_WEB_APP_URL not set; skipping Sheets append');
       }
-    } catch (e) {
-      console.error('Expand fetch failed:', e.message);
+    } catch (err) {
+      console.error('Sheets append error:', err);
     }
 
-    const md          = expanded.metadata || session.metadata || {};
-    const parentEmail = pickParentEmail(expanded, md);
-    const toEmail     = parentEmail || DEBUG_EMAIL_TO || '';
+    // ---- Send receipt email via Resend (inline template) ----
+    try {
+      const hasResend = !!process.env.RESEND_API_KEY && !!process.env.EMAIL_FROM;
+      console.log('webhook.ok {');
+      console.log('  orderNumber:', `'${orderNumber}',`);
+      console.log('  parentEmail:', `'${parentEmail}',`);
+      console.log('  hasProvider:', hasResend);
+      console.log('}');
 
-    const orderNumber = makeOrderNumber(session.id, session.created);
-    const amountTotal = expanded.amount_total ?? session.amount_total ?? 0;
-    const currency    = expanded.currency || session.currency || 'usd';
-    const receiptUrl  = expanded?.payment_intent?.charges?.data?.[0]?.receipt_url || '';
-    const viewOrderUrl= `${SITE_URL.replace(/\/$/, '')}/success.html?session_id=${encodeURIComponent(session.id)}`;
+      if (hasResend && parentEmail) {
+        const emailProps = {
+          brandName: 'Scott Ymker Photography',
+          logoUrl: absoluteLogoUrl(event),
+          orderNumber,
+          created,
+          total,
+          currency,
+          parentEmail,
+          receiptUrl,
+          viewOrderUrl: successPageUrl(event, sessionId),
+          students,
+          pmBrand,
+          pmLast4
+        };
+        const msg = modernReceipt(emailProps);
 
-    let students = collectStudentsFromMetadata(md);
-    const lineItems = expanded.line_items?.data || [];
-    if (students.length && lineItems.length) {
-      students = assignAmountsFromLineItems(students, lineItems);
-    }
-
-    const rows = students.length ? students.map((s)=>({
-      order_number: orderNumber,
-      parent_email: parentEmail || '',
-      first: s.first || '',
-      last : s.last  || '',
-      grade: s.grade || '',
-      teacher: s.teacher || '',
-      background: s.bg || '',
-      package: s.pkg || '',
-      addons : s.addons || '',
-      package_and_addons: s.packageLine || '',
-      student_display: s.name || '',
-      total_cents_for_student: s.amount != null ? s.amount : '',
-      session_id: session.id,
-      created: new Date((session.created || Date.now()/1000)*1000).toISOString()
-    })) : [{
-      order_number: orderNumber,
-      parent_email: parentEmail || '',
-      first:'', last:'', grade:'', teacher:'',
-      background: md.background || '',
-      package: md.package || '',
-      addons : md.addons || '',
-      package_and_addons: [md.package, md.addons].filter(Boolean).join(', '),
-      student_display: '',
-      total_cents_for_student: amountTotal || '',
-      session_id: session.id,
-      created: new Date((session.created || Date.now()/1000)*1000).toISOString()
-    }];
-
-    if (SHEETS_WEBAPP_URL) {
-      try {
-        await appendRowsToSheets(rows);
-        console.log(`Sheets appended 1 row(s) for order ${orderNumber}`);
-      } catch (err) {
-        console.error('Sheets append error:', err.message);
+        await sendResendEmail({
+          subject: msg.subject,
+          html: msg.html,
+          text: msg.text,
+          to: parentEmail,
+          from: process.env.EMAIL_FROM,
+          bcc: process.env.EMAIL_BCC || '',
+          replyTo: process.env.REPLY_TO_EMAIL || ''
+        });
+        console.log('email.sent { to:', parentEmail, '}');
+      } else {
+        console.warn('Resend not configured or no parentEmail; skipping email send');
       }
+    } catch (err) {
+      console.error('Email send error:', err);
+      // Don’t fail the webhook because of email issues
     }
 
-    console.log('webhook.ok {');
-    console.log("  orderNumber:", `'${orderNumber}',`);
-    console.log("  parentEmail:", `'${parentEmail}',`);
-    console.log("  hasProvider:", !!RESEND_API_KEY);
-    console.log('}');
-
-    if (RESEND_API_KEY && toEmail) {
-      let pmBrand = '', pmLast4 = '';
-      try {
-        const ch = expanded?.payment_intent?.charges?.data?.[0];
-        pmBrand = ch?.payment_method_details?.card?.brand || '';
-        pmLast4 = ch?.payment_method_details?.card?.last4 || '';
-      } catch (_) {}
-
-      const { subject, html, text } = renderReceipt({
-        brandName: BRAND_NAME,
-        logoUrl  : BRAND_LOGO,
-        orderNumber,
-        created  : session.created,
-        total    : amountTotal,
-        currency,
-        parentEmail: toEmail,
-        receiptUrl,
-        viewOrderUrl,
-        students,
-        pmBrand,
-        pmLast4,
-      });
-
-      try {
-        console.log('email.sending', { to: toEmail });
-        await sendEmail(toEmail, subject, html, text);
-        console.log('email.sent', { to: toEmail });
-      } catch (err) {
-        console.error('Email send error:', err.message);
-      }
-    }
-
-    return { statusCode: 200, body: JSON.stringify({ ok:true }) };
+    return json(200, { ok: true });
   } catch (err) {
-    console.error(err);
-    return { statusCode: 500, body: JSON.stringify({ error:'Server error', details:String(err) }) };
+    console.error('webhook.fatal', err);
+    return json(200, { ok: false, error: String(err && err.message || err) });
+  }
+};
+
+/* ----------------------- Helpers ----------------------- */
+
+function json(status, obj) {
+  return { statusCode: status, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) };
+}
+
+function buildOrderNumber(sessionId, createdEpoch) {
+  // Format: SYP-YYYYMMDD-XXXXXX  (6 from the tail of the id)
+  const d = new Date((createdEpoch || Date.now()/1000) * 1000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth()+1).padStart(2,'0');
+  const day = String(d.getUTCDate()).padStart(2,'0');
+  const tail = (sessionId || '').replace(/^cs_/, '').replace(/[^a-zA-Z0-9]/g,'').slice(-6).toUpperCase() || 'XXXXXX';
+  return `SYP-${y}${m}${day}-${tail}`;
+}
+
+function collectStudentsFromMetadata(md, currency) {
+  const out = [];
+  const count = parseInt(md.students_count || md.student_count || md.count || '0', 10) || guessStudentCount(md);
+  for (let i=1;i<=count;i++){
+    const first = (md[`s${i}_name`] || md[`s${i}_first`] || '').split(' ')[0] || '';
+    const last  = md[`s${i}_last`] || (md[`s${i}_name`] ? md[`s${i}_name`].split(' ').slice(1).join(' ') : '');
+    const grade = md[`s${i}_grade`] || '';
+    const teacher = md[`s${i}_teacher`] || '';
+    const pkg  = (md[`s${i}_pkg`] || '').toUpperCase();
+    const addons = (md[`s${i}_addons`] || '')
+      .split(',')
+      .map(s=>s.trim())
+      .filter(Boolean)
+      .join(', ');
+    const background = md[`s${i}_bg`] || md[`s${i}_background`] || '';
+
+    const packageLine = [pkg, addons].filter(Boolean).join(', '); // e.g. "B1, H"
+
+    // If amounts per-student were not included, leave undefined
+    const amount = md[`s${i}_amount`] ? Number(md[`s${i}_amount`]) : undefined;
+
+    out.push({
+      index:i, first, last,
+      name: [first,last].filter(Boolean).join(' '),
+      grade, teacher, pkg, addons,
+      background, packageLine, amount, currency
+    });
+  }
+  return out;
+}
+
+function guessStudentCount(md) {
+  const keys = Object.keys(md||{});
+  const set = new Set();
+  keys.forEach(k=>{
+    const m = k.match(/^s(\d+)_/);
+    if (m) set.add(Number(m[1]));
+  });
+  return set.size || 1;
+}
+
+async function appendToSheets(webAppUrl, rows) {
+  await fetch(webAppUrl, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ rows })
+  });
+}
+
+async function sendResendEmail({ subject, html, text, to, from, bcc, replyTo }) {
+  const payload = {
+    from,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html,
+    text
+  };
+  if (bcc) payload.bcc = Array.isArray(bcc) ? bcc : [bcc];
+  if (replyTo) payload.reply_to = replyTo;
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(()=> '');
+    throw new Error(`Resend error ${res.status}: ${body}`);
   }
 }
 
-module.exports = { handler };
+/* ------------- Inline email template (no imports) ------------- */
+
+const money = (cents = 0, currency = 'usd') =>
+  (Number(cents) / 100).toLocaleString(undefined, {
+    style: 'currency',
+    currency: String(currency || 'USD').toUpperCase(),
+  });
+
+function modernReceipt(props = {}) {
+  const {
+    brandName = 'Scott Ymker Photography',
+    logoUrl = '',
+    orderNumber = '',
+    created,
+    total = 0,
+    currency = 'usd',
+    parentEmail = '',
+    receiptUrl = '',
+    viewOrderUrl = '',
+    students = [],
+    pmBrand = '',
+    pmLast4 = '',
+  } = props;
+
+  const createdStr = created
+    ? new Date(created * 1000).toLocaleString()
+    : new Date().toLocaleString();
+
+  const subject = `Receipt ${orderNumber} — ${brandName}`;
+
+  const studentRows = (students && students.length ? students : []).map((s) => {
+    const line = s.packageLine || [s.pkg, s.addons].filter(Boolean).join(', ');
+    const amt = s.amount != null ? money(s.amount, currency) : '';
+    return `
+      <tr>
+        <td style="padding:8px 0;font-weight:600;">${escapeHtml(s.name || '')}</td>
+        <td style="padding:8px 0;color:#555;">${escapeHtml(line || '')}</td>
+        <td style="padding:8px 0;text-align:right;white-space:nowrap;">${amt}</td>
+      </tr>`;
+  }).join('');
+
+  const pm = [pmBrand ? pmBrand.toUpperCase() : '', pmLast4 ? `•••• ${pmLast4}` : '']
+    .filter(Boolean).join(' · ');
+
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${escapeHtml(subject)}</title></head>
+<body style="margin:0;background:#f6f7f9;padding:24px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;background:#f6f7f9;">
+    <tr><td style="padding:0 8px 16px 8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${logoUrl ? `<img src="${escapeAttr(logoUrl)}" alt="${escapeAttr(brandName)}" style="height:36px;width:auto;border:0;display:block;" />` : ''}
+        <div style="font-weight:700;font-size:16px;color:#111;">${escapeHtml(brandName)}</div>
+      </div>
+    </td></tr>
+
+    <tr><td style="padding:0 8px 16px 8px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #e7e7e9;border-radius:14px;">
+        <tr><td style="padding:20px;">
+          <div style="font-size:20px;font-weight:700;color:#111;margin:0 0 6px 0;">Receipt • ${escapeHtml(brandName)}</div>
+          <div style="color:#68707a;font-size:14px;margin:0 0 10px 0;">Paid ${escapeHtml(createdStr)}</div>
+          <div style="font-size:28px;font-weight:800;margin:10px 0;">${money(total, currency)}</div>
+          <div style="margin-top:14px;">
+            ${viewOrderUrl ? `<a href="${escapeAttr(viewOrderUrl)}" style="display:inline-block;background:#0ea5e9;color:#fff;text-decoration:none;padding:10px 14px;border-radius:999px;font-weight:600;">View receipt</a>` : ''}
+            ${receiptUrl ? `<a href="${escapeAttr(receiptUrl)}" style="display:inline-block;margin-left:8px;color:#0ea5e9;text-decoration:none;padding:10px 14px;border-radius:999px;border:1px solid #0ea5e9;font-weight:600;">Card receipt</a>` : ''}
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td style="padding:0 8px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff;border:1px solid #e7e7e9;border-radius:14px;">
+        <tr><td style="padding:18px 20px;">
+          <div style="font-size:16px;font-weight:700;margin:0 0 8px 0;">Order ${escapeHtml(orderNumber)}</div>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th align="left" style="text-align:left;color:#68707a;font-size:13px;padding:6px 0;">Student</th>
+                <th align="left" style="text-align:left;color:#68707a;font-size:13px;padding:6px 0;">Items</th>
+                <th align="right" style="text-align:right;color:#68707a;font-size:13px;padding:6px 0;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentRows || `<tr><td colspan="3" style="padding:8px 0;color:#68707a;">Thank you for your order.</td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2" style="padding-top:10px;color:#68707a;">Payment ${pm ? `• ${escapeHtml(pm)}` : ''}</td>
+                <td align="right" style="padding-top:10px;font-weight:800;">${money(total, currency)}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div style="margin-top:12px;color:#68707a;font-size:13px;">
+            A copy has been sent to ${escapeHtml(parentEmail || 'your email')}.
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+
+    <tr><td style="padding:12px 8px 0 8px;color:#68707a;font-size:12px;">
+      Questions? Reply to this email and we’ll help.
+    </td></tr>
+  </table>
+</body></html>`;
+
+  const text = [
+    `${brandName} — Receipt ${orderNumber}`,
+    `Paid: ${createdStr}`,
+    `Total: ${money(total, currency)}`,
+    parentEmail ? `Email: ${parentEmail}` : '',
+    students && students.length ? '\nItems:' : '',
+    ...(students || []).map((s) => {
+      const line = s.packageLine || [s.pkg, s.addons].filter(Boolean).join(', ');
+      const amt = s.amount != null ? money(s.amount, currency) : '';
+      return `• ${s.name}${line ? ` — ${line}` : ''}${amt ? ` — ${amt}` : ''}`;
+    }),
+    viewOrderUrl ? `\nView receipt: ${viewOrderUrl}` : '',
+    receiptUrl ? `Card receipt: ${receiptUrl}` : '',
+  ].filter(Boolean).join('\n');
+
+  return { subject, html, text };
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+function absoluteLogoUrl(event) {
+  // Build absolute base from request (works for both *.netlify.app and custom domain)
+  const protoHost = event.headers['x-forwarded-proto'] && event.headers['x-forwarded-host']
+    ? `${event.headers['x-forwarded-proto']}://${event.headers['x-forwarded-host']}`
+    : (`https://${event.headers.host}`);
+  return `${protoHost}/2020Logo_black.png`;
+}
+
+function successPageUrl(event, sessionId) {
+  const protoHost = event.headers['x-forwarded-proto'] && event.headers['x-forwarded-host']
+    ? `${event.headers['x-forwarded-proto']}://${event.headers['x-forwarded-host']}`
+    : (`https://${event.headers.host}`);
+  return `${protoHost}/success.html?session_id=${encodeURIComponent(sessionId || '')}`;
+}
