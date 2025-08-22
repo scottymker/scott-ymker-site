@@ -2,13 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Scott Ymker Photography • School Portraits</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="index.css" />
+
+  <!-- Mobile QA overrides -->
+  <style>
+    /* --- Global/mobile hygiene --- */
+    * { box-sizing: border-box; }
+    html, body { overflow-x: hidden; }
+    img { max-width: 100%; height: auto; display: block; }
+    .wrap { width: min(1200px, calc(100% - 32px)); margin-inline: auto; }
+
+    /* --- Header + hamburger nav --- */
+    :root { --nav-h: 64px; --border:#e6e7ea; --ink:#111; --card:#fff; }
+    .sitebar { position: relative; z-index: 10; background: var(--card); border-bottom: 1px solid var(--border); }
+    .sitebar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--nav-h); }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand img { height: 32px; width: auto; }
+
+    .nav-links { display: flex; gap: 20px; align-items: center; } /* desktop */
+    .nav-toggle{
+      display:none; border:0; background:transparent; width:40px; height:40px;
+      color:#111 !important; /* force black */
+      -webkit-appearance:none; appearance:none; padding:0; margin:0;
+    }
+    .nav-toggle svg{ width:28px; height:28px; display:block; }
+    @media (max-width:768px){
+      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center; }
+      /* Closed mobile menu is fully hidden (prevents stray bar) */
+      .nav-links{
+        position:fixed; left:0; right:0; top:var(--nav-h);
+        background:var(--card); border-top:1px solid var(--border);
+        flex-direction:column; padding:12px 16px;
+        display:none; pointer-events:none;
+      }
+      .nav-links.open{ display:flex; pointer-events:auto; }
+    }
+
+    /* --- Sections/cards --- */
+    .hero .card, .promo .card, .contact .card { overflow: hidden; }
+
+    /* --- Background gallery --- */
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+    .bg-card { border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06); overflow: hidden; }
+    .bg-card .thumb img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+    .bg-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; font-size: 14px; }
+    @media (max-width:480px){ .bg-meta .hint{ display:none; } }
+
+    /* --- Contact box fixes --- */
+    .kvs { display: grid; grid-template-columns: 120px 1fr; gap: 10px 12px; align-items: start; }
+    .kvs .key { color:#6b7280; }
+    .kvs a, .kvs div { min-width:0; overflow-wrap:break-word; word-break:break-word; }
+    @media (max-width:420px){
+      .kvs{ grid-template-columns:1fr; }
+      .kvs .key{ font-weight:600; margin-top:8px; }
+      .kvs .key + div{ margin-top:-4px; }
+    }
+  </style>
 </head>
 <body>
   <header class="sitebar">
@@ -17,9 +72,17 @@
         <img src="2020Logo_black.png" alt="Scott Ymker Photography logo">
         <div>Scott Ymker Photography</div>
       </div>
-      <nav aria-label="main">
+
+      <!-- Hamburger (SVG so it's always visible & black) -->
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav id="site-nav" class="nav-links" aria-label="main">
         <a href="index.html" aria-current="page">Home</a>
-        <a href="order.html">Order</a>
+        <a href="multi-order.html">Order</a>
         <a href="contact.html">Contact</a>
       </nav>
     </div>
@@ -31,7 +94,7 @@
         <h1>Welcome! Choose your student’s background</h1>
         <p class="subtle">Preview each background below. You’ll confirm your choice on the order page—no pressure.</p>
         <div class="cta">
-          <a class="btn primary" href="order.html">Start your order</a>
+          <a class="btn primary" href="multi-order.html">Start your order</a>
           <a class="btn" href="#backgrounds">See backgrounds</a>
         </div>
       </div>
@@ -112,7 +175,7 @@
             <li>Available as an add-on (M) or inside select packages</li>
           </ul>
           <p class="note">Add the Composite on the order page—look for add-on <strong>M</strong>.</p>
-          <div class="cta"><a class="btn primary" href="order.html">Order now</a></div>
+          <div class="cta"><a class="btn primary" href="multi-order.html">Order now</a></div>
         </div>
       </div>
     </section>
@@ -121,14 +184,21 @@
       <div class="card">
         <h2 class="section-title" style="margin-top:0">Questions before you order?</h2>
         <div class="kvs" role="list">
-          <div class="key">Email</div><div><a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a></div>
-          <div class="key">Phone</div><div><a href="tel:6055500828">605-550-0828</a></div>
-          <div class="key">Mailing</div><div>PO Box 544, Armour, SD 57313</div>
-          <div class="key">Website</div><div><a href="https://scottymkerphotos.com" target="_blank" rel="noopener">scottymkerphotos.com</a></div>
+          <div class="key">Email</div>
+          <div><a href="mailto:scott@scottymkerphotos.com">scott@scottymker<wbr>photos.com</a></div>
+
+          <div class="key">Phone</div>
+          <div><a href="tel:6055500828">605-550-0828</a></div>
+
+          <div class="key">Mailing</div>
+          <div>PO Box 544, Armour, SD 57313</div>
+
+          <div class="key">Website</div>
+          <div><a href="https://scottymkerphotos.com" target="_blank" rel="noopener">scottymker<wbr>photos.com</a></div>
         </div>
         <div class="cta" style="margin-top:14px">
           <a class="btn" href="contact.html">Contact form</a>
-          <a class="btn primary" href="order.html">Start your order</a>
+          <a class="btn primary" href="multi-order.html">Start your order</a>
         </div>
       </div>
     </section>
@@ -138,8 +208,26 @@
     © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
   </footer>
 
+  <!-- Mobile QA nav script -->
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      if (!toggle || !nav) return;
+
+      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+
+      toggle.addEventListener('click', () => {
+        const open = !nav.classList.contains('open');
+        nav.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+
+      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
   </script>
 </body>
 </html>

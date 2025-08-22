@@ -2,10 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Checkout canceled • Scott Ymker Photography</title>
 
-  <!-- Inter font to match order/success -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,75 +12,103 @@
   <style>
     :root{
       --bg:#f6f7f9; --card:#fff; --ink:#121212; --muted:#68707a;
-      --accent:#0ea5e9; --accent-ink:#fff; --ok:#16a34a; --warn:#a16207;
-      --border:#e8ebef;
+      --accent:#0ea5e9; --accent-ink:#fff; --warn:#a16207; --border:#e8ebef;
+      --nav-h:64px;
     }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    a{color:inherit}
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-    /* Header (same style as success/order) */
-    .sitebar{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 10px 12px;border-bottom:1px solid var(--border);
-      background:linear-gradient(#fbfbfc,#f6f7f9);
-      border-radius:12px;
-    }
-    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-    .brand img{height:36px;width:auto}
-    nav a{
-      text-decoration:none;color:#2d3640;margin-left:18px;font-weight:500;
-      padding:6px 8px;border-radius:8px
-    }
-    nav a[aria-current="page"]{background:#eef7ff;color:#0b77c5}
-    nav a:hover{background:#eff2f6}
+    *{ box-sizing:border-box }
+    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden }
+    img{ max-width:100%; height:auto; display:block }
+    a{ color:inherit; text-decoration:none }
 
-    /* Cards & layout */
+    /* Unified container — prevents overflow and matches hero/cards width */
+    .wrap{ width:min(1100px, calc(100% - 32px)); margin:24px auto }
+
+    /* Header with hamburger (same pattern as success/multi-order) */
+    .sitebar{ position:relative; z-index:10; background:var(--card); border-bottom:1px solid var(--border) }
+    .sitebar .inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:16px; padding-inline:10px }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; min-width:0 }
+    .brand img{ height:36px; width:auto }
+    .nav-links{ display:flex; gap:18px; align-items:center }
+    .nav-links a{ padding:6px 8px; border-radius:8px; font-weight:500 }
+    .nav-links a[aria-current="page"]{ background:#eef7ff; color:#0b77c5 }
+    .nav-links a:hover{ background:#eff2f6 }
+    .nav-toggle{ display:none; border:0; background:transparent; width:40px; height:40px; color:#111 !important; -webkit-appearance:none; appearance:none; padding:0; margin:0 }
+    .nav-toggle svg{ width:28px; height:28px; display:block }
+    @media (max-width:768px){
+      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center }
+      .nav-links{
+        position:fixed; left:0; right:0; top:var(--nav-h);
+        background:var(--card); border-top:1px solid var(--border);
+        flex-direction:column; padding:12px 16px; display:none; pointer-events:none
+      }
+      .nav-links.open{ display:flex; pointer-events:auto }
+    }
+
+    /* Hero */
     .hero{
-      margin-top:18px;background:var(--card);border:1px solid var(--border);
-      border-radius:16px;padding:22px 20px;display:flex;gap:14px;align-items:center
+      margin-top:18px; background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:22px 20px; display:flex; gap:14px; align-items:center
     }
     .icon{
-      height:36px;width:36px;border-radius:50%;display:grid;place-items:center;
-      background:rgba(161,98,7,.12);color:var(--warn);font-weight:800
+      height:36px; width:36px; border-radius:50%; display:grid; place-items:center;
+      background:rgba(161,98,7,.12); color:var(--warn); font-weight:800
     }
-    h1{margin:0 0 4px;font-size:24px}
-    .subtle{color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    h1{ margin:0 0 4px; font-size:24px }
+    .subtle{ color:var(--muted) }
 
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
-    .card h2{font-size:16px;margin:0 0 12px}
+    /* Cards & layout (equal widths, no overflow) */
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; align-items:stretch }
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;
+      display:flex; flex-direction:column; min-width:0
+    }
+    .card h2{ font-size:16px; margin:0 0 12px }
 
     .btn{
-      appearance:none;border:1px solid var(--border);background:#fff;color:var(--ink);
-      padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:600
+      appearance:none; border:1px solid var(--border); background:#fff; color:var(--ink);
+      padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:600
     }
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-    .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+    .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink) }
+    .btn-row{ display:flex; gap:10px; flex-wrap:wrap }
 
-    .list{display:grid;row-gap:8px}
-    .kv{display:grid;grid-template-columns:160px 1fr;column-gap:12px;row-gap:8px}
-    .label{color:var(--muted)}
+    .list{ display:grid; row-gap:8px }
+    .kv{ display:grid; grid-template-columns:160px 1fr; column-gap:12px; row-gap:8px; min-width:0 }
+    .label{ color:var(--muted) }
+    @media (max-width:520px){
+      .kv{ grid-template-columns:1fr }
+      .kv .label{ font-weight:600 }
+      .kv .label + div{ margin-bottom:6px }
+    }
 
-    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+    footer{ margin:24px 0 40px; color:var(--muted); font-size:13px }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- Header -->
-    <div class="sitebar">
-      <div class="brand">
+  <!-- Header -->
+  <div class="sitebar">
+    <div class="wrap inner">
+      <a class="brand" href="index.html">
         <img src="2020Logo_black.png" alt="Scott Ymker Photography logo" />
         <span>Scott Ymker Photography</span>
-      </div>
-      <nav aria-label="Main">
+      </a>
+
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav id="site-nav" class="nav-links" aria-label="main">
         <a href="index.html">Home</a>
-        <a href="order.html" aria-current="page">Order</a>
+        <a href="multi-order.html" aria-current="page">Order</a>
         <a href="contact.html">Contact</a>
       </nav>
     </div>
+  </div>
 
+  <div class="wrap">
     <!-- Hero -->
     <section class="hero" role="status" aria-live="polite">
       <div class="icon" role="img" aria-label="Checkout canceled">!</div>
@@ -101,7 +128,7 @@
         </div>
 
         <div class="btn-row" style="margin-top:14px">
-          <a class="btn primary" href="order.html">Resume order</a>
+          <a class="btn primary" href="multi-order.html">Resume order</a>
           <a class="btn" href="index.html">Back to Home</a>
         </div>
       </div>
@@ -128,14 +155,31 @@
   </div>
 
   <script>
-    // Small nicety: if a reason came through (?reason=something), show it under the headline.
+    // Footer year
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // Optional: reason message (?reason=...)
     const params = new URLSearchParams(location.search);
     const reason = params.get('reason');
     if (reason) {
       const hero = document.querySelector('.hero .subtle');
       hero.textContent = `No charge was made. Reason: ${reason}. You can review your order and try again below.`;
     }
-    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // Hamburger
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      if (!toggle || !nav) return;
+      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+      toggle.addEventListener('click', () => {
+        const open = !nav.classList.contains('open');
+        nav.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
   </script>
 </body>
 </html>

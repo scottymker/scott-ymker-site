@@ -7,16 +7,47 @@ const ADDON_NAMES    = {
 };
 
 const PACKAGE_BREAKDOWN = {
+  // Base packages
   A:  ["1 × 8x10 Class Composite","2 × 8x10","2 × 5x7","8 × wallets","16 × mini wallets"],
-  A1: ["Package A","1 × Digital File"],
   B:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 5x7","16 × wallets"],
-  B1: ["Package B","2 × extra 5x7"],
   C:  ["1 × 8x10 Class Composite","1 × 8x10","2 × 3.5x5","4 × wallets","16 × mini wallets"],
-  C1: ["Package C","2 × 5x7"],
   D:  ["1 × 8x10 Class Composite","2 × 5x7","8 × wallets"],
-  D1: ["Package D","16 × mini wallets"],
   E:  ["2 × 5x7","2 × 3.5x5","4 × wallets"],
-  E1: ["Package E","8 × extra wallets"]
+
+  // Updated “*1” descriptions
+  A1: [
+    "1 × 8x10 Class Composite",
+    "2 × 8x10",
+    "2 × 5x7",
+    "8 × wallets",
+    "16 × mini wallets",
+    "1 × Digital File"
+  ],
+  B1: [
+    "1 × 8x10 Class Composite",
+    "1 × 8x10",
+    "4 × 5x7",
+    "16 × wallets"
+  ],
+  C1: [
+    "1 × 8x10 Class Composite",
+    "1 × 8x10",
+    "2 × 3.5x5",
+    "2 × 5x7",
+    "4 × wallets",
+    "16 × mini wallets"
+  ],
+  D1: [
+    "1 × 8x10 Class Composite",
+    "2 × 5x7",
+    "8 × wallets",
+    "16 × mini wallets"
+  ],
+  E1: [
+    "2 × 5x7",
+    "2 × 3.5x5",
+    "12 × wallets"
+  ]
 };
 
 const MAX_STUDENTS = 6;
@@ -32,10 +63,10 @@ const addBtn = $('#addStudent');
 
 function studentTemplate(i){
   return `
-  <details class="student" data-i="${i}" ${i<=2?'open':''}>
+  <details class="student" data-i="${i}" ${i<=1?'open':''}>
     <summary>
       <span class="summ-left">Student ${i}</span>
-      <span class="summ-right muted" data-summ="${i}">Click to expand</span>
+      <span class="summ-right muted" data-summ="${i}">New student</span>
     </summary>
     <div class="content">
       <div class="section-title">Student information</div>
@@ -123,47 +154,34 @@ function removeStudent(i){
 // expose for inline handlers
 window.__removeStudent = removeStudent;
 
-// seed with 2 students
-addStudent(); addStudent();
+// seed with **1** student (was 2)
+addStudent();
 
 // -------- Header helpers ----------
 function studentName(det){
   const first = det.querySelector('[name$="_first"]')?.value.trim() || '';
   const last  = det.querySelector('[name$="_last"]')?.value.trim()  || '';
   if (first || last) return `${first} ${last}`.trim();
-  const i = det.dataset.i || '';
-  return `Student ${i}`.trim();
+  return ""; // empty means “no name yet”
 }
-function studentSubLabel(det){
-  const t = det.querySelector('[name$="_teacher"]')?.value.trim() || '';
-  const g = det.querySelector('[name$="_grade"]')?.value.trim()   || '';
-  const pkg = safeCode(det.querySelector('[name$="_package"]')?.value);
-  const pkgTxt = pkg ? `Pkg ${pkg}` : '';
-  const parts = [t, g, pkgTxt].filter(Boolean);
-  return parts.join(' / ');
-}
+
+// Only show the name (or “New student”) under the Student X label.
+// No teacher/grade/pkg here to keep it short on mobile.
 function updateSummaryHeaders(){
   [...studentsEl.children].forEach((det)=>{
     const i = det.dataset.i || '';
     const name = studentName(det);
-    const extra = studentSubLabel(det);
     const span = det.querySelector('[data-summ]');
     const left = det.querySelector('.summ-left');
-    const base = `Student ${i}`;
 
-    if (left){
-      if (/^Student \d+$/.test(name)) left.textContent = base;
-      else left.textContent = `${base}: ${name}`;
-    }
+    if (left) left.textContent = `Student ${i}`;
     if (!span) return;
-    if (extra){
-      span.textContent = `${name} — ${extra}`;
-      span.classList.remove('muted');
-    }else if (!/^Student \d+$/.test(name)){
+
+    if (name){
       span.textContent = name;
       span.classList.remove('muted');
-    }else{
-      span.textContent = 'Click to expand';
+    } else {
+      span.textContent = 'New student';
       span.classList.add('muted');
     }
   });
@@ -192,7 +210,7 @@ function collect(){
     const addons = [...det.querySelectorAll('[name$="_addons"]:checked')].map(x=>safeCode(x.value));
     return {
       det,
-      name: studentName(det),
+      name: studentName(det) || `Student ${det.dataset.i || ''}`.trim(),
       teacher: det.querySelector('[name$="_teacher"]')?.value.trim() || '',
       grade:   det.querySelector('[name$="_grade"]')?.value.trim()   || '',
       pkg:     safeCode(pkgSel?.value),
@@ -242,7 +260,7 @@ function renderSummary(){
   }
 
   $('#sumTotal').textContent = fmtMoney(total);
-  updateSummaryHeaders();
+  updateSummaryHeaders(); // keep header name line in sync as user types
 }
 
 window.renderSummary = renderSummary; // expose globally for inline handlers
@@ -267,7 +285,7 @@ document.getElementById('multiForm').addEventListener('submit', async (e)=>{
         price_data: {
           currency:"usd",
           product_data:{ name:`${s.name} — Package ${s.pkg}` },
-          unit_amount: PACKAGE_PRICES[s.pkg] ?? 0
+        unit_amount: PACKAGE_PRICES[s.pkg] ?? 0
         },
         quantity:1
       });

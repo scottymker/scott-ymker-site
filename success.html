@@ -2,47 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Thank you • Scott Ymker Photography</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{ --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9; --ok:#16a34a; --border:#e7e7e9; }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    .wrap{max-width:960px;margin:24px auto;padding:0 16px}
-    header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-    header img{height:42px;width:auto}
-    header .brand{font-weight:700;letter-spacing:.2px}
-    .hero{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;display:flex;align-items:center;gap:16px}
-    .check{height:36px;width:36px;border-radius:50%;display:grid;place-items:center;background:rgba(22,163,74,.1);color:var(--ok);font-size:20px}
-    h1{margin:0;font-size:24px}
-    .subtle{color:var(--muted);margin-top:4px}
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-top:18px}
-    @media (max-width:800px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
-    .card h2{font-size:16px;margin:0 0 12px}
-    .keyvals{display:grid;grid-template-columns:180px 1fr;row-gap:8px;column-gap:12px}
-    .label{color:var(--muted)}
-    .total{font-weight:700;font-size:18px}
-    .items{width:100%;border-collapse:collapse;margin-top:6px}
-    .items th,.items td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:left}
-    .items th{color:var(--muted);font-weight:600;font-size:13px}
-    .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
-    .btn{appearance:none;border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;cursor:pointer}
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-    .muted{color:var(--muted)}
-    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+    :root{ --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9; --ok:#16a34a; --border:#e7e7e9; --nav-h:64px; }
+    *{ box-sizing:border-box }
+    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden }
+    img{ max-width:100%; height:auto; display:block }
+    a{ color:inherit; text-decoration:none }
+    .wrap{ width:min(960px, calc(100% - 32px)); margin:24px auto }
+
+    /* Header with hamburger */
+    .sitebar{ position:relative; z-index:10; background:var(--card); border-bottom:1px solid var(--border) }
+    .sitebar .inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:16px; padding-inline:10px }
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; min-width:0 }
+    .brand img{ height:36px; width:auto }
+    .nav-links{ display:flex; gap:18px; align-items:center }
+    .nav-links a{ padding:6px 8px; border-radius:8px; font-weight:500 }
+    .nav-links a[aria-current="page"]{ background:#eef7ff; color:#0b77c5 }
+    .nav-links a:hover{ background:#eff2f6 }
+    .nav-toggle{ display:none; border:0; background:transparent; width:40px; height:40px; color:#111 !important; -webkit-appearance:none; appearance:none; padding:0; margin:0 }
+    .nav-toggle svg{ width:28px; height:28px; display:block }
+    @media (max-width:768px){
+      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center }
+      .nav-links{
+        position:fixed; left:0; right:0; top:var(--nav-h);
+        background:var(--card); border-top:1px solid var(--border);
+        flex-direction:column; padding:12px 16px; display:none; pointer-events:none
+      }
+      .nav-links.open{ display:flex; pointer-events:auto }
+    }
+
+    /* Hero */
+    .hero{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 24px; display:flex; align-items:center; gap:16px; margin-top:18px }
+    .check{ height:36px; width:36px; border-radius:50%; display:grid; place-items:center; background:rgba(22,163,74,.1); color:var(--ok); font-size:20px }
+    h1{ margin:0; font-size:24px }
+    .subtle{ color:var(--muted); margin-top:4px }
+
+    /* Equal-height grid */
+    .grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; margin-top:18px; align-items:stretch }
+    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; display:flex; flex-direction:column; min-width:0 }
+    .card h2{ font-size:16px; margin:0 0 12px }
+    .grow{ flex:1 } /* pushes actions to bottom so both columns align visually */
+
+    /* Items table: mobile-safe */
+    .tableWrap{ width:100%; overflow-x:auto } /* hard stop for any overflow */
+    .items{ width:100%; border-collapse:collapse; margin-top:6px; table-layout:fixed }
+    .items col.desc{ width:auto }
+    .items col.qty{ width:64px }
+    .items col.amt{ width:120px }
+    .items th, .items td{ padding:8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top }
+    .items th{ color:var(--muted); font-weight:600; font-size:13px }
+    .items td:nth-child(2), .items th:nth-child(2){ text-align:center }
+    .items td:nth-child(3), .items th:nth-child(3){ text-align:right }
+    .items td:first-child{ word-break:break-word; overflow-wrap:anywhere }
+
+    /* Key/Value block: stack on narrow screens to avoid overflow */
+    .keyvals{ display:grid; grid-template-columns:180px 1fr; row-gap:8px; column-gap:12px; min-width:0 }
+    .label{ color:var(--muted) }
+    @media (max-width:520px){
+      .keyvals{ grid-template-columns:1fr }
+      .keyvals .label{ font-weight:600 }
+      .keyvals .label + div{ margin-bottom:6px }
+    }
+
+    .total{ font-weight:700; font-size:18px }
+    .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap }
+    .btn{ appearance:none; border:1px solid var(--border); background:#fff; padding:10px 14px; border-radius:999px; cursor:pointer }
+    .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff }
+    .muted{ color:var(--muted) }
+    footer{ margin:24px 0 40px; color:var(--muted); font-size:13px }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <img src="2020Logo_black.png" alt="Scott Ymker Photography">
-      <div class="brand">Scott Ymker Photography</div>
-    </header>
+  <!-- Header -->
+  <div class="sitebar">
+    <div class="wrap inner">
+      <a class="brand" href="index.html">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography logo">
+        <span>Scott Ymker Photography</span>
+      </a>
 
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav id="site-nav" class="nav-links" aria-label="main">
+        <a href="index.html">Home</a>
+        <a href="multi-order.html">Order</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="wrap">
     <section class="hero">
       <div class="check">✓</div>
       <div>
@@ -54,14 +113,20 @@
     <section class="grid">
       <div class="card" id="summary">
         <h2>Order summary</h2>
-        <table class="items" id="itemsTable" aria-live="polite">
-          <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
-          <tbody id="itemsBody"></tbody>
-          <tfoot>
-            <tr><td colspan="2" class="label">Total</td><td class="total" id="totalCell">$0.00</td></tr>
-          </tfoot>
-        </table>
-
+        <div class="grow">
+          <div class="tableWrap">
+            <table class="items" id="itemsTable" aria-live="polite">
+              <colgroup>
+                <col class="desc"><col class="qty"><col class="amt">
+              </colgroup>
+              <thead><tr><th>Description</th><th>Qty</th><th>Amount</th></tr></thead>
+              <tbody id="itemsBody"></tbody>
+              <tfoot>
+                <tr><td colspan="2" class="label">Total</td><td class="total" id="totalCell">$0.00</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
         <div class="actions">
           <button class="btn" onclick="window.print()">Print receipt</button>
           <a class="btn primary" href="index.html">Back to Home</a>
@@ -75,10 +140,9 @@
           <div class="label">Status</div><div id="kvStatus">—</div>
           <div class="label">Email</div><div id="kvEmail">—</div>
           <div class="label">Phone</div><div id="kvPhone">—</div>
-          <div class="label">Student</div><div id="kvStudent">—</div>
-          <div class="label">Teacher / Grade</div><div id="kvTeacher">—</div>
-          <div class="label">School</div><div id="kvSchool">—</div>
-          <div class="label">Background</div><div id="kvBg">—</div>
+          <div class="label">Students</div><div id="kvStudent">—</div>
+          <div class="label">Teachers / Grades</div><div id="kvTeacher">—</div>
+          <div class="label">Backgrounds</div><div id="kvBg">—</div>
           <div class="label">Add-ons</div><div id="kvAddons">—</div>
         </div>
       </div>
@@ -98,80 +162,126 @@
   </div>
 
   <script>
-  // Year in footer
-  document.getElementById('yr').textContent = new Date().getFullYear();
+    // Footer year
+    document.getElementById('yr').textContent = new Date().getFullYear();
 
-  // Money formatter
-  const fmtMoney = (cents, currency='usd') =>
-    (Number(cents || 0)/100).toLocaleString(undefined, {
-      style:'currency', currency:(currency||'USD').toUpperCase()
+    // Hamburger
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      if (!toggle || !nav) return;
+      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+      toggle.addEventListener('click', () => {
+        const open = !nav.classList.contains('open');
+        nav.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     });
 
-  // Robust session_id extraction: ?session_id=... OR ?id=... OR #session_id=...
-  function getSessionId() {
-    const url = new URL(window.location.href);
-    const qp = url.searchParams;
-    let sid = qp.get('session_id') || qp.get('id');
-    if (!sid && url.hash) {
-      const m = url.hash.match(/(?:^|[&#?])session_id=([^&]+)/);
-      if (m) sid = decodeURIComponent(m[1]);
-    }
-    return sid || '';
-  }
+    // Money formatter
+    const fmtMoney = (cents, currency='usd') =>
+      (Number(cents || 0)/100).toLocaleString(undefined, { style:'currency', currency:(currency||'USD').toUpperCase() });
 
-  async function load() {
-    const sessionId = getSessionId();
-    const sub = document.getElementById('orderSub');
-
-    if (!sessionId) {
-      console.error('Missing session id');
-      sub.textContent = 'No receipt found. Please check your email or contact us for help.';
-      return;
+    // Read session id from URL
+    function getSessionId() {
+      const url = new URL(window.location.href);
+      const qp = url.searchParams;
+      let sid = qp.get('session_id') || qp.get('id');
+      if (!sid && url.hash) {
+        const m = url.hash.match(/(?:^|[&#?])session_id=([^&]+)/);
+        if (m) sid = decodeURIComponent(m[1]);
+      }
+      return sid || '';
     }
 
-    try {
-      const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
-      const data = await res.json();
-      if (!res.ok) throw data;
-
-      sub.textContent = `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
-
-      const body = document.getElementById('itemsBody');
-      body.innerHTML = '';
-      (data.items || []).forEach(it => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-        <td>${it.description || 'Item'}</td>
-        <td>${it.quantity ?? 1}</td>
-        <td>${fmtMoney(it.amount_total ?? it.unit_amount * (it.quantity ?? 1), it.currency || data.currency)}</td>`;
-        body.appendChild(tr);
-      });
-
-      document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
-
-      const md = data.metadata || {};
-      const v = (x)=> x && String(x).trim() ? x : '—';
-      const student = [md.student_first, md.student_last].filter(Boolean).join(' ') || '—';
-      const tg = [md.teacher, md.grade].filter(Boolean).join(' / ') || '—';
-
-      document.getElementById('kvOrder').textContent  = data.id?.replace('cs_', 'CS-') ?? '—';
-      document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
-      document.getElementById('kvEmail').textContent  = v(data.customer_email);
-      document.getElementById('kvPhone').textContent  = v(data.customer_phone || md.parent_phone);
-      document.getElementById('kvStudent').textContent= student;
-      document.getElementById('kvTeacher').textContent= tg;
-      document.getElementById('kvSchool').textContent = v(md.school);
-      document.getElementById('kvBg').textContent     = v(md.background);
-      document.getElementById('kvAddons').textContent = v(md.addons);
-    } catch (err) {
-      console.error('get-session error:', err);
-      sub.textContent = 'We could not load your receipt. Please check your email or contact us for assistance.';
-      document.getElementById('summary').innerHTML = '<p class="muted">Receipt details are unavailable.</p>';
+    // Fallback order number if backend didn't set metadata.order_number
+    function makeOrderNumber(data){
+      let base = '';
+      const pi = data.payment_intent;
+      if (typeof pi === 'string') base = pi;
+      else if (pi && typeof pi === 'object' && pi.id) base = pi.id;
+      else base = data.id || '';
+      const tail = ((base.match(/[a-z0-9]+$/i) || [''])[0]).slice(-6).toUpperCase().padStart(6,'X');
+      const ts = typeof data.created === 'number' ? data.created * 1000 : (data.created ? Date.parse(data.created) : Date.now());
+      const d  = new Date(ts);
+      const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+      return `SYP-${yyyy}${mm}${dd}-${tail}`;
     }
-  }
 
-  load();
-</script>
+    function listFromMeta(md, keyFmt){
+      const n = parseInt(md.students_count || '0', 10) || 0;
+      if (!n) return [];
+      const out = [];
+      for (let i=1;i<=n;i++) out.push(keyFmt(i, md));
+      return out.filter(Boolean);
+    }
 
+    async function load() {
+      const sessionId = getSessionId();
+      const sub = document.getElementById('orderSub');
+
+      if (!sessionId) {
+        sub.textContent = 'No receipt found. Please check your email or contact us for help.';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
+        const data = await res.json();
+        if (!res.ok) throw data;
+
+        sub.textContent = `Receipt below. A copy has been sent to ${data.customer_email || 'your email'}.`;
+
+        const md = data.metadata || {};
+        const orderNo = md.order_number || makeOrderNumber(data);
+
+        // Details
+        document.getElementById('kvOrder').textContent  = orderNo;
+        document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
+        document.getElementById('kvEmail').textContent  = (data.customer_email || '—');
+        document.getElementById('kvPhone').textContent  = (data.customer_phone || md.parent_phone || '—');
+
+        // Items table
+        const body = document.getElementById('itemsBody');
+        body.innerHTML = '';
+        (data.items || []).forEach(it => {
+          const tr = document.createElement('tr');
+          const qty = (it.quantity ?? 1);
+          const amt = (it.amount_total != null) ? it.amount_total : (it.unit_amount || 0) * qty;
+          tr.innerHTML = `<td>${it.description || 'Item'}</td><td>${qty}</td><td>${fmtMoney(amt, it.currency || data.currency)}</td>`;
+          body.appendChild(tr);
+        });
+        document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
+
+        // Multi-student metadata
+        const names = listFromMeta(md, i => md[`s${i}_name`]);
+        const tgs   = listFromMeta(md, i => {
+          const t = md[`s${i}_teacher`] || '';
+          const g = md[`s${i}_grade`] || '';
+          return [t,g].filter(Boolean).join(' / ');
+        });
+        const bgs   = listFromMeta(md, i => md[`s${i}_bg`]);
+        const adds  = listFromMeta(md, i => md[`s${i}_addons`]);
+
+        document.getElementById('kvStudent').textContent =
+          (names.length ? names.join(', ') : [md.student_first, md.student_last].filter(Boolean).join(' ') || '—');
+        document.getElementById('kvTeacher').textContent =
+          (tgs.length ? tgs.join(' • ') : [md.teacher, md.grade].filter(Boolean).join(' / ') || '—');
+        document.getElementById('kvBg').textContent     =
+          (bgs.length ? bgs.join(', ') : (md.background || '—'));
+        document.getElementById('kvAddons').textContent =
+          (adds.length ? adds.join(' • ') : (md.addons || '—'));
+
+      } catch (err) {
+        console.error('get-session error:', err);
+        sub.textContent = 'We could not load your receipt. Please check your email or contact us for assistance.';
+        document.getElementById('summary').innerHTML = '<p class="muted">Receipt details are unavailable.</p>';
+      }
+    }
+
+    load();
+  </script>
 </body>
 </html>
