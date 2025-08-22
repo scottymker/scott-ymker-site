@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Static site for Scott Ymker Photography",
+  "engines": { "node": ">=18" },
   "scripts": {
     "dev": "netlify dev",
     "import:one": "node scripts/import-one.mjs",
@@ -16,6 +17,8 @@
     "pdfkit": "^0.15.0",
     "qrcode": "^1.5.3",
     "sharp": "^0.33.3",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "stripe": "^14.24.0",
+    "resend": "^3.4.0"
   }
 }
