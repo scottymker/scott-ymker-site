@@ -24,7 +24,7 @@
     .brand img{ height:28px; width:auto }
     .brand span{ font-weight:700 }
 
-    /* Nav + hamburger (same as your current page) */
+    /* Nav + hamburger */
     .nav-links{ display:flex; align-items:center; gap:8px }
     .nav-links a{ padding:8px 10px; border-radius:8px; color:#111; font-weight:500 }
     .nav-links a[aria-current="page"]{ font-weight:700; background:#eef7ff; color:#0b77c5 }
@@ -62,7 +62,7 @@
     .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px }
     .section-title{ font-weight:600; margin:10px 0 8px }
 
-    /* Inputs (44px prevents iOS zoom) */
+    /* Inputs */
     select, input[type="text"], input[type="tel"], input[type="email"]{
       width:100%; height:44px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font:inherit
     }
@@ -85,7 +85,7 @@
     .acc-panel{ padding:12px 14px; display:none }
     .acc-panel.open{ display:block }
 
-    /* Sub-sections inside Student accordion */
+    /* Sub-sections inside a student accordion */
     .sub{ border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:10px; background:#fff }
     .sub h4{ margin:0 0 8px; font-size:14px }
 
@@ -94,7 +94,7 @@
     @media (max-width:840px){ .pkg-grid{ grid-template-columns:1fr } }
     .pkg-card{
       border:2px solid #e5e7eb; border-radius:12px; padding:12px;
-      cursor:pointer; display:flex; flex-direction:column; gap:8px; min-height:120px;
+      cursor:pointer; display:flex; flex-direction:column; gap:8px; min-height:120px; position:relative;
     }
     .pkg-card:hover{ border-color:#d1d5db }
     .pkg-card.selected{ border-color:#3b82f6; background:#f5f9ff; box-shadow:0 0 0 3px rgba(59,130,246,.15) inset }
@@ -116,6 +116,8 @@
     .total-row td{ font-weight:700 }
     .kv{ display:grid; grid-template-columns:140px 1fr; row-gap:6px; column-gap:8px; margin-top:10px }
     .kv .k{ color:var(--muted) }
+
+    .pill{ background:#eef2f7; border-radius:999px; padding:2px 8px; font-size:12px; color:#374151 }
   </style>
 </head>
 <body>
@@ -146,8 +148,9 @@
     <div class="hero-card">
       <div>
         <h1>Order • Accordion Flow</h1>
-        <p>Enter parent info, then choose your student’s background, package, and optional add‑ons.</p>
+        <p>Add one or more students. Choose background, package, and optional add‑ons for each.</p>
       </div>
+      <button id="addStudentBtn" class="btn primary">+ Add another student</button>
     </div>
   </section>
 
@@ -167,113 +170,13 @@
           </div>
           <input required type="email" name="parent_email" placeholder="Email" inputmode="email" autocomplete="email" oninput="renderSummary()">
           <div class="actions">
-            <button type="button" class="btn primary" id="toStudent">Save & Continue</button>
+            <button type="button" class="btn primary" id="toStudents">Save & Continue</button>
           </div>
         </div>
       </section>
 
-      <!-- 2) Student -->
-      <section class="acc" id="acc-student">
-        <button class="acc-head" type="button" aria-expanded="false">
-          2) Student
-          <span class="muted" id="studentBadge">Not started</span>
-        </button>
-        <div class="acc-panel">
-          <!-- 2.1 Student Info -->
-          <div class="sub">
-            <h4>Student Info</h4>
-            <div class="row">
-              <input required name="first" placeholder="First name">
-              <input required name="last" placeholder="Last name">
-            </div>
-            <div class="row">
-              <input required name="teacher" placeholder="Teacher">
-              <input required name="grade" placeholder="Grade">
-            </div>
-            <input required name="school" placeholder="School" style="margin-top:10px">
-          </div>
-
-          <!-- 2.2 Background & Package -->
-          <div class="sub">
-            <h4>Background & Package</h4>
-
-            <label class="muted" for="bg">Background</label>
-            <select id="bg" name="background" style="margin:6px 0 12px" onchange="onBgChange(this.value)">
-              <option value="F1" selected>F1 (default)</option>
-              <option value="F2">F2</option>
-              <option value="F3">F3</option>
-              <option value="F4">F4</option>
-              <option value="F5">F5</option>
-              <option value="F6">F6</option>
-            </select>
-
-            <fieldset id="pkgRadios" class="pkg-grid" aria-label="Choose a package">
-              <!-- Package A -->
-              <label class="pkg-card" tabindex="0">
-                <input class="sr-only" type="radio" name="package" value="A" data-price="35" style="position:absolute; opacity:0; pointer-events:none">
-                <div class="pkg-top"><span>Package A</span><strong>$35</strong></div>
-                <ul class="pkg-details">
-                  <li>1 – 8×10</li><li>2 – 5×7</li><li>8 – Wallets</li>
-                </ul>
-              </label>
-
-              <!-- Package B -->
-              <label class="pkg-card" tabindex="0">
-                <input class="sr-only" type="radio" name="package" value="B" data-price="45" style="position:absolute; opacity:0; pointer-events:none">
-                <div class="pkg-top"><span>Package B</span><strong>$45</strong></div>
-                <ul class="pkg-details">
-                  <li>1 – 8×10</li><li>4 – 5×7</li><li>16 – Wallets</li>
-                </ul>
-              </label>
-
-              <!-- Package C -->
-              <label class="pkg-card" tabindex="0">
-                <input class="sr-only" type="radio" name="package" value="C" data-price="60" style="position:absolute; opacity:0; pointer-events:none">
-                <div class="pkg-top"><span>Package C</span><strong>$60</strong></div>
-                <ul class="pkg-details">
-                  <li>2 – 8×10</li><li>4 – 5×7</li><li>16 – Wallets</li>
-                </ul>
-              </label>
-
-              <!-- Package D -->
-              <label class="pkg-card" tabindex="0">
-                <input class="sr-only" type="radio" name="package" value="D" data-price="75" style="position:absolute; opacity:0; pointer-events:none">
-                <div class="pkg-top"><span>Package D</span><strong>$75</strong></div>
-                <ul class="pkg-details">
-                  <li>2 – 8×10</li><li>4 – 5×7</li><li>1 – 11×14</li>
-                </ul>
-              </label>
-
-              <!-- Package E -->
-              <label class="pkg-card" tabindex="0">
-                <input class="sr-only" type="radio" name="package" value="E" data-price="95" style="position:absolute; opacity:0; pointer-events:none">
-                <div class="pkg-top"><span>Package E</span><strong>$95</strong></div>
-                <ul class="pkg-details">
-                  <li>Digital + Prints bundle</li>
-                  <li>2 – 8×10, 4 – 5×7, 16 – Wallets</li>
-                </ul>
-              </label>
-              <!-- If you have A1–E1 alternates, duplicate the pattern above and adjust values/prices/details -->
-            </fieldset>
-          </div>
-
-          <!-- 2.3 Add-ons -->
-          <div class="sub">
-            <h4>Add‑ons (optional)</h4>
-            <fieldset id="addons" disabled>
-              <label class="addon"><input type="checkbox" value="F" data-price="10"> Retouching (+$10)</label>
-              <label class="addon"><input type="checkbox" value="G" data-price="12"> Extra 8×10 (+$12)</label>
-              <label class="addon"><input type="checkbox" value="H" data-price="8"> Extra 5×7 (+$8)</label>
-              <label class="addon"><input type="checkbox" value="I" data-price="6"> Extra Wallets (+$6)</label>
-              <!-- …add J–N as needed -->
-            </fieldset>
-          </div>
-
-          <div class="actions">
-            <button type="button" class="btn primary" id="readyToPay">Review & Continue</button>
-          </div>
-        </div>
-      </section>
+      <!-- 2) Students container (dynamic) -->
+      <div id="studentsWrap"></div>
 
       <!-- 3) Review & Checkout -->
       <section class="acc" id="acc-review">
@@ -307,10 +210,7 @@
         <div class="k">Parent</div><div id="kvParent">—</div>
         <div class="k">Email</div><div id="kvEmail">—</div>
         <div class="k">Phone</div><div id="kvPhone">—</div>
-        <div class="k">Student</div><div id="kvStudent">—</div>
-        <div class="k">Background</div><div id="kvBg">F1</div>
-        <div class="k">Package</div><div id="kvPkg">—</div>
-        <div class="k">Add‑ons</div><div id="kvAdd">None</div>
+        <div class="k">Students</div><div id="kvStudents">0</div>
       </div>
     </aside>
   </main>
@@ -320,6 +220,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       const toggle = document.querySelector('.nav-toggle');
       const nav = document.getElementById('site-nav');
+      if (!toggle || !nav) return;
       const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
       toggle.addEventListener('click', () => {
         const isOpen = !nav.classList.contains('open');
@@ -331,14 +232,45 @@
     });
   </script>
 
-  <!-- Accordion logic + minimal checkout wiring -->
+  <!-- Accordion logic + multi-student + 10-package support -->
   <script>
+    /* ---- Configuration (update prices/details as needed) ---- */
+    const PACKAGES = [
+      {id:'A',  price:35, title:'Package A',  details:['1 – 8×10','2 – 5×7','8 – Wallets']},
+      {id:'B',  price:45, title:'Package B',  details:['1 – 8×10','4 – 5×7','16 – Wallets']},
+      {id:'C',  price:60, title:'Package C',  details:['2 – 8×10','4 – 5×7','16 – Wallets']},
+      {id:'D',  price:75, title:'Package D',  details:['2 – 8×10','4 – 5×7','1 – 11×14']},
+      {id:'E',  price:95, title:'Package E',  details:['Digital + Prints bundle','2 – 8×10, 4 – 5×7, 16 – Wallets']},
+      {id:'A1', price:35, title:'Package A1', details:['Alt of A — update text']},
+      {id:'B1', price:45, title:'Package B1', details:['Alt of B — update text']},
+      {id:'C1', price:60, title:'Package C1', details:['Alt of C — update text']},
+      {id:'D1', price:75, title:'Package D1', details:['Alt of D — update text']},
+      {id:'E1', price:95, title:'Package E1', details:['Alt of E — update text']}
+    ];
+    const ADDONS = [
+      {id:'F', name:'Retouching', price:10},
+      {id:'G', name:'Extra 8×10', price:12},
+      {id:'H', name:'Extra 5×7', price:8},
+      {id:'I', name:'Extra Wallets', price:6},
+      {id:'J', name:'Digital Download', price:25},
+      {id:'K', name:'16×20 Poster', price:30},
+      {id:'L', name:'Keychains', price:10},
+      {id:'M', name:'Magnets', price:10},
+      {id:'N', name:'Buttons', price:8},
+    ];
+
+    /* ---- App state ---- */
     const state = {
       parent: { name:"", phone:"", email:"" },
-      student: { first:"", last:"", teacher:"", grade:"", school:"", background:"F1", package:null, addons:[] }
+      students: []   // array of {id, info:{...}, background, package, addons:[]}
     };
 
-    // Helper: open a specific accordion section by id
+    const maxStudents = 10;
+
+    /* ---- Helpers ---- */
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
     function openAcc(id){
       document.querySelectorAll('.acc').forEach(sec=>{
         const head = sec.querySelector('.acc-head');
@@ -349,124 +281,260 @@
       });
     }
 
-    // Background change
-    function onBgChange(v){ state.student.background = v; renderSummary(); }
+    function createPackageGrid(studentId){
+      // Builds the package cards grid for a given student section
+      const grid = document.createElement('div');
+      grid.className = 'pkg-grid';
+      PACKAGES.forEach(p=>{
+        const label = document.createElement('label');
+        label.className = 'pkg-card';
+        label.tabIndex = 0;
+        label.innerHTML = `
+          <input class="sr-only" type="radio" name="package-${studentId}" value="${p.id}" data-price="${p.price}"
+                 style="position:absolute;opacity:0;pointer-events:none">
+          <div class="pkg-top"><span>${p.title}</span><strong>$${p.price}</strong></div>
+          <ul class="pkg-details">${p.details.map(d=>`<li>${d}</li>`).join('')}</ul>
+        `;
+        grid.appendChild(label);
+      });
+      return grid;
+    }
 
-    // Package card selection (visual + data)
-    document.addEventListener('click', (e)=>{
-      const label = e.target.closest('.pkg-card');
-      if(!label) return;
-      const input = label.querySelector('input[type=radio]');
-      if(!input) return;
-      // check this radio
-      input.checked = true;
-      // visual state
-      document.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));
-      label.classList.add('selected');
-      // enable add-ons
-      document.getElementById('addons').disabled = false;
-      // update state
-      state.student.package = input.value;
+    function createAddonsList(studentId){
+      const fs = document.createElement('fieldset');
+      fs.id = `addons-${studentId}`;
+      fs.disabled = true;
+      ADDONS.forEach(a=>{
+        const lab = document.createElement('label');
+        lab.className = 'addon';
+        lab.innerHTML = `<input type="checkbox" value="${a.id}" data-price="${a.price}"> ${a.name} (+$${a.price})`;
+        fs.appendChild(lab);
+      });
+      return fs;
+    }
+
+    function studentTemplate(idx){
+      const id = `s${idx}`;
+      return `
+        <section class="acc" id="acc-${id}">
+          <button class="acc-head" type="button" aria-expanded="${idx===1?'true':'false'}">
+            2) Student ${idx}
+            <span class="pill" id="badge-${id}">Not started</span>
+          </button>
+          <div class="acc-panel ${idx===1?'open':''}">
+            <div class="sub">
+              <h4>Student Info</h4>
+              <div class="row">
+                <input required name="first-${id}" placeholder="First name">
+                <input required name="last-${id}" placeholder="Last name">
+              </div>
+              <div class="row">
+                <input required name="teacher-${id}" placeholder="Teacher">
+                <input required name="grade-${id}" placeholder="Grade">
+              </div>
+              <input required name="school-${id}" placeholder="School" style="margin-top:10px">
+            </div>
+
+            <div class="sub">
+              <h4>Background & Package</h4>
+              <label class="muted" for="bg-${id}">Background</label>
+              <select id="bg-${id}" name="background-${id}" style="margin:6px 0 12px">
+                <option value="F1" selected>F1 (default)</option>
+                <option value="F2">F2</option><option value="F3">F3</option>
+                <option value="F4">F4</option><option value="F5">F5</option><option value="F6">F6</option>
+              </select>
+              <div id="pkgGrid-${id}"></div>
+            </div>
+
+            <div class="sub">
+              <h4>Add‑ons (optional)</h4>
+              <div id="addonsWrap-${id}"></div>
+            </div>
+
+            <div class="actions">
+              <button type="button" class="btn small rm" data-remove="${id}">Remove student</button>
+              <button type="button" class="btn primary" data-ready="${id}">Save Student</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function mountStudent(idx){
+      const wrap = document.getElementById('studentsWrap');
+      wrap.insertAdjacentHTML('beforeend', studentTemplate(idx));
+      const id = `s${idx}`;
+
+      // init state
+      state.students.push({ id, info:{}, background:'F1', package:null, addons:[] });
+
+      // package grid + addons
+      const gridHost = document.getElementById(`pkgGrid-${id}`);
+      gridHost.replaceChildren(createPackageGrid(id));
+      const addonsHost = document.getElementById(`addonsWrap-${id}`);
+      addonsHost.replaceChildren(createAddonsList(id));
+
+      // listeners unique to this student
+      const section = document.getElementById(`acc-${id}`);
+
+      // package click (event delegation within this section)
+      section.addEventListener('click', (e)=>{
+        const card = e.target.closest('.pkg-card');
+        if(!card) return;
+        const input = card.querySelector('input[type=radio]');
+        if(!input) return;
+        // visual select
+        section.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        input.checked = true;
+        // enable addons
+        section.querySelector(`#addons-${id}`)?.removeAttribute('disabled');
+        // update state
+        const stu = state.students.find(s=>s.id===id);
+        stu.package = input.value;
+        renderSummary();
+      });
+
+      // background change
+      section.querySelector(`#bg-${id}`).addEventListener('change', (e)=>{
+        const stu = state.students.find(s=>s.id===id);
+        stu.background = e.target.value;
+        renderSummary();
+      });
+
+      // addons change
+      section.querySelector(`#addons-${id}`).addEventListener('change', (e)=>{
+        const stu = state.students.find(s=>s.id===id);
+        const checks = Array.from(section.querySelectorAll(`#addons-${id} input:checked`)).map(i=>i.value);
+        stu.addons = checks;
+        renderSummary();
+      });
+
+      // save student button
+      section.querySelector(`[data-ready="${id}"]`).addEventListener('click', ()=>{
+        const f = document.getElementById('orderForm');
+        const need = [`first-${id}`,`last-${id}`,`teacher-${id}`,`grade-${id}`,`school-${id}`];
+        for(const n of need){ if(!f.elements[n].reportValidity()) return; }
+        const stu = state.students.find(s=>s.id===id);
+        stu.info = {
+          first: f.elements[`first-${id}`].value.trim(),
+          last:  f.elements[`last-${id}`].value.trim(),
+          teacher:f.elements[`teacher-${id}`].value.trim(),
+          grade: f.elements[`grade-${id}`].value.trim(),
+          school:f.elements[`school-${id}`].value.trim()
+        };
+        document.getElementById(`badge-${id}`).textContent = 'Saved';
+        renderSummary();
+        openAcc('acc-review');
+        document.getElementById('reviewBadge').textContent = 'Ready';
+      });
+
+      // remove student
+      section.querySelector(`[data-remove="${id}"]`).addEventListener('click', ()=>{
+        const idx = state.students.findIndex(s=>s.id===id);
+        if(idx>-1){ state.students.splice(idx,1); }
+        section.remove();
+        renderSummary();
+      });
+
+      // accordion head toggle for this section
+      section.querySelector('.acc-head').addEventListener('click', ()=>{
+        const head = section.querySelector('.acc-head');
+        const panel = section.querySelector('.acc-panel');
+        const isOpen = head.getAttribute('aria-expanded')==='true';
+        head.setAttribute('aria-expanded', String(!isOpen));
+        panel.classList.toggle('open', !isOpen);
+      });
+
       renderSummary();
-    });
+    }
 
-    // Add-ons
-    document.getElementById('addons').addEventListener('change', ()=>{
-      const checked = [...document.querySelectorAll('#addons input:checked')].map(i=>i.value);
-      state.student.addons = checked;
-      renderSummary();
-    });
+    /* ---- Wire-up global actions ---- */
 
-    // Save Parent → go to Student
-    document.getElementById('toStudent').addEventListener('click', ()=>{
-      const form = document.getElementById('orderForm');
-      const name  = form.elements['parent_name'];
-      const phone = form.elements['parent_phone'];
-      const email = form.elements['parent_email'];
-      if(!name.reportValidity() || !email.reportValidity()) return;
-
-      state.parent = { name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim() };
-      document.getElementById('parentBadge').textContent = 'Saved';
-      openAcc('acc-student');
-      renderSummary();
-    });
-
-    // Student → Review
-    document.getElementById('readyToPay').addEventListener('click', ()=>{
+    // Save Parent → open first student (or create it)
+    document.getElementById('toStudents').addEventListener('click', ()=>{
       const f = document.getElementById('orderForm');
-      const req = ['first','last','teacher','grade','school'];
-      for(const key of req){ if(!f.elements[key].reportValidity()) return; }
-      state.student.first   = f.elements['first'].value.trim();
-      state.student.last    = f.elements['last'].value.trim();
-      state.student.teacher = f.elements['teacher'].value.trim();
-      state.student.grade   = f.elements['grade'].value.trim();
-      state.student.school  = f.elements['school'].value.trim();
-
-      document.getElementById('studentBadge').textContent = 'Saved';
-      document.getElementById('reviewBadge').textContent = 'Ready';
-      openAcc('acc-review');
+      const name  = f.elements['parent_name'];
+      const phone = f.elements['parent_phone'];
+      const email = f.elements['parent_email'];
+      if(!name.reportValidity() || !email.reportValidity()) return;
+      state.parent = { name:name.value.trim(), phone:phone.value.trim(), email:email.value.trim() };
+      document.getElementById('parentBadge').textContent = 'Saved';
+      if(state.students.length===0) mountStudent(1);
+      openAcc('acc-s1');
       renderSummary();
+    });
+
+    // Add another student
+    document.getElementById('addStudentBtn').addEventListener('click', ()=>{
+      if(state.students.length>=maxStudents){ alert('Maximum students added.'); return; }
+      mountStudent(state.students.length+1);
+      openAcc(`acc-s${state.students.length}`);
     });
 
     // Summary renderer
     function renderSummary(){
-      const sumItems = document.getElementById('sumItems');
-      const sumTotal = document.getElementById('sumTotal');
-      const f = document.getElementById('orderForm');
-
-      // Parent KV
+      // parent KV
       document.getElementById('kvParent').textContent = state.parent.name || '—';
       document.getElementById('kvEmail').textContent  = state.parent.email || '—';
       document.getElementById('kvPhone').textContent  = state.parent.phone || '—';
-      document.getElementById('kvStudent').textContent= [state.student.first, state.student.last].filter(Boolean).join(' ') || '—';
-      document.getElementById('kvBg').textContent     = state.student.background || 'F1';
+      document.getElementById('kvStudents').textContent = String(state.students.length);
 
-      // Package & add-ons
-      const pkgInput = document.querySelector('input[name=package]:checked');
-      const pkgId = pkgInput?.value || null;
-      const pkgPrice = pkgInput ? Number(pkgInput.dataset.price) : 0;
-      document.getElementById('kvPkg').textContent = pkgId || '—';
-
-      let rows = '';
+      // line items
+      const tbody = document.getElementById('sumItems');
+      tbody.innerHTML = '';
       let total = 0;
-      if(pkgId){
-        rows += `<tr><td>Package ${pkgId}</td><td>1</td><td>$${pkgPrice.toFixed(2)}</td></tr>`;
-        total += pkgPrice;
-      }
-      const addonInputs = [...document.querySelectorAll('#addons input:checked')];
-      const addonNames = [];
-      for(const i of addonInputs){
-        const price = Number(i.dataset.price||0);
-        rows += `<tr><td>Add‑on ${i.value}</td><td>1</td><td>$${price.toFixed(2)}</td></tr>`;
-        addonNames.push(i.value);
-        total += price;
-      }
-      document.getElementById('kvAdd').textContent = addonNames.length ? addonNames.join(', ') : 'None';
-      sumItems.innerHTML = rows || `<tr><td>No items selected yet</td><td></td><td>$0.00</td></tr>`;
-      sumTotal.textContent = `$${total.toFixed(2)}`;
-    }
-    window.renderSummary = renderSummary; // so parent inputs can call it oninput
 
-    // Submit → create Stripe Checkout Session (adjust endpoint if needed)
+      state.students.forEach((stu, i)=>{
+        // package
+        if(stu.package){
+          const p = PACKAGES.find(x=>x.id===stu.package);
+          const price = p ? p.price : 0;
+          total += price;
+          tbody.insertAdjacentHTML('beforeend',
+            `<tr><td>Student ${i+1}: Package ${stu.package} (${stu.info.first||''} ${stu.info.last||''})</td><td>1</td><td>$${price.toFixed(2)}</td></tr>`
+          );
+        } else {
+          tbody.insertAdjacentHTML('beforeend',
+            `<tr><td>Student ${i+1}: (no package selected)</td><td></td><td>$0.00</td></tr>`
+          );
+        }
+        // addons
+        stu.addons.forEach(id=>{
+          const a = ADDONS.find(x=>x.id===id);
+          if(!a) return;
+          total += a.price;
+          tbody.insertAdjacentHTML('beforeend',
+            `<tr class="subrow"><td class="sub">Add‑on ${a.id} – ${a.name}</td><td>1</td><td>$${a.price.toFixed(2)}</td></tr>`
+          );
+        });
+      });
+
+      if(state.students.length===0){
+        tbody.innerHTML = `<tr><td>No students yet</td><td></td><td>$0.00</td></tr>`;
+      }
+
+      document.getElementById('sumTotal').textContent = `$${total.toFixed(2)}`;
+    }
+    window.renderSummary = renderSummary;
+
+    // Checkout submit
     document.getElementById('orderForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
-
-      // Basic validation
-      if(!state.parent.name || !state.parent.email){
-        openAcc('acc-parent'); return;
+      if(!state.parent.name || !state.parent.email){ openAcc('acc-parent'); return; }
+      if(state.students.length===0){ alert('Please add at least one student.'); return; }
+      // validate each student has a package
+      for(const s of state.students){
+        if(!s.package){ alert('Each student must have a package selected.'); return; }
       }
-      if(!state.student.package){
-        openAcc('acc-student'); alert('Please choose a package to continue.'); return;
-      }
-
       try{
         const res = await fetch('/api/create-checkout', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             parent: state.parent,
-            students: [state.student], // designed so multi-student can be added later
-            meta: { flow: 'accordion', background: state.student.background }
+            students: state.students,
+            meta: { flow:'accordion-multi' }
           })
         });
         const data = await res.json();
@@ -478,18 +546,28 @@
       }
     });
 
-    // Open/close accordion heads
-    document.querySelectorAll('.acc-head').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const sec = btn.closest('.acc');
-        const isOpen = btn.getAttribute('aria-expanded') === 'true';
-        btn.setAttribute('aria-expanded', String(!isOpen));
-        sec.querySelector('.acc-panel').classList.toggle('open', !isOpen);
-      });
+    // Review accordion head
+    document.querySelector('#acc-review .acc-head').addEventListener('click', ()=>{
+      const sec = document.getElementById('acc-review');
+      const head = sec.querySelector('.acc-head');
+      const panel = sec.querySelector('.acc-panel');
+      const isOpen = head.getAttribute('aria-expanded')==='true';
+      head.setAttribute('aria-expanded', String(!isOpen));
+      panel.classList.toggle('open', !isOpen);
     });
 
-    // Initial render
-    renderSummary();
+    // Parent accordion head
+    document.querySelector('#acc-parent .acc-head').addEventListener('click', ()=>{
+      const sec = document.getElementById('acc-parent');
+      const head = sec.querySelector('.acc-head');
+      const panel = sec.querySelector('.acc-panel');
+      const isOpen = head.getAttribute('aria-expanded')==='true';
+      head.setAttribute('aria-expanded', String(!isOpen));
+      panel.classList.toggle('open', !isOpen);
+    });
+
+    // Start with one student shown for convenience
+    mountStudent(1);
   </script>
 </body>
 </html>
