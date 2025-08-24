@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order (Accordion) – Scott Ymker Photography</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#f6f7f9; --card:#fff; --ink:#111; --muted:#6b7280; --accent:#0ea5e9; --accent-ink:#fff; --border:#e5e7eb; --nav-h:64px; }
+    *{ box-sizing:border-box }
+    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden }
+    img{ max-width:100%; height:auto; display:block }
+    a{ color:inherit; text-decoration:none }
+
+    /* Header */
+    .topbar{ background:#f8fafc; border-bottom:1px solid var(--border) }
+    .topbar .wrap{
+      max-width:1100px; margin:0 auto; padding:10px 16px;
+      display:flex; align-items:center; justify-content:space-between; min-height:var(--nav-h);
+    }
+    .brand{ display:flex; align-items:center; gap:10px }
+    .brand img{ height:28px; width:auto }
+    .brand span{ font-weight:700 }
+
+    /* Nav + hamburger (same as your current page) */
+    .nav-links{ display:flex; align-items:center; gap:8px }
+    .nav-links a{ padding:8px 10px; border-radius:8px; color:#111; font-weight:500 }
+    .nav-links a[aria-current="page"]{ font-weight:700; background:#eef7ff; color:#0b77c5 }
+    .nav-links a:hover{ background:#eef2f7 }
+    .nav-toggle{
+      display:none; border:0; background:transparent; width:40px; height:40px; color:#111 !important;
+      -webkit-appearance:none; appearance:none; padding:0; margin:0;
+    }
+    .nav-toggle svg{ width:28px; height:28px; display:block }
+    @media (max-width:768px){
+      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center }
+      .nav-links{
+        position:fixed; left:0; right:0; top:var(--nav-h);
+        background:var(--card); border-top:1px solid var(--border);
+        flex-direction:column; padding:12px 16px; display:none; pointer-events:none
+      }
+      .nav-links.open{ display:flex; pointer-events:auto }
+    }
+
+    /* Hero + layout */
+    .hero{ max-width:1100px; margin:16px auto 0; padding:0 16px }
+    .hero-card{
+      background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:18px; display:flex; justify-content:space-between; gap:16px; align-items:center;
+    }
+    .hero h1{ margin:0 0 4px; font-size:20px }
+    .hero p{ margin:0; color:var(--muted) }
+
+    .grid{
+      max-width:1100px; margin:14px auto; padding:0 16px;
+      display:grid; grid-template-columns:1.25fr .75fr; gap:18px;
+    }
+    @media (max-width:980px){ .grid{ grid-template-columns:1fr } }
+
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px }
+    .section-title{ font-weight:600; margin:10px 0 8px }
+
+    /* Inputs (44px prevents iOS zoom) */
+    select, input[type="text"], input[type="tel"], input[type="email"]{
+      width:100%; height:44px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font:inherit
+    }
+    .row{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+    @media (max-width:720px){ .row{ grid-template-columns:1fr } }
+    .muted{ color:var(--muted) }
+    .actions{ margin-top:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap }
+    .btn{ display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); background:#fff; border-radius:999px; padding:10px 14px; font-weight:600; cursor:pointer }
+    .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff }
+    .btn.small{ padding:8px 12px; font-weight:600 }
+    .btn.rm{ color:#ef4444; border-color:#ef4444 }
+
+    /* Accordion */
+    .acc{ border:1px solid var(--border); border-radius:12px; margin-top:12px; background:#fff; overflow:hidden }
+    .acc-head{
+      width:100%; border:0; background:#fff; padding:12px 14px; font-weight:700; text-align:left;
+      border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer
+    }
+    .acc-head[aria-expanded="true"]{ background:#f9fbff }
+    .acc-panel{ padding:12px 14px; display:none }
+    .acc-panel.open{ display:block }
+
+    /* Sub-sections inside Student accordion */
+    .sub{ border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:10px; background:#fff }
+    .sub h4{ margin:0 0 8px; font-size:14px }
+
+    /* Package cards (card-style radios) */
+    .pkg-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
+    @media (max-width:840px){ .pkg-grid{ grid-template-columns:1fr } }
+    .pkg-card{
+      border:2px solid #e5e7eb; border-radius:12px; padding:12px;
+      cursor:pointer; display:flex; flex-direction:column; gap:8px; min-height:120px;
+    }
+    .pkg-card:hover{ border-color:#d1d5db }
+    .pkg-card.selected{ border-color:#3b82f6; background:#f5f9ff; box-shadow:0 0 0 3px rgba(59,130,246,.15) inset }
+    .pkg-top{ display:flex; align-items:center; justify-content:space-between; gap:8px }
+    .pkg-top span{ font-weight:700 }
+    .pkg-top strong{ font-weight:800 }
+    .pkg-details{ margin:0; padding-left:18px; color:#374151; font-size:14px }
+
+    /* Add-ons list */
+    .addon{ display:flex; align-items:center; gap:10px; padding:8px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#fff }
+    .addon input{ width:18px; height:18px }
+    fieldset:disabled{ opacity:.6 }
+
+    /* Summary */
+    #summaryCard{ overflow-x:auto }
+    table{ width:100%; border-collapse:collapse; table-layout:fixed }
+    th,td{ padding:8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; word-break:break-word }
+    th{ color:var(--muted); font-size:13px }
+    .total-row td{ font-weight:700 }
+    .kv{ display:grid; grid-template-columns:140px 1fr; row-gap:6px; column-gap:8px; margin-top:10px }
+    .kv .k{ color:var(--muted) }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="2020Logo_black.png" alt="Scott Ymker logo">
+        <span>Scott Ymker Photography</span>
+      </a>
+
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav id="site-nav" class="nav-links" aria-label="Main">
+        <a href="index.html">Home</a>
+        <a href="order-accordian.html" aria-current="page">Order</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-card">
+      <div>
+        <h1>Order • Accordion Flow</h1>
+        <p>Enter parent info, then choose your student’s background, package, and optional add‑ons.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main -->
+  <main class="grid">
+    <form id="orderForm" class="card" novalidate>
+      <!-- 1) Parent -->
+      <section class="acc" id="acc-parent">
+        <button class="acc-head" type="button" aria-expanded="true">
+          1) Parent / Guardian
+          <span class="muted" id="parentBadge">Required</span>
+        </button>
+        <div class="acc-panel open">
+          <div class="row" style="margin-bottom:10px">
+            <input required name="parent_name" placeholder="Parent full name" oninput="renderSummary()">
+            <input required type="tel" name="parent_phone" placeholder="Phone" inputmode="tel" autocomplete="tel" oninput="renderSummary()">
+          </div>
+          <input required type="email" name="parent_email" placeholder="Email" inputmode="email" autocomplete="email" oninput="renderSummary()">
+          <div class="actions">
+            <button type="button" class="btn primary" id="toStudent">Save & Continue</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2) Student -->
+      <section class="acc" id="acc-student">
+        <button class="acc-head" type="button" aria-expanded="false">
+          2) Student
+          <span class="muted" id="studentBadge">Not started</span>
+        </button>
+        <div class="acc-panel">
+          <!-- 2.1 Student Info -->
+          <div class="sub">
+            <h4>Student Info</h4>
+            <div class="row">
+              <input required name="first" placeholder="First name">
+              <input required name="last" placeholder="Last name">
+            </div>
+            <div class="row">
+              <input required name="teacher" placeholder="Teacher">
+              <input required name="grade" placeholder="Grade">
+            </div>
+            <input required name="school" placeholder="School" style="margin-top:10px">
+          </div>
+
+          <!-- 2.2 Background & Package -->
+          <div class="sub">
+            <h4>Background & Package</h4>
+
+            <label class="muted" for="bg">Background</label>
+            <select id="bg" name="background" style="margin:6px 0 12px" onchange="onBgChange(this.value)">
+              <option value="F1" selected>F1 (default)</option>
+              <option value="F2">F2</option>
+              <option value="F3">F3</option>
+              <option value="F4">F4</option>
+              <option value="F5">F5</option>
+              <option value="F6">F6</option>
+            </select>
+
+            <fieldset id="pkgRadios" class="pkg-grid" aria-label="Choose a package">
+              <!-- Package A -->
+              <label class="pkg-card" tabindex="0">
+                <input class="sr-only" type="radio" name="package" value="A" data-price="35" style="position:absolute; opacity:0; pointer-events:none">
+                <div class="pkg-top"><span>Package A</span><strong>$35</strong></div>
+                <ul class="pkg-details">
+                  <li>1 – 8×10</li><li>2 – 5×7</li><li>8 – Wallets</li>
+                </ul>
+              </label>
+
+              <!-- Package B -->
+              <label class="pkg-card" tabindex="0">
+                <input class="sr-only" type="radio" name="package" value="B" data-price="45" style="position:absolute; opacity:0; pointer-events:none">
+                <div class="pkg-top"><span>Package B</span><strong>$45</strong></div>
+                <ul class="pkg-details">
+                  <li>1 – 8×10</li><li>4 – 5×7</li><li>16 – Wallets</li>
+                </ul>
+              </label>
+
+              <!-- Package C -->
+              <label class="pkg-card" tabindex="0">
+                <input class="sr-only" type="radio" name="package" value="C" data-price="60" style="position:absolute; opacity:0; pointer-events:none">
+                <div class="pkg-top"><span>Package C</span><strong>$60</strong></div>
+                <ul class="pkg-details">
+                  <li>2 – 8×10</li><li>4 – 5×7</li><li>16 – Wallets</li>
+                </ul>
+              </label>
+
+              <!-- Package D -->
+              <label class="pkg-card" tabindex="0">
+                <input class="sr-only" type="radio" name="package" value="D" data-price="75" style="position:absolute; opacity:0; pointer-events:none">
+                <div class="pkg-top"><span>Package D</span><strong>$75</strong></div>
+                <ul class="pkg-details">
+                  <li>2 – 8×10</li><li>4 – 5×7</li><li>1 – 11×14</li>
+                </ul>
+              </label>
+
+              <!-- Package E -->
+              <label class="pkg-card" tabindex="0">
+                <input class="sr-only" type="radio" name="package" value="E" data-price="95" style="position:absolute; opacity:0; pointer-events:none">
+                <div class="pkg-top"><span>Package E</span><strong>$95</strong></div>
+                <ul class="pkg-details">
+                  <li>Digital + Prints bundle</li>
+                  <li>2 – 8×10, 4 – 5×7, 16 – Wallets</li>
+                </ul>
+              </label>
+              <!-- If you have A1–E1 alternates, duplicate the pattern above and adjust values/prices/details -->
+            </fieldset>
+          </div>
+
+          <!-- 2.3 Add-ons -->
+          <div class="sub">
+            <h4>Add‑ons (optional)</h4>
+            <fieldset id="addons" disabled>
+              <label class="addon"><input type="checkbox" value="F" data-price="10"> Retouching (+$10)</label>
+              <label class="addon"><input type="checkbox" value="G" data-price="12"> Extra 8×10 (+$12)</label>
+              <label class="addon"><input type="checkbox" value="H" data-price="8"> Extra 5×7 (+$8)</label>
+              <label class="addon"><input type="checkbox" value="I" data-price="6"> Extra Wallets (+$6)</label>
+              <!-- …add J–N as needed -->
+            </fieldset>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn primary" id="readyToPay">Review & Continue</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3) Review & Checkout -->
+      <section class="acc" id="acc-review">
+        <button class="acc-head" type="button" aria-expanded="false">
+          3) Review & Checkout
+          <span class="muted" id="reviewBadge">Waiting</span>
+        </button>
+        <div class="acc-panel">
+          <p class="muted">Confirm everything looks right, then proceed to secure payment.</p>
+          <div class="actions">
+            <button type="submit" class="btn primary" id="checkoutBtn">Proceed to Checkout</button>
+            <span class="muted">You’ll pay securely on Stripe.</span>
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <!-- Summary -->
+    <aside class="card" id="summaryCard">
+      <div class="section-title">Order summary</div>
+      <table aria-live="polite">
+        <thead>
+          <tr><th>Description</th><th>Qty</th><th>Amount</th></tr>
+        </thead>
+        <tbody id="sumItems"></tbody>
+        <tfoot>
+          <tr class="total-row"><td>Total</td><td></td><td id="sumTotal">$0.00</td></tr>
+        </tfoot>
+      </table>
+      <div class="kv" style="margin-top:12px">
+        <div class="k">Parent</div><div id="kvParent">—</div>
+        <div class="k">Email</div><div id="kvEmail">—</div>
+        <div class="k">Phone</div><div id="kvPhone">—</div>
+        <div class="k">Student</div><div id="kvStudent">—</div>
+        <div class="k">Background</div><div id="kvBg">F1</div>
+        <div class="k">Package</div><div id="kvPkg">—</div>
+        <div class="k">Add‑ons</div><div id="kvAdd">None</div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Nav script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+      toggle.addEventListener('click', () => {
+        const isOpen = !nav.classList.contains('open');
+        nav.classList.toggle('open', isOpen);
+        toggle.setAttribute('aria-expanded', String(isOpen));
+      });
+      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
+  </script>
+
+  <!-- Accordion logic + minimal checkout wiring -->
+  <script>
+    const state = {
+      parent: { name:"", phone:"", email:"" },
+      student: { first:"", last:"", teacher:"", grade:"", school:"", background:"F1", package:null, addons:[] }
+    };
+
+    // Helper: open a specific accordion section by id
+    function openAcc(id){
+      document.querySelectorAll('.acc').forEach(sec=>{
+        const head = sec.querySelector('.acc-head');
+        const panel = sec.querySelector('.acc-panel');
+        const open = sec.id === id;
+        head.setAttribute('aria-expanded', open);
+        panel.classList.toggle('open', open);
+      });
+    }
+
+    // Background change
+    function onBgChange(v){ state.student.background = v; renderSummary(); }
+
+    // Package card selection (visual + data)
+    document.addEventListener('click', (e)=>{
+      const label = e.target.closest('.pkg-card');
+      if(!label) return;
+      const input = label.querySelector('input[type=radio]');
+      if(!input) return;
+      // check this radio
+      input.checked = true;
+      // visual state
+      document.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));
+      label.classList.add('selected');
+      // enable add-ons
+      document.getElementById('addons').disabled = false;
+      // update state
+      state.student.package = input.value;
+      renderSummary();
+    });
+
+    // Add-ons
+    document.getElementById('addons').addEventListener('change', ()=>{
+      const checked = [...document.querySelectorAll('#addons input:checked')].map(i=>i.value);
+      state.student.addons = checked;
+      renderSummary();
+    });
+
+    // Save Parent → go to Student
+    document.getElementById('toStudent').addEventListener('click', ()=>{
+      const form = document.getElementById('orderForm');
+      const name  = form.elements['parent_name'];
+      const phone = form.elements['parent_phone'];
+      const email = form.elements['parent_email'];
+      if(!name.reportValidity() || !email.reportValidity()) return;
+
+      state.parent = { name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim() };
+      document.getElementById('parentBadge').textContent = 'Saved';
+      openAcc('acc-student');
+      renderSummary();
+    });
+
+    // Student → Review
+    document.getElementById('readyToPay').addEventListener('click', ()=>{
+      const f = document.getElementById('orderForm');
+      const req = ['first','last','teacher','grade','school'];
+      for(const key of req){ if(!f.elements[key].reportValidity()) return; }
+      state.student.first   = f.elements['first'].value.trim();
+      state.student.last    = f.elements['last'].value.trim();
+      state.student.teacher = f.elements['teacher'].value.trim();
+      state.student.grade   = f.elements['grade'].value.trim();
+      state.student.school  = f.elements['school'].value.trim();
+
+      document.getElementById('studentBadge').textContent = 'Saved';
+      document.getElementById('reviewBadge').textContent = 'Ready';
+      openAcc('acc-review');
+      renderSummary();
+    });
+
+    // Summary renderer
+    function renderSummary(){
+      const sumItems = document.getElementById('sumItems');
+      const sumTotal = document.getElementById('sumTotal');
+      const f = document.getElementById('orderForm');
+
+      // Parent KV
+      document.getElementById('kvParent').textContent = state.parent.name || '—';
+      document.getElementById('kvEmail').textContent  = state.parent.email || '—';
+      document.getElementById('kvPhone').textContent  = state.parent.phone || '—';
+      document.getElementById('kvStudent').textContent= [state.student.first, state.student.last].filter(Boolean).join(' ') || '—';
+      document.getElementById('kvBg').textContent     = state.student.background || 'F1';
+
+      // Package & add-ons
+      const pkgInput = document.querySelector('input[name=package]:checked');
+      const pkgId = pkgInput?.value || null;
+      const pkgPrice = pkgInput ? Number(pkgInput.dataset.price) : 0;
+      document.getElementById('kvPkg').textContent = pkgId || '—';
+
+      let rows = '';
+      let total = 0;
+      if(pkgId){
+        rows += `<tr><td>Package ${pkgId}</td><td>1</td><td>$${pkgPrice.toFixed(2)}</td></tr>`;
+        total += pkgPrice;
+      }
+      const addonInputs = [...document.querySelectorAll('#addons input:checked')];
+      const addonNames = [];
+      for(const i of addonInputs){
+        const price = Number(i.dataset.price||0);
+        rows += `<tr><td>Add‑on ${i.value}</td><td>1</td><td>$${price.toFixed(2)}</td></tr>`;
+        addonNames.push(i.value);
+        total += price;
+      }
+      document.getElementById('kvAdd').textContent = addonNames.length ? addonNames.join(', ') : 'None';
+      sumItems.innerHTML = rows || `<tr><td>No items selected yet</td><td></td><td>$0.00</td></tr>`;
+      sumTotal.textContent = `$${total.toFixed(2)}`;
+    }
+    window.renderSummary = renderSummary; // so parent inputs can call it oninput
+
+    // Submit → create Stripe Checkout Session (adjust endpoint if needed)
+    document.getElementById('orderForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+
+      // Basic validation
+      if(!state.parent.name || !state.parent.email){
+        openAcc('acc-parent'); return;
+      }
+      if(!state.student.package){
+        openAcc('acc-student'); alert('Please choose a package to continue.'); return;
+      }
+
+      try{
+        const res = await fetch('/api/create-checkout', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            parent: state.parent,
+            students: [state.student], // designed so multi-student can be added later
+            meta: { flow: 'accordion', background: state.student.background }
+          })
+        });
+        const data = await res.json();
+        if(data?.url){ location.href = data.url; }
+        else { alert('Could not start checkout.'); console.error('Checkout error', data); }
+      }catch(err){
+        alert('Network error starting checkout.');
+        console.error(err);
+      }
+    });
+
+    // Open/close accordion heads
+    document.querySelectorAll('.acc-head').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const sec = btn.closest('.acc');
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', String(!isOpen));
+        sec.querySelector('.acc-panel').classList.toggle('open', !isOpen);
+      });
+    });
+
+    // Initial render
+    renderSummary();
+  </script>
+</body>
+</html>
