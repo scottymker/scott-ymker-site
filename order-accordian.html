@@ -14,7 +14,7 @@
     img{ max-width:100%; height:auto; display:block }
     a{ color:inherit; text-decoration:none }
 
-    /* Header */
+    /* Header (matches your site) */
     .topbar{ background:#f8fafc; border-bottom:1px solid var(--border) }
     .topbar .wrap{
       max-width:1100px; margin:0 auto; padding:10px 16px;
@@ -24,7 +24,6 @@
     .brand img{ height:28px; width:auto }
     .brand span{ font-weight:700 }
 
-    /* Nav + hamburger */
     .nav-links{ display:flex; align-items:center; gap:8px }
     .nav-links a{ padding:8px 10px; border-radius:8px; color:#111; font-weight:500 }
     .nav-links a[aria-current="page"]{ font-weight:700; background:#eef7ff; color:#0b77c5 }
@@ -62,7 +61,7 @@
     .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px }
     .section-title{ font-weight:600; margin:10px 0 8px }
 
-    /* Inputs */
+    /* Inputs (44px to avoid iOS zoom) */
     select, input[type="text"], input[type="tel"], input[type="email"]{
       width:100%; height:44px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font:inherit
     }
@@ -85,7 +84,9 @@
     .acc-panel{ padding:12px 14px; display:none }
     .acc-panel.open{ display:block }
 
-    /* Sub-sections inside a student accordion */
+    .pill{ background:#eef2f7; border-radius:999px; padding:2px 8px; font-size:12px; color:#374151 }
+
+    /* Sub-sections inside student accordion */
     .sub{ border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:10px; background:#fff }
     .sub h4{ margin:0 0 8px; font-size:14px }
 
@@ -103,7 +104,7 @@
     .pkg-top strong{ font-weight:800 }
     .pkg-details{ margin:0; padding-left:18px; color:#374151; font-size:14px }
 
-    /* Add-ons list */
+    /* Add-ons */
     .addon{ display:flex; align-items:center; gap:10px; padding:8px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#fff }
     .addon input{ width:18px; height:18px }
     fieldset:disabled{ opacity:.6 }
@@ -116,8 +117,6 @@
     .total-row td{ font-weight:700 }
     .kv{ display:grid; grid-template-columns:140px 1fr; row-gap:6px; column-gap:8px; margin-top:10px }
     .kv .k{ color:var(--muted) }
-
-    .pill{ background:#eef2f7; border-radius:999px; padding:2px 8px; font-size:12px; color:#374151 }
   </style>
 </head>
 <body>
@@ -232,44 +231,49 @@
     });
   </script>
 
-  <!-- Accordion logic + multi-student + 10-package support -->
+  <!-- Accordion logic + multi-student + 10-package support + live header names -->
   <script>
-    /* ---- Configuration (update prices/details as needed) ---- */
+    /* ---- Config (swap details/prices with your exact copy) ---- */
     const PACKAGES = [
       {id:'A',  price:35, title:'Package A',  details:['1 – 8×10','2 – 5×7','8 – Wallets']},
       {id:'B',  price:45, title:'Package B',  details:['1 – 8×10','4 – 5×7','16 – Wallets']},
       {id:'C',  price:60, title:'Package C',  details:['2 – 8×10','4 – 5×7','16 – Wallets']},
       {id:'D',  price:75, title:'Package D',  details:['2 – 8×10','4 – 5×7','1 – 11×14']},
       {id:'E',  price:95, title:'Package E',  details:['Digital + Prints bundle','2 – 8×10, 4 – 5×7, 16 – Wallets']},
-      {id:'A1', price:35, title:'Package A1', details:['Alt of A — update text']},
-      {id:'B1', price:45, title:'Package B1', details:['Alt of B — update text']},
-      {id:'C1', price:60, title:'Package C1', details:['Alt of C — update text']},
-      {id:'D1', price:75, title:'Package D1', details:['Alt of D — update text']},
-      {id:'E1', price:95, title:'Package E1', details:['Alt of E — update text']}
-    ];
-    const ADDONS = [
-      {id:'F', name:'Retouching', price:10},
-      {id:'G', name:'Extra 8×10', price:12},
-      {id:'H', name:'Extra 5×7', price:8},
-      {id:'I', name:'Extra Wallets', price:6},
-      {id:'J', name:'Digital Download', price:25},
-      {id:'K', name:'16×20 Poster', price:30},
-      {id:'L', name:'Keychains', price:10},
-      {id:'M', name:'Magnets', price:10},
-      {id:'N', name:'Buttons', price:8},
+      {id:'A1', price:35, title:'Package A1', details:['Alternate of A — update text']},
+      {id:'B1', price:45, title:'Package B1', details:['Alternate of B — update text']},
+      {id:'C1', price:60, title:'Package C1', details:['Alternate of C — update text']},
+      {id:'D1', price:75, title:'Package D1', details:['Alternate of D — update text']},
+      {id:'E1', price:95, title:'Package E1', details:['Alternate of E — update text']}
     ];
 
-    /* ---- App state ---- */
+    // 9 add-ons (F–N)
+    const ADDONS = [
+      {id:'F', name:'Retouching',       price:10},
+      {id:'G', name:'Extra 8×10',       price:12},
+      {id:'H', name:'Extra 5×7',        price:8},
+      {id:'I', name:'Extra Wallets',    price:6},
+      {id:'J', name:'Digital Download', price:25},
+      {id:'K', name:'16×20 Poster',     price:30},
+      {id:'L', name:'Keychains',        price:10},
+      {id:'M', name:'Magnets',          price:10},
+      {id:'N', name:'Buttons',          price:8},
+    ];
+
+    /* ---- State ---- */
     const state = {
       parent: { name:"", phone:"", email:"" },
-      students: []   // array of {id, info:{...}, background, package, addons:[]}
+      students: [] // {id, info:{first,last,teacher,grade,school}, background, package, addons:[]}
     };
-
     const maxStudents = 10;
 
     /* ---- Helpers ---- */
-    const $ = (sel, root=document) => root.querySelector(sel);
+    const $  = (sel, root=document) => root.querySelector(sel);
     const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+    const nameOr = (first,last,placeholder) => {
+      const t = [first,last].filter(Boolean).join(' ');
+      return t.trim() ? t : placeholder;
+    };
 
     function openAcc(id){
       document.querySelectorAll('.acc').forEach(sec=>{
@@ -282,7 +286,6 @@
     }
 
     function createPackageGrid(studentId){
-      // Builds the package cards grid for a given student section
       const grid = document.createElement('div');
       grid.className = 'pkg-grid';
       PACKAGES.forEach(p=>{
@@ -290,8 +293,7 @@
         label.className = 'pkg-card';
         label.tabIndex = 0;
         label.innerHTML = `
-          <input class="sr-only" type="radio" name="package-${studentId}" value="${p.id}" data-price="${p.price}"
-                 style="position:absolute;opacity:0;pointer-events:none">
+          <input class="sr-only" type="radio" name="package-${studentId}" value="${p.id}" data-price="${p.price}" style="position:absolute;opacity:0;pointer-events:none">
           <div class="pkg-top"><span>${p.title}</span><strong>$${p.price}</strong></div>
           <ul class="pkg-details">${p.details.map(d=>`<li>${d}</li>`).join('')}</ul>
         `;
@@ -318,19 +320,19 @@
       return `
         <section class="acc" id="acc-${id}">
           <button class="acc-head" type="button" aria-expanded="${idx===1?'true':'false'}">
-            2) Student ${idx}
+            <span>2) <span class="muted">Student ${idx}</span> — <strong id="label-${id}-name" style="font-weight:700">Enter name</strong></span>
             <span class="pill" id="badge-${id}">Not started</span>
           </button>
           <div class="acc-panel ${idx===1?'open':''}">
             <div class="sub">
               <h4>Student Info</h4>
               <div class="row">
-                <input required name="first-${id}" placeholder="First name">
-                <input required name="last-${id}" placeholder="Last name">
+                <input required name="first-${id}" placeholder="First name" data-stu="${id}" data-field="first">
+                <input required name="last-${id}"  placeholder="Last name"  data-stu="${id}" data-field="last">
               </div>
               <div class="row">
                 <input required name="teacher-${id}" placeholder="Teacher">
-                <input required name="grade-${id}" placeholder="Grade">
+                <input required name="grade-${id}"   placeholder="Grade">
               </div>
               <input required name="school-${id}" placeholder="School" style="margin-top:10px">
             </div>
@@ -361,7 +363,7 @@
     }
 
     function mountStudent(idx){
-      const wrap = document.getElementById('studentsWrap');
+      const wrap = $('#studentsWrap');
       wrap.insertAdjacentHTML('beforeend', studentTemplate(idx));
       const id = `s${idx}`;
 
@@ -369,50 +371,60 @@
       state.students.push({ id, info:{}, background:'F1', package:null, addons:[] });
 
       // package grid + addons
-      const gridHost = document.getElementById(`pkgGrid-${id}`);
-      gridHost.replaceChildren(createPackageGrid(id));
-      const addonsHost = document.getElementById(`addonsWrap-${id}`);
-      addonsHost.replaceChildren(createAddonsList(id));
+      $('#pkgGrid-'+id).replaceChildren(createPackageGrid(id));
+      $('#addonsWrap-'+id).replaceChildren(createAddonsList(id));
 
-      // listeners unique to this student
-      const section = document.getElementById(`acc-${id}`);
+      const section = $('#acc-'+id);
 
-      // package click (event delegation within this section)
-      section.addEventListener('click', (e)=>{
-        const card = e.target.closest('.pkg-card');
-        if(!card) return;
-        const input = card.querySelector('input[type=radio]');
-        if(!input) return;
-        // visual select
-        section.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));
-        card.classList.add('selected');
-        input.checked = true;
-        // enable addons
-        section.querySelector(`#addons-${id}`)?.removeAttribute('disabled');
-        // update state
-        const stu = state.students.find(s=>s.id===id);
-        stu.package = input.value;
-        renderSummary();
+      // Live header name update
+      section.querySelectorAll('input[data-stu="'+id+'"]').forEach(inp=>{
+        inp.addEventListener('input', ()=>{
+          const f = $('#orderForm');
+          const first = f.elements[`first-${id}`].value.trim();
+          const last  = f.elements[`last-${id}`].value.trim();
+          $('#label-'+id+'-name').textContent = nameOr(first,last,'Enter name');
+          const stu = state.students.find(s=>s.id===id);
+          stu.info.first = first;
+          stu.info.last  = last;
+          renderSummary();
+        });
       });
 
       // background change
-      section.querySelector(`#bg-${id}`).addEventListener('change', (e)=>{
+      section.querySelector('#bg-'+id).addEventListener('change', (e)=>{
         const stu = state.students.find(s=>s.id===id);
         stu.background = e.target.value;
         renderSummary();
       });
 
-      // addons change
-      section.querySelector(`#addons-${id}`).addEventListener('change', (e)=>{
+      // package selection
+      section.addEventListener('click', (e)=>{
+        const card = e.target.closest('.pkg-card');
+        if(!card) return;
+        const input = card.querySelector('input[type=radio]');
+        if(!input) return;
+        section.querySelectorAll('.pkg-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        input.checked = true;
+        // enable addons
+        section.querySelector('#addons-'+id)?.removeAttribute('disabled');
+        // store
         const stu = state.students.find(s=>s.id===id);
-        const checks = Array.from(section.querySelectorAll(`#addons-${id} input:checked`)).map(i=>i.value);
+        stu.package = input.value;
+        renderSummary();
+      });
+
+      // addons change
+      section.querySelector('#addons-'+id).addEventListener('change', ()=>{
+        const stu = state.students.find(s=>s.id===id);
+        const checks = Array.from(section.querySelectorAll('#addons-'+id+' input:checked')).map(i=>i.value);
         stu.addons = checks;
         renderSummary();
       });
 
-      // save student button
-      section.querySelector(`[data-ready="${id}"]`).addEventListener('click', ()=>{
-        const f = document.getElementById('orderForm');
+      // save student
+      section.querySelector('[data-ready="'+id+'"]').addEventListener('click', ()=>{
+        const f = $('#orderForm');
         const need = [`first-${id}`,`last-${id}`,`teacher-${id}`,`grade-${id}`,`school-${id}`];
         for(const n of need){ if(!f.elements[n].reportValidity()) return; }
         const stu = state.students.find(s=>s.id===id);
@@ -423,21 +435,21 @@
           grade: f.elements[`grade-${id}`].value.trim(),
           school:f.elements[`school-${id}`].value.trim()
         };
-        document.getElementById(`badge-${id}`).textContent = 'Saved';
-        renderSummary();
+        $('#badge-'+id).textContent = 'Saved';
+        $('#reviewBadge').textContent = 'Ready';
         openAcc('acc-review');
-        document.getElementById('reviewBadge').textContent = 'Ready';
+        renderSummary();
       });
 
       // remove student
-      section.querySelector(`[data-remove="${id}"]`).addEventListener('click', ()=>{
-        const idx = state.students.findIndex(s=>s.id===id);
-        if(idx>-1){ state.students.splice(idx,1); }
+      section.querySelector('[data-remove="'+id+'"]').addEventListener('click', ()=>{
+        const i = state.students.findIndex(s=>s.id===id);
+        if(i>-1) state.students.splice(i,1);
         section.remove();
         renderSummary();
       });
 
-      // accordion head toggle for this section
+      // accordion toggle for this student
       section.querySelector('.acc-head').addEventListener('click', ()=>{
         const head = section.querySelector('.acc-head');
         const panel = section.querySelector('.acc-panel');
@@ -449,63 +461,61 @@
       renderSummary();
     }
 
-    /* ---- Wire-up global actions ---- */
+    /* ---- Global wiring ---- */
 
-    // Save Parent → open first student (or create it)
-    document.getElementById('toStudents').addEventListener('click', ()=>{
-      const f = document.getElementById('orderForm');
+    // Save parent → open/create first student
+    $('#toStudents').addEventListener('click', ()=>{
+      const f = $('#orderForm');
       const name  = f.elements['parent_name'];
       const phone = f.elements['parent_phone'];
       const email = f.elements['parent_email'];
       if(!name.reportValidity() || !email.reportValidity()) return;
       state.parent = { name:name.value.trim(), phone:phone.value.trim(), email:email.value.trim() };
-      document.getElementById('parentBadge').textContent = 'Saved';
+      $('#parentBadge').textContent = 'Saved';
       if(state.students.length===0) mountStudent(1);
       openAcc('acc-s1');
       renderSummary();
     });
 
-    // Add another student
-    document.getElementById('addStudentBtn').addEventListener('click', ()=>{
-      if(state.students.length>=maxStudents){ alert('Maximum students added.'); return; }
-      mountStudent(state.students.length+1);
-      openAcc(`acc-s${state.students.length}`);
+    // Add student
+    $('#addStudentBtn').addEventListener('click', ()=>{
+      if(state.students.length>=10){ alert('Maximum students added.'); return; }
+      const idx = state.students.length + 1;
+      mountStudent(idx);
+      openAcc(`acc-s${idx}`);
     });
 
-    // Summary renderer
+    // Summary
     function renderSummary(){
-      // parent KV
-      document.getElementById('kvParent').textContent = state.parent.name || '—';
-      document.getElementById('kvEmail').textContent  = state.parent.email || '—';
-      document.getElementById('kvPhone').textContent  = state.parent.phone || '—';
-      document.getElementById('kvStudents').textContent = String(state.students.length);
+      $('#kvParent').textContent  = state.parent.name  || '—';
+      $('#kvEmail').textContent   = state.parent.email || '—';
+      $('#kvPhone').textContent   = state.parent.phone || '—';
+      $('#kvStudents').textContent= String(state.students.length);
 
-      // line items
-      const tbody = document.getElementById('sumItems');
+      const tbody = $('#sumItems');
       tbody.innerHTML = '';
       let total = 0;
 
       state.students.forEach((stu, i)=>{
-        // package
+        const who = nameOr(stu.info.first, stu.info.last, `Student ${i+1}`);
         if(stu.package){
           const p = PACKAGES.find(x=>x.id===stu.package);
           const price = p ? p.price : 0;
           total += price;
           tbody.insertAdjacentHTML('beforeend',
-            `<tr><td>Student ${i+1}: Package ${stu.package} (${stu.info.first||''} ${stu.info.last||''})</td><td>1</td><td>$${price.toFixed(2)}</td></tr>`
+            `<tr><td>${who}: Package ${stu.package}</td><td>1</td><td>$${price.toFixed(2)}</td></tr>`
           );
-        } else {
+        }else{
           tbody.insertAdjacentHTML('beforeend',
-            `<tr><td>Student ${i+1}: (no package selected)</td><td></td><td>$0.00</td></tr>`
+            `<tr><td>${who}: (no package selected)</td><td></td><td>$0.00</td></tr>`
           );
         }
-        // addons
         stu.addons.forEach(id=>{
           const a = ADDONS.find(x=>x.id===id);
           if(!a) return;
           total += a.price;
           tbody.insertAdjacentHTML('beforeend',
-            `<tr class="subrow"><td class="sub">Add‑on ${a.id} – ${a.name}</td><td>1</td><td>$${a.price.toFixed(2)}</td></tr>`
+            `<tr class="subrow"><td class="muted">↳ Add‑on ${a.id} – ${a.name}</td><td>1</td><td>$${a.price.toFixed(2)}</td></tr>`
           );
         });
       });
@@ -514,16 +524,15 @@
         tbody.innerHTML = `<tr><td>No students yet</td><td></td><td>$0.00</td></tr>`;
       }
 
-      document.getElementById('sumTotal').textContent = `$${total.toFixed(2)}`;
+      $('#sumTotal').textContent = `$${total.toFixed(2)}`;
     }
     window.renderSummary = renderSummary;
 
-    // Checkout submit
-    document.getElementById('orderForm').addEventListener('submit', async (e)=>{
+    // Submit → Stripe Checkout
+    $('#orderForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!state.parent.name || !state.parent.email){ openAcc('acc-parent'); return; }
       if(state.students.length===0){ alert('Please add at least one student.'); return; }
-      // validate each student has a package
       for(const s of state.students){
         if(!s.package){ alert('Each student must have a package selected.'); return; }
       }
@@ -531,42 +540,31 @@
         const res = await fetch('/api/create-checkout', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({
-            parent: state.parent,
-            students: state.students,
-            meta: { flow:'accordion-multi' }
-          })
+          body: JSON.stringify({ parent: state.parent, students: state.students, meta:{ flow:'accordion-multi' } })
         });
         const data = await res.json();
         if(data?.url){ location.href = data.url; }
         else { alert('Could not start checkout.'); console.error('Checkout error', data); }
-      }catch(err){
-        alert('Network error starting checkout.');
-        console.error(err);
-      }
+      }catch(err){ alert('Network error starting checkout.'); console.error(err); }
     });
 
-    // Review accordion head
-    document.querySelector('#acc-review .acc-head').addEventListener('click', ()=>{
-      const sec = document.getElementById('acc-review');
-      const head = sec.querySelector('.acc-head');
-      const panel = sec.querySelector('.acc-panel');
+    // Review accordion
+    $('#acc-review .acc-head').addEventListener('click', ()=>{
+      const sec = $('#acc-review'); const head = sec.querySelector('.acc-head'); const panel = sec.querySelector('.acc-panel');
       const isOpen = head.getAttribute('aria-expanded')==='true';
       head.setAttribute('aria-expanded', String(!isOpen));
       panel.classList.toggle('open', !isOpen);
     });
 
-    // Parent accordion head
-    document.querySelector('#acc-parent .acc-head').addEventListener('click', ()=>{
-      const sec = document.getElementById('acc-parent');
-      const head = sec.querySelector('.acc-head');
-      const panel = sec.querySelector('.acc-panel');
+    // Parent accordion
+    $('#acc-parent .acc-head').addEventListener('click', ()=>{
+      const sec = $('#acc-parent'); const head = sec.querySelector('.acc-head'); const panel = sec.querySelector('.acc-panel');
       const isOpen = head.getAttribute('aria-expanded')==='true';
       head.setAttribute('aria-expanded', String(!isOpen));
       panel.classList.toggle('open', !isOpen);
     });
 
-    // Start with one student shown for convenience
+    // Start with one student ready
     mountStudent(1);
   </script>
 </body>
