@@ -4,8 +4,8 @@
 
 [functions]
   node_bundler = "esbuild"
-  # Ship the Stripe SDK with the lambda
-  external_node_modules = ["stripe"]
+  # Ship SDKs/libs needed by both v1 and v2
+  external_node_modules = ["stripe", "sharp", "@netlify/blobs"]
   # Make sure shared code/templates are bundled with functions
   included_files = [
     "netlify/functions/_lib/**",
@@ -13,6 +13,24 @@
     "Thomas.jpg",
     "Avery.jpg"
   ]
+
+[build.environment]
+  # Sharp works great on Node 18+ (adjust if you’ve pinned a different version)
+  NODE_VERSION = "18"
+
+# --- V2 API (must be BEFORE the wildcard /api/* rule) ---
+[[redirects]]
+  from = "/api/v2/login"
+  to   = "/.netlify/functions/v2-login"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from = "/api/v2/free-download"
+  to   = "/.netlify/functions/v2-free-download"
+  status = 200
+  force  = true
+# ---------------------------------------------------------
 
 # Pretty /api/* -> Functions (e.g., /api/get-gallery, /api/stripe-webhook)
 [[redirects]]
