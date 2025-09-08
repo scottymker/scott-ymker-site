@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Access My Event — V2</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* scope styles to #v2-root so nothing leaks */
+    #v2-root { --bg:#f6f7f9; --card:#fff; --ink:#111; --muted:#6b7280; --accent:#0ea5e9; --border:#e6e7eb;
+      background:var(--bg); color:var(--ink); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; }
+    #v2-root .container{ max-width:980px; margin:40px auto; padding:0 16px; }
+    #v2-root .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    #v2-root .row{ display:flex; gap:12px; margin:10px 0 20px; }
+    #v2-root input{ flex:1; padding:12px 14px; border:1px solid var(--border); border-radius:12px; font-size:16px; }
+    #v2-root button{ background:var(--accent); color:#fff; border:0; padding:12px 16px; border-radius:12px; font-weight:600; cursor:pointer; }
+    #v2-root .secondary{ display:inline-block; padding:12px 16px; border-radius:12px; border:1px solid var(--border); text-decoration:none; color:var(--ink); }
+    #v2-root .error{ color:#b91c1c; }
+    #v2-root .gallery img{ width:100%; height:auto; border-radius:14px; border:1px solid var(--border); }
+    #v2-root .actions{ display:flex; gap:12px; margin-top:14px; flex-wrap:wrap; }
+    #v2-root .muted{ color:var(--muted); }
+  </style>
+</head>
+<body>
+<div id="v2-root">
+  <div class="container">
+    <section id="access-app" class="card">
+      <h1>Access My Event — V2</h1>
+      <p class="muted">Enter the 6-character code to view your photo.</p>
+
+      <form id="code-form" class="row">
+        <input id="code-input" pattern="[A-Za-z0-9]{5,8}" maxlength="8" placeholder="e.g., YIF9RN" required />
+        <button type="submit">View Photos</button>
+      </form>
+
+      <p id="error" class="error" hidden></p>
+
+      <div id="result" hidden>
+        <div class="student-bar">
+          <strong id="student-name"></strong>
+          <span class="muted" id="student-meta"></span>
+        </div>
+
+        <div class="gallery"><img id="hero" alt="Your photo" /></div>
+
+        <div class="actions">
+          <button id="download-btn">Free Social Download</button>
+          <a id="order-link" class="secondary" href="/order.html">Order Prints & Full-Res</a>
+        </div>
+
+        <p id="claim-note" class="muted"></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script type="module" src="/v2/assets/js/access.js"></script>
+</body>
+</html>
