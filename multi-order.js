@@ -247,6 +247,9 @@ function removeStudent(i){
 
 window.__removeStudent = removeStudent;
 
+// Wire up "Add another student" button
+addBtn.addEventListener('click', addStudent);
+
 // seed with 1 student
 addStudent();
 
