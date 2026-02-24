@@ -19,9 +19,11 @@ const PACKAGE_BREAKDOWN = {
   E1: ["2 × 5x7","2 × 3.5x5","12 × wallets"]
 };
 
-const PACKAGES_ORDER = ['A','A1','B','B1','C','C1','D','D1','E','E1'];
+// Base packages first, then digital variants
+const PACKAGES_ORDER = ['A','B','C','D','E','A1','B1','C1','D1','E1'];
 const BACKGROUNDS = ['F1','F2','F3','F4','F5','F6'];
 
+const VISIBLE_PKG_COUNT = 5;
 const MAX_STUDENTS = 6;
 
 const $  = (s)=>document.querySelector(s);
@@ -35,22 +37,47 @@ const addBtn = $('#addStudent');
 
 // ---------- Package cards HTML ----------
 function pkgCardsHTML(i){
-  return PACKAGES_ORDER.map(code => {
+  const cards = PACKAGES_ORDER.map((code, idx) => {
     const price = PACKAGE_PRICES[code];
     const items = PACKAGE_BREAKDOWN[code] || [];
+    const badge = code === 'A' ? '<span class="pkg-badge">Most Popular</span>' : '';
     return `<div class="pkg-card" data-student="${i}" data-pkg="${code}" onclick="window.__selectPkg(${i},'${code}')">
+      ${badge}
       <div class="pkg-name">Package ${code}</div>
       <div class="pkg-price">${fmtMoney(price)}</div>
       <ul class="pkg-items">${items.map(x=>`<li>${x}</li>`).join('')}</ul>
     </div>`;
-  }).join('');
+  });
+
+  // First 5 visible, rest in hidden container
+  const visible = cards.slice(0, VISIBLE_PKG_COUNT).join('');
+  const hidden  = cards.slice(VISIBLE_PKG_COUNT).join('');
+
+  return `<div class="pkg-grid">${visible}
+    <div class="pkg-more" hidden>${hidden}</div>
+  </div>
+  <div class="pkg-show-more">
+    <button type="button" class="btn small" onclick="window.__showMorePkgs(${i})">Show more packages</button>
+  </div>`;
 }
+
+// ---------- Show more packages ----------
+window.__showMorePkgs = function(i){
+  const det = studentsEl.querySelector(`details[data-i="${i}"]`);
+  if (!det) return;
+  const more = det.querySelector('.pkg-more');
+  const btnWrap = det.querySelector('.pkg-show-more');
+  if (more) more.hidden = false;
+  if (btnWrap) btnWrap.hidden = true;
+};
 
 // ---------- Background thumbnails HTML ----------
 function bgThumbsHTML(i){
   return BACKGROUNDS.map((code, idx) => {
     const sel = idx === 0 ? ' selected' : '';
+    const badge = code === 'F1' ? '<span class="bg-badge">Default</span>' : '';
     return `<div class="bg-thumb${sel}" data-student="${i}" data-bg="${code}" onclick="window.__selectBg(${i},'${code}')">
+      ${badge}
       <img src="${code}_Background_Example.jpg" alt="${code} background" loading="lazy">
       <span class="bg-label">${code}</span>
     </div>`;
@@ -64,6 +91,11 @@ window.__selectPkg = function(i, code){
   det.querySelectorAll('.pkg-card').forEach(c => c.classList.toggle('selected', c.dataset.pkg === code));
   det.querySelector(`input[name="s${i}_package"]`).value = code;
   enforceAddonRules(det);
+
+  // Reveal add-ons section
+  const addonSection = det.querySelector('.addon-section');
+  if (addonSection && addonSection.hidden) addonSection.hidden = false;
+
   renderSummary();
 };
 
@@ -75,7 +107,25 @@ window.__selectBg = function(i, code){
   renderSummary();
 };
 
+// ---------- "Same school?" shortcut ----------
+window.__copySchool = function(i){
+  const s1 = studentsEl.querySelector('details[data-i="1"]');
+  const det = studentsEl.querySelector(`details[data-i="${i}"]`);
+  if (!s1 || !det) return;
+  const teacher1 = s1.querySelector('[name$="_teacher"]')?.value || '';
+  const grade1   = s1.querySelector('[name$="_grade"]')?.value || '';
+  const teacherInput = det.querySelector('[name$="_teacher"]');
+  const gradeInput   = det.querySelector('[name$="_grade"]');
+  if (teacherInput) teacherInput.value = teacher1;
+  if (gradeInput)   gradeInput.value   = grade1;
+  renderSummary();
+};
+
 function studentTemplate(i){
+  const sameSchoolLink = i > 1
+    ? `<button type="button" class="btn-link same-school" onclick="window.__copySchool(${i})">Same school as Student 1?</button>`
+    : '';
+
   return `
   <details class="student" data-i="${i}" ${i<=1?'open':''}>
     <summary>
@@ -88,6 +138,7 @@ function studentTemplate(i){
         <input type="text" name="s${i}_first"   placeholder="First name" required oninput="window.renderSummary()">
         <input type="text" name="s${i}_last"    placeholder="Last name" required oninput="window.renderSummary()">
       </div>
+      ${sameSchoolLink}
       <div class="row" style="margin-top:10px">
         <input type="text" name="s${i}_teacher" placeholder="Teacher" required oninput="window.renderSummary()">
         <input type="text" name="s${i}_grade"   placeholder="Grade" required oninput="window.renderSummary()">
@@ -95,16 +146,18 @@ function studentTemplate(i){
 
       <div class="section-title" style="margin-top:14px">Choose a package</div>
       <input type="hidden" name="s${i}_package" value="">
-      <div class="pkg-grid">${pkgCardsHTML(i)}</div>
+      ${pkgCardsHTML(i)}
 
-      <div class="section-title" style="margin-top:14px">Add-ons (optional)</div>
-      <div>
-        ${Object.entries(ADDON_NAMES).map(([code, name])=>(
-          `<label class="addon">
-             <input type="checkbox" name="s${i}_addons" value="${code}" disabled onchange="window.renderSummary()">
-             ${code} — ${name} <span class="muted">($${(ADDON_PRICES[code]/100).toFixed(2)})</span>
-           </label>`
-        )).join('')}
+      <div class="addon-section" hidden>
+        <div class="section-title" style="margin-top:14px">Add-ons (optional)</div>
+        <div class="addon-grid">
+          ${Object.entries(ADDON_NAMES).map(([code, name])=>(
+            `<label class="addon">
+               <input type="checkbox" name="s${i}_addons" value="${code}" disabled onchange="window.renderSummary()">
+               ${code} — ${name} <span class="muted">($${(ADDON_PRICES[code]/100).toFixed(2)})</span>
+             </label>`
+          )).join('')}
+        </div>
       </div>
 
       <div class="section-title" style="margin-top:14px">Choose a background</div>
@@ -151,6 +204,29 @@ function renumberStudents(){
       thumb.dataset.student = i;
       thumb.setAttribute('onclick', `window.__selectBg(${i},'${thumb.dataset.bg}')`);
     });
+
+    // Update show-more button onclick
+    const showMoreBtn = det.querySelector('.pkg-show-more .btn');
+    if (showMoreBtn) {
+      showMoreBtn.setAttribute('onclick', `window.__showMorePkgs(${i})`);
+    }
+
+    // Update same-school link
+    const sameSchool = det.querySelector('.same-school');
+    if (sameSchool) {
+      if (i <= 1) {
+        sameSchool.remove();
+      } else {
+        sameSchool.setAttribute('onclick', `window.__copySchool(${i})`);
+      }
+    } else if (i > 1) {
+      // Add same-school link if missing (student was previously #1)
+      const firstRow = det.querySelector('.row');
+      if (firstRow && firstRow.nextElementSibling) {
+        firstRow.insertAdjacentHTML('afterend',
+          `<button type="button" class="btn-link same-school" onclick="window.__copySchool(${i})">Same school as Student 1?</button>`);
+      }
+    }
   });
   updateSummaryHeaders();
 }
@@ -240,7 +316,6 @@ function updateProgress(){
   steps[2].classList.toggle('active', reviewReady);
 
   // Step 4: Checkout (only active during submit — set in submit handler)
-  // Don't touch it here so submit handler's class sticks
 
   // Connecting lines
   const lines = $$('.step-line');
@@ -335,16 +410,52 @@ window.__togglePromo = function(){
   if (note) note.hidden = !note.hidden;
 };
 
+// -------- Inline Validation ----------
+function clearErrors(){
+  $$('.error').forEach(el => el.classList.remove('error'));
+  $$('.error-message').forEach(el => el.remove());
+}
+
+function showErrors(fields){
+  clearErrors();
+  fields.forEach(({el, msg}) => {
+    if (el) {
+      el.classList.add('error');
+      el.insertAdjacentHTML('afterend', `<div class="error-message">${msg}</div>`);
+    }
+  });
+  // Scroll to first error
+  if (fields.length && fields[0].el) {
+    fields[0].el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
 // -------- Submit ----------
 document.getElementById('multiForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
+  clearErrors();
+
   const { parent, students } = collect();
 
-  if (!parent.name || !parent.phone || !parent.email){
-    alert('Please complete parent name, phone, and email.'); return;
-  }
+  // Inline validation
+  const errors = [];
+  const nameInput = $('[name="parent_name"]');
+  const phoneInput = $('[name="parent_phone"]');
+  const emailInput = $('[name="parent_email"]');
+
+  if (!parent.name)  errors.push({ el: nameInput, msg: 'Parent name is required.' });
+  if (!parent.phone) errors.push({ el: phoneInput, msg: 'Phone number is required.' });
+  if (!parent.email) errors.push({ el: emailInput, msg: 'Email is required.' });
+
   if (!students.some(s=>!!s.pkg)){
-    alert('Pick a package for at least one student.'); return;
+    // Highlight the first student's package grid
+    const firstPkgGrid = studentsEl.querySelector('.pkg-grid');
+    errors.push({ el: firstPkgGrid, msg: 'Pick a package for at least one student.' });
+  }
+
+  if (errors.length) {
+    showErrors(errors);
+    return;
   }
 
   // Activate checkout step
