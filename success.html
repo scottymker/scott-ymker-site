@@ -170,9 +170,10 @@
     function getSessionId() {
       const url = new URL(window.location.href);
       const qp = url.searchParams;
-      let sid = qp.get('session_id') || qp.get('id');
+      // Payment Element returns payment_intent; Checkout returns session_id
+      let sid = qp.get('payment_intent') || qp.get('session_id') || qp.get('id');
       if (!sid && url.hash) {
-        const m = url.hash.match(/(?:^|[&#?])session_id=([^&]+)/);
+        const m = url.hash.match(/(?:^|[&#?])(?:session_id|payment_intent)=([^&]+)/);
         if (m) sid = decodeURIComponent(m[1]);
       }
       return sid || '';

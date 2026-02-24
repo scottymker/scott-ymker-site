@@ -433,8 +433,87 @@ function showErrors(fields){
   }
 }
 
+// -------- Stripe Payment Element ----------
+let stripe = null;
+let elements = null;
+let paymentElement = null;
+
+function buildLineItems(students) {
+  const line_items = [];
+  students.forEach(s => {
+    if (s.pkg) {
+      line_items.push({
+        price_data: {
+          currency: "usd",
+          product_data: { name: `${s.name} — Package ${s.pkg}` },
+          unit_amount: PACKAGE_PRICES[s.pkg] ?? 0
+        },
+        quantity: 1
+      });
+    }
+    s.addons.forEach(code => {
+      line_items.push({
+        price_data: {
+          currency: "usd",
+          product_data: { name: `${s.name} — Add-on ${code} — ${ADDON_NAMES[code] || ''}` },
+          unit_amount: ADDON_PRICES[code] ?? 0
+        },
+        quantity: 1
+      });
+    });
+  });
+  return line_items;
+}
+
+function buildMetadata(parent, students) {
+  const metadata = {
+    parent_name: parent.name,
+    parent_phone: parent.phone,
+    parent_email: parent.email,
+    students_count: String(students.length)
+  };
+  students.forEach((s, idx) => {
+    const k = idx + 1;
+    metadata[`s${k}_name`] = s.name;
+    metadata[`s${k}_teacher`] = s.teacher;
+    metadata[`s${k}_grade`] = s.grade;
+    metadata[`s${k}_bg`] = s.bg;
+    metadata[`s${k}_pkg`] = s.pkg || '';
+    metadata[`s${k}_addons`] = s.addons.join(', ');
+  });
+  return metadata;
+}
+
+function showPaymentStep() {
+  $('#orderStep').hidden = true;
+  $('#paymentStep').hidden = false;
+  // Copy summary into payment sidebar
+  const src = $('#summaryCard');
+  const dest = $('#paymentSummary');
+  if (src && dest) dest.innerHTML = src.innerHTML;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showOrderStep() {
+  $('#paymentStep').hidden = true;
+  $('#orderStep').hidden = false;
+  // Clean up Stripe elements
+  if (paymentElement) { paymentElement.destroy(); paymentElement = null; }
+  elements = null;
+  stripe = null;
+  $('#payment-element').innerHTML = '';
+  const msg = $('#payment-message');
+  if (msg) { msg.hidden = true; msg.textContent = ''; }
+  const steps = $$('.step');
+  if (steps[3]) steps[3].classList.remove('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Back button
+document.getElementById('backToOrder').addEventListener('click', showOrderStep);
+
 // -------- Submit ----------
-document.getElementById('multiForm').addEventListener('submit', async (e)=>{
+document.getElementById('multiForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   clearErrors();
 
@@ -450,8 +529,7 @@ document.getElementById('multiForm').addEventListener('submit', async (e)=>{
   if (!parent.phone) errors.push({ el: phoneInput, msg: 'Phone number is required.' });
   if (!parent.email) errors.push({ el: emailInput, msg: 'Email is required.' });
 
-  if (!students.some(s=>!!s.pkg)){
-    // Highlight the first student's package grid
+  if (!students.some(s => !!s.pkg)) {
     const firstPkgGrid = studentsEl.querySelector('.pkg-grid');
     errors.push({ el: firstPkgGrid, msg: 'Pick a package for at least one student.' });
   }
@@ -463,80 +541,96 @@ document.getElementById('multiForm').addEventListener('submit', async (e)=>{
 
   // Activate checkout step
   const steps = $$('.step');
-  if (steps[3]) { steps[3].classList.add('active'); }
+  if (steps[3]) steps[3].classList.add('active');
 
-  const line_items = [];
-  students.forEach(s=>{
-    if (s.pkg){
-      line_items.push({
-        price_data: {
-          currency:"usd",
-          product_data:{ name:`${s.name} — Package ${s.pkg}` },
-        unit_amount: PACKAGE_PRICES[s.pkg] ?? 0
-        },
-        quantity:1
-      });
-    }
-    s.addons.forEach(code=>{
-      line_items.push({
-        price_data:{
-          currency:"usd",
-          product_data:{ name:`${s.name} — Add-on ${code} — ${ADDON_NAMES[code]||''}` },
-          unit_amount: ADDON_PRICES[code] ?? 0
-        },
-        quantity:1
-      });
-    });
-  });
-
-  const metadata = {
-    parent_name: parent.name,
-    parent_phone: parent.phone,
-    parent_email: parent.email,
-    students_count: String(students.length)
-  };
-  students.forEach((s, idx)=>{
-    const k = idx+1;
-    metadata[`s${k}_name`] = s.name;
-    metadata[`s${k}_teacher`] = s.teacher;
-    metadata[`s${k}_grade`] = s.grade;
-    metadata[`s${k}_bg`] = s.bg;
-    metadata[`s${k}_pkg`] = s.pkg || '';
-    metadata[`s${k}_addons`] = s.addons.join(', ');
-  });
-
+  const line_items = buildLineItems(students);
+  const metadata = buildMetadata(parent, students);
   const email = parent.email;
-  const btn = $('#checkout'); const orig=btn.textContent; btn.disabled=true; btn.textContent='Processing…';
 
-  try{
-    const res = await fetch('/.netlify/functions/create-checkout-session', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify({
-        line_items,
-        email,
-        metadata,
-        students: students.map(s=>({package:s.pkg, addons:s.addons, name:s.name, background:s.bg}))
-      })
+  const btn = $('#checkout');
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Processing…';
+
+  try {
+    const res = await fetch('/.netlify/functions/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ line_items, email, metadata })
     });
     const json = await res.json();
-    if(!res.ok){
+    if (!res.ok) {
       console.error(json);
       alert(json?.details?.error?.message || json?.error || 'Stripe error');
-      btn.disabled=false; btn.textContent=orig;
+      btn.disabled = false; btn.textContent = orig;
       if (steps[3]) steps[3].classList.remove('active');
       return;
     }
-    if(json.url){ window.location.href=json.url; }
-    else{
-      alert('No checkout URL returned.');
-      btn.disabled=false; btn.textContent=orig;
-      if (steps[3]) steps[3].classList.remove('active');
-    }
-  }catch(err){
+
+    // Init Stripe + mount Payment Element
+    stripe = Stripe(json.publishableKey);
+    elements = stripe.elements({
+      clientSecret: json.clientSecret,
+      appearance: {
+        theme: 'stripe',
+        variables: {
+          colorPrimary: '#c4703f',
+          colorBackground: '#ffffff',
+          colorText: '#1a1a1a',
+          fontFamily: 'Outfit, system-ui, sans-serif',
+          borderRadius: '12px',
+        }
+      }
+    });
+
+    paymentElement = elements.create('payment');
+    paymentElement.mount('#payment-element');
+
+    // Show payment step
+    showPaymentStep();
+    $('#payAmount').textContent = fmtMoney(json.amount);
+    const payBtn = $('#payBtn');
+    payBtn.disabled = false;
+    payBtn.textContent = `Pay ${fmtMoney(json.amount)}`;
+
+    // Store order number for success redirect
+    payBtn.dataset.orderNumber = json.orderNumber;
+
+    btn.disabled = false;
+    btn.textContent = orig;
+
+  } catch (err) {
     console.error(err);
     alert('Network error. Please try again.');
-    btn.disabled=false; btn.textContent=orig;
+    btn.disabled = false; btn.textContent = orig;
     if (steps[3]) steps[3].classList.remove('active');
   }
+});
+
+// -------- Pay button ----------
+document.getElementById('payBtn').addEventListener('click', async () => {
+  if (!stripe || !elements) return;
+
+  const payBtn = $('#payBtn');
+  const origText = payBtn.textContent;
+  payBtn.disabled = true;
+  payBtn.textContent = 'Processing…';
+
+  const msgEl = $('#payment-message');
+  msgEl.hidden = true;
+
+  const { error } = await stripe.confirmPayment({
+    elements,
+    confirmParams: {
+      return_url: `${window.location.origin}/success.html`,
+    },
+  });
+
+  // Only reaches here if there's an error (otherwise redirects)
+  if (error) {
+    msgEl.textContent = error.message || 'An unexpected error occurred.';
+    msgEl.hidden = false;
+  }
+  payBtn.disabled = false;
+  payBtn.textContent = origText;
 });

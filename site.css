@@ -835,3 +835,13 @@ body::before {
   font-size: 13px;
   margin-top: 4px;
 }
+
+/* --- Payment message --- */
+#payment-message {
+  color: var(--error);
+  font-size: 14px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--error-light);
+  border-radius: var(--radius);
+}

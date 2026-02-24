@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="site.css?v=3" />
+  <link rel="stylesheet" href="site.css?v=4" />
 
   <style>
     .hero { padding: 24px 0 0; }
@@ -98,7 +98,24 @@
       </div>
     </div>
 
-    <div class="order-grid">
+    <!-- Payment step (hidden until checkout) -->
+    <div id="paymentStep" class="order-grid" hidden>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div class="section-title" style="margin:0">Payment</div>
+          <button type="button" class="btn small" id="backToOrder">Back to order</button>
+        </div>
+        <div id="payment-element"></div>
+        <div id="payment-message" hidden></div>
+        <div class="actions" style="margin-top:18px">
+          <button type="button" id="payBtn" class="btn primary" disabled>Pay now</button>
+          <span class="muted" id="payAmount"></span>
+        </div>
+      </div>
+      <aside class="card" id="paymentSummary"></aside>
+    </div>
+
+    <div id="orderStep" class="order-grid">
       <form id="multiForm" class="card" novalidate>
         <div>
           <div class="section-title">Parent / Guardian</div>
@@ -140,6 +157,7 @@
         </div>
       </aside>
     </div>
+    </div>
   </main>
 
   <footer class="site-footer">
@@ -166,6 +184,7 @@
     });
   </script>
 
-  <script src="multi-order.js?v=3"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="multi-order.js?v=4"></script>
 </body>
 </html>
