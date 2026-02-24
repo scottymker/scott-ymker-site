@@ -206,9 +206,15 @@ function updateSummaryHeaders(){
 function updateProgress(){
   const parentName = $('[name="parent_name"]')?.value.trim();
   const parentEmail = $('[name="parent_email"]')?.value.trim();
+  const parentStarted = !!(parentName || parentEmail);
   const parentDone = !!(parentName && parentEmail);
 
   const students = [...studentsEl.querySelectorAll('details')];
+  const anyStudentStarted = students.some(det => {
+    const first = det.querySelector('[name$="_first"]')?.value.trim();
+    const pkg = det.querySelector('[name$="_package"]')?.value.trim();
+    return first || pkg;
+  });
   const studentsDone = students.length > 0 && students.every(det => {
     const first = det.querySelector('[name$="_first"]')?.value.trim();
     const last = det.querySelector('[name$="_last"]')?.value.trim();
@@ -218,26 +224,25 @@ function updateProgress(){
 
   const reviewReady = parentDone && studentsDone;
 
-  // Update step classes
   const steps = $$('.step');
   if (steps.length < 4) return;
 
-  // Step 1: Parent Info
+  // Step 1: Parent Info — active only when user has started typing
   steps[0].classList.toggle('done', parentDone);
-  steps[0].classList.toggle('active', !parentDone);
+  steps[0].classList.toggle('active', parentStarted && !parentDone);
 
-  // Step 2: Students
+  // Step 2: Students — active only when parent done and student has started
   steps[1].classList.toggle('done', studentsDone);
-  steps[1].classList.toggle('active', parentDone && !studentsDone);
+  steps[1].classList.toggle('active', parentDone && anyStudentStarted && !studentsDone);
 
-  // Step 3: Review
+  // Step 3: Review — active when everything is filled
   steps[2].classList.toggle('done', false);
   steps[2].classList.toggle('active', reviewReady);
 
-  // Step 4: Checkout (only active during submit)
-  steps[3].classList.toggle('active', false);
+  // Step 4: Checkout (only active during submit — set in submit handler)
+  // Don't touch it here so submit handler's class sticks
 
-  // Update connecting lines
+  // Connecting lines
   const lines = $$('.step-line');
   if (lines[0]) lines[0].classList.toggle('done', parentDone);
   if (lines[1]) lines[1].classList.toggle('done', studentsDone);
