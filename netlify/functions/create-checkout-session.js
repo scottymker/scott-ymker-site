@@ -36,6 +36,7 @@ exports.handler = async (event) => {
     // Prefill email + show phone field
     if (email) form.set("customer_email", String(email));
     form.set("phone_number_collection[enabled]", "true");
+    form.set("allow_promotion_codes", "true");
 
     // Make Order # searchable:
     // - client_reference_id

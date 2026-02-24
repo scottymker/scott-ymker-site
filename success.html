@@ -3,88 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Thank you • Scott Ymker Photography</title>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Thank you &bull; Scott Ymker Photography</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+
   <style>
-    :root{ --bg:#fafafa; --card:#ffffff; --ink:#111; --muted:#666; --accent:#0ea5e9; --ok:#16a34a; --border:#e7e7e9; --nav-h:64px; }
-    *{ box-sizing:border-box }
-    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden }
-    img{ max-width:100%; height:auto; display:block }
-    a{ color:inherit; text-decoration:none }
-    .wrap{ width:min(960px, calc(100% - 32px)); margin:24px auto }
+    .hero {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .grid-receipt {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 20px;
+      margin-top: 24px;
+      align-items: stretch;
+    }
+    @media (max-width: 900px) { .grid-receipt { grid-template-columns: 1fr; } }
+    .card h2 { font-family: var(--font-display); font-size: 20px; margin: 0 0 14px; }
+    .grow { flex: 1; }
 
-    /* Header with hamburger */
-    .sitebar{ position:relative; z-index:10; background:var(--card); border-bottom:1px solid var(--border) }
-    .sitebar .inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:16px; padding-inline:10px }
-    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; min-width:0 }
-    .brand img{ height:36px; width:auto }
-    .nav-links{ display:flex; gap:18px; align-items:center }
-    .nav-links a{ padding:6px 8px; border-radius:8px; font-weight:500 }
-    .nav-links a[aria-current="page"]{ background:#eef7ff; color:#0b77c5 }
-    .nav-links a:hover{ background:#eff2f6 }
-    .nav-toggle{ display:none; border:0; background:transparent; width:40px; height:40px; color:#111 !important; -webkit-appearance:none; appearance:none; padding:0; margin:0 }
-    .nav-toggle svg{ width:28px; height:28px; display:block }
-    @media (max-width:768px){
-      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center }
-      .nav-links{
-        position:fixed; left:0; right:0; top:var(--nav-h);
-        background:var(--card); border-top:1px solid var(--border);
-        flex-direction:column; padding:12px 16px; display:none; pointer-events:none
-      }
-      .nav-links.open{ display:flex; pointer-events:auto }
+    .tableWrap { width: 100%; overflow-x: auto; }
+    .items { width: 100%; border-collapse: collapse; margin-top: 6px; table-layout: fixed; }
+    .items col.desc { width: auto; }
+    .items col.qty { width: 64px; }
+    .items col.amt { width: 120px; }
+    .items th, .items td { padding: 10px; border-bottom: 1px solid var(--border-light); text-align: left; vertical-align: top; }
+    .items th { color: var(--muted); font-weight: 600; font-size: 13px; }
+    .items td:nth-child(2), .items th:nth-child(2) { text-align: center; }
+    .items td:nth-child(3), .items th:nth-child(3) { text-align: right; }
+    .items td:first-child { word-break: break-word; overflow-wrap: anywhere; }
+
+    .keyvals { display: grid; grid-template-columns: 180px 1fr; row-gap: 10px; column-gap: 14px; min-width: 0; }
+    .keyvals .label { color: var(--muted); font-weight: 500; }
+    @media (max-width: 520px) {
+      .keyvals { grid-template-columns: 1fr; }
+      .keyvals .label { font-weight: 600; }
+      .keyvals .label + div { margin-bottom: 6px; }
     }
 
-    /* Hero */
-    .hero{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 24px; display:flex; align-items:center; gap:16px; margin-top:18px }
-    .check{ height:36px; width:36px; border-radius:50%; display:grid; place-items:center; background:rgba(22,163,74,.1); color:var(--ok); font-size:20px }
-    h1{ margin:0; font-size:24px }
-    .subtle{ color:var(--muted); margin-top:4px }
-
-    /* Equal-height grid */
-    .grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:18px; margin-top:18px; align-items:stretch }
-    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
-    .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; display:flex; flex-direction:column; min-width:0 }
-    .card h2{ font-size:16px; margin:0 0 12px }
-    .grow{ flex:1 } /* pushes actions to bottom so both columns align visually */
-
-    /* Items table: mobile-safe */
-    .tableWrap{ width:100%; overflow-x:auto } /* hard stop for any overflow */
-    .items{ width:100%; border-collapse:collapse; margin-top:6px; table-layout:fixed }
-    .items col.desc{ width:auto }
-    .items col.qty{ width:64px }
-    .items col.amt{ width:120px }
-    .items th, .items td{ padding:8px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top }
-    .items th{ color:var(--muted); font-weight:600; font-size:13px }
-    .items td:nth-child(2), .items th:nth-child(2){ text-align:center }
-    .items td:nth-child(3), .items th:nth-child(3){ text-align:right }
-    .items td:first-child{ word-break:break-word; overflow-wrap:anywhere }
-
-    /* Key/Value block: stack on narrow screens to avoid overflow */
-    .keyvals{ display:grid; grid-template-columns:180px 1fr; row-gap:8px; column-gap:12px; min-width:0 }
-    .label{ color:var(--muted) }
-    @media (max-width:520px){
-      .keyvals{ grid-template-columns:1fr }
-      .keyvals .label{ font-weight:600 }
-      .keyvals .label + div{ margin-bottom:6px }
-    }
-
-    .total{ font-weight:700; font-size:18px }
-    .actions{ display:flex; gap:10px; margin-top:18px; flex-wrap:wrap }
-    .btn{ appearance:none; border:1px solid var(--border); background:#fff; padding:10px 14px; border-radius:999px; cursor:pointer }
-    .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff }
-    .muted{ color:var(--muted) }
-    footer{ margin:24px 0 40px; color:var(--muted); font-size:13px }
+    .total { font-weight: 700; font-size: 18px; }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="sitebar">
-    <div class="wrap inner">
+  <header class="sitebar">
+    <div class="wrap">
       <a class="brand" href="index.html">
         <img src="2020Logo_black.png" alt="Scott Ymker Photography logo">
-        <span>Scott Ymker Photography</span>
+        <span class="brand-name">Scott Ymker Photography</span>
       </a>
 
       <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
@@ -99,19 +69,19 @@
         <a href="contact.html">Contact</a>
       </nav>
     </div>
-  </div>
+  </header>
 
   <div class="wrap">
-    <section class="hero">
-      <div class="check">✓</div>
+    <section class="hero card animate-in">
+      <div class="status-icon ok">&#x2713;</div>
       <div>
         <h1>Thank you for your purchase!</h1>
-        <div class="subtle" id="orderSub">Loading your receipt…</div>
+        <div class="subtle" id="orderSub">Loading your receipt&hellip;</div>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="card" id="summary">
+    <section class="grid-receipt">
+      <div class="card animate-in delay-1" id="summary">
         <h2>Order summary</h2>
         <div class="grow">
           <div class="tableWrap">
@@ -133,36 +103,35 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card animate-in delay-2">
         <h2>Details</h2>
         <div class="keyvals" id="detailsKV">
-          <div class="label">Order #</div><div id="kvOrder">—</div>
-          <div class="label">Status</div><div id="kvStatus">—</div>
-          <div class="label">Email</div><div id="kvEmail">—</div>
-          <div class="label">Phone</div><div id="kvPhone">—</div>
-          <div class="label">Students</div><div id="kvStudent">—</div>
-          <div class="label">Teachers / Grades</div><div id="kvTeacher">—</div>
-          <div class="label">Backgrounds</div><div id="kvBg">—</div>
-          <div class="label">Add-ons</div><div id="kvAddons">—</div>
+          <div class="label">Order #</div><div id="kvOrder">&mdash;</div>
+          <div class="label">Status</div><div id="kvStatus">&mdash;</div>
+          <div class="label">Email</div><div id="kvEmail">&mdash;</div>
+          <div class="label">Phone</div><div id="kvPhone">&mdash;</div>
+          <div class="label">Students</div><div id="kvStudent">&mdash;</div>
+          <div class="label">Teachers / Grades</div><div id="kvTeacher">&mdash;</div>
+          <div class="label">Backgrounds</div><div id="kvBg">&mdash;</div>
+          <div class="label">Add-ons</div><div id="kvAddons">&mdash;</div>
         </div>
       </div>
     </section>
 
-    <section class="card" style="margin-top:18px">
+    <section class="card animate-in delay-3" style="margin-top:20px">
       <h2>Questions or changes?</h2>
       <p class="muted">
         If anything looks off, reply to your receipt email or contact us:
-        <br><strong>Email:</strong> <a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a>
+        <br><strong>Email:</strong> <a href="mailto:scott@scottymkerphotos.com" style="color:var(--accent);">scott@scottymkerphotos.com</a>
       </p>
     </section>
 
-    <footer>
-      © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+    <footer class="site-footer" style="border-top:none;">
+      &copy; <span id="yr"></span> Scott Ymker Photography &bull; All rights reserved.
     </footer>
   </div>
 
   <script>
-    // Footer year
     document.getElementById('yr').textContent = new Date().getFullYear();
 
     // Hamburger
@@ -180,11 +149,24 @@
       document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
     });
 
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.animate-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+
     // Money formatter
     const fmtMoney = (cents, currency='usd') =>
       (Number(cents || 0)/100).toLocaleString(undefined, { style:'currency', currency:(currency||'USD').toUpperCase() });
 
-    // Read session id from URL
     function getSessionId() {
       const url = new URL(window.location.href);
       const qp = url.searchParams;
@@ -196,7 +178,6 @@
       return sid || '';
     }
 
-    // Fallback order number if backend didn't set metadata.order_number
     function makeOrderNumber(data){
       let base = '';
       const pi = data.payment_intent;
@@ -237,13 +218,11 @@
         const md = data.metadata || {};
         const orderNo = md.order_number || makeOrderNumber(data);
 
-        // Details
         document.getElementById('kvOrder').textContent  = orderNo;
         document.getElementById('kvStatus').textContent = (data.payment_status || 'paid').toUpperCase();
-        document.getElementById('kvEmail').textContent  = (data.customer_email || '—');
-        document.getElementById('kvPhone').textContent  = (data.customer_phone || md.parent_phone || '—');
+        document.getElementById('kvEmail').textContent  = (data.customer_email || '\u2014');
+        document.getElementById('kvPhone').textContent  = (data.customer_phone || md.parent_phone || '\u2014');
 
-        // Items table
         const body = document.getElementById('itemsBody');
         body.innerHTML = '';
         (data.items || []).forEach(it => {
@@ -255,7 +234,6 @@
         });
         document.getElementById('totalCell').textContent = fmtMoney(data.amount_total, data.currency);
 
-        // Multi-student metadata
         const names = listFromMeta(md, i => md[`s${i}_name`]);
         const tgs   = listFromMeta(md, i => {
           const t = md[`s${i}_teacher`] || '';
@@ -266,13 +244,13 @@
         const adds  = listFromMeta(md, i => md[`s${i}_addons`]);
 
         document.getElementById('kvStudent').textContent =
-          (names.length ? names.join(', ') : [md.student_first, md.student_last].filter(Boolean).join(' ') || '—');
+          (names.length ? names.join(', ') : [md.student_first, md.student_last].filter(Boolean).join(' ') || '\u2014');
         document.getElementById('kvTeacher').textContent =
-          (tgs.length ? tgs.join(' • ') : [md.teacher, md.grade].filter(Boolean).join(' / ') || '—');
+          (tgs.length ? tgs.join(' \u2022 ') : [md.teacher, md.grade].filter(Boolean).join(' / ') || '\u2014');
         document.getElementById('kvBg').textContent     =
-          (bgs.length ? bgs.join(', ') : (md.background || '—'));
+          (bgs.length ? bgs.join(', ') : (md.background || '\u2014'));
         document.getElementById('kvAddons').textContent =
-          (adds.length ? adds.join(' • ') : (md.addons || '—'));
+          (adds.length ? adds.join(' \u2022 ') : (md.addons || '\u2014'));
 
       } catch (err) {
         console.error('get-session error:', err);

@@ -3,95 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Checkout canceled • Scott Ymker Photography</title>
-
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Checkout canceled &bull; Scott Ymker Photography</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
 
   <style>
-    :root{
-      --bg:#f6f7f9; --card:#fff; --ink:#121212; --muted:#68707a;
-      --accent:#0ea5e9; --accent-ink:#fff; --warn:#a16207; --border:#e8ebef;
-      --nav-h:64px;
+    .hero {
+      margin-top: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
     }
-    *{ box-sizing:border-box }
-    html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow-x:hidden }
-    img{ max-width:100%; height:auto; display:block }
-    a{ color:inherit; text-decoration:none }
-
-    /* Unified container — prevents overflow and matches hero/cards width */
-    .wrap{ width:min(1100px, calc(100% - 32px)); margin:24px auto }
-
-    /* Header with hamburger (same pattern as success/multi-order) */
-    .sitebar{ position:relative; z-index:10; background:var(--card); border-bottom:1px solid var(--border) }
-    .sitebar .inner{ height:var(--nav-h); display:flex; align-items:center; justify-content:space-between; gap:16px; padding-inline:10px }
-    .brand{ display:flex; align-items:center; gap:10px; font-weight:700; min-width:0 }
-    .brand img{ height:36px; width:auto }
-    .nav-links{ display:flex; gap:18px; align-items:center }
-    .nav-links a{ padding:6px 8px; border-radius:8px; font-weight:500 }
-    .nav-links a[aria-current="page"]{ background:#eef7ff; color:#0b77c5 }
-    .nav-links a:hover{ background:#eff2f6 }
-    .nav-toggle{ display:none; border:0; background:transparent; width:40px; height:40px; color:#111 !important; -webkit-appearance:none; appearance:none; padding:0; margin:0 }
-    .nav-toggle svg{ width:28px; height:28px; display:block }
-    @media (max-width:768px){
-      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center }
-      .nav-links{
-        position:fixed; left:0; right:0; top:var(--nav-h);
-        background:var(--card); border-top:1px solid var(--border);
-        flex-direction:column; padding:12px 16px; display:none; pointer-events:none
-      }
-      .nav-links.open{ display:flex; pointer-events:auto }
+    .grid-cancel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 24px;
+      align-items: stretch;
     }
-
-    /* Hero */
-    .hero{
-      margin-top:18px; background:var(--card); border:1px solid var(--border);
-      border-radius:16px; padding:22px 20px; display:flex; gap:14px; align-items:center
-    }
-    .icon{
-      height:36px; width:36px; border-radius:50%; display:grid; place-items:center;
-      background:rgba(161,98,7,.12); color:var(--warn); font-weight:800
-    }
-    h1{ margin:0 0 4px; font-size:24px }
-    .subtle{ color:var(--muted) }
-
-    /* Cards & layout (equal widths, no overflow) */
-    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; align-items:stretch }
-    @media (max-width:900px){ .grid{ grid-template-columns:1fr } }
-
-    .card{
-      background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px;
-      display:flex; flex-direction:column; min-width:0
-    }
-    .card h2{ font-size:16px; margin:0 0 12px }
-
-    .btn{
-      appearance:none; border:1px solid var(--border); background:#fff; color:var(--ink);
-      padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:600
-    }
-    .btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink) }
-    .btn-row{ display:flex; gap:10px; flex-wrap:wrap }
-
-    .list{ display:grid; row-gap:8px }
-    .kv{ display:grid; grid-template-columns:160px 1fr; column-gap:12px; row-gap:8px; min-width:0 }
-    .label{ color:var(--muted) }
-    @media (max-width:520px){
-      .kv{ grid-template-columns:1fr }
-      .kv .label{ font-weight:600 }
-      .kv .label + div{ margin-bottom:6px }
-    }
-
-    footer{ margin:24px 0 40px; color:var(--muted); font-size:13px }
+    @media (max-width: 900px) { .grid-cancel { grid-template-columns: 1fr; } }
+    .card h2 { font-family: var(--font-display); font-size: 20px; margin: 0 0 14px; }
+    .list { display: grid; row-gap: 8px; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="sitebar">
-    <div class="wrap inner">
+  <header class="sitebar">
+    <div class="wrap">
       <a class="brand" href="index.html">
         <img src="2020Logo_black.png" alt="Scott Ymker Photography logo" />
-        <span>Scott Ymker Photography</span>
+        <span class="brand-name">Scott Ymker Photography</span>
       </a>
 
       <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
@@ -106,59 +49,54 @@
         <a href="contact.html">Contact</a>
       </nav>
     </div>
-  </div>
+  </header>
 
   <div class="wrap">
-    <!-- Hero -->
-    <section class="hero" role="status" aria-live="polite">
-      <div class="icon" role="img" aria-label="Checkout canceled">!</div>
+    <section class="hero card animate-in" role="status" aria-live="polite">
+      <div class="status-icon warn" role="img" aria-label="Checkout canceled">!</div>
       <div>
         <h1>Checkout canceled</h1>
         <div class="subtle">No charge was made. You can review your order and try again below.</div>
       </div>
     </section>
 
-    <section class="grid">
-      <!-- Actions -->
-      <div class="card">
+    <section class="grid-cancel">
+      <div class="card animate-in delay-1">
         <h2>What would you like to do?</h2>
         <div class="list" style="margin-top:4px">
-          <div>• Return to your order form to make changes or resume checkout.</div>
-          <div>• Or head back home to keep browsing.</div>
+          <div>&bull; Return to your order form to make changes or resume checkout.</div>
+          <div>&bull; Or head back home to keep browsing.</div>
         </div>
 
-        <div class="btn-row" style="margin-top:14px">
+        <div class="btn-row" style="margin-top:16px">
           <a class="btn primary" href="multi-order.html">Resume order</a>
           <a class="btn" href="index.html">Back to Home</a>
         </div>
       </div>
 
-      <!-- Help / contact -->
-      <div class="card">
+      <div class="card animate-in delay-2">
         <h2>Need help?</h2>
         <div class="kv">
           <div class="label">Email</div>
-          <div><a href="mailto:support@scottymkerphotos.com">support@scottymkerphotos.com</a></div>
+          <div><a href="mailto:support@scottymkerphotos.com" style="color:var(--accent);">support@scottymkerphotos.com</a></div>
 
           <div class="label">Receipt status</div>
-          <div>Because payment wasn’t completed, a receipt was not issued.</div>
+          <div>Because payment wasn&rsquo;t completed, a receipt was not issued.</div>
 
           <div class="label">Tip</div>
-          <div>If you saw an authorization on your bank, it will drop automatically per your bank’s policy.</div>
+          <div>If you saw an authorization on your bank, it will drop automatically per your bank&rsquo;s policy.</div>
         </div>
       </div>
     </section>
 
-    <footer>
-      © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+    <footer class="site-footer" style="border-top:none;">
+      &copy; <span id="yr"></span> Scott Ymker Photography &bull; All rights reserved.
     </footer>
   </div>
 
   <script>
-    // Footer year
     document.getElementById('yr').textContent = new Date().getFullYear();
 
-    // Optional: reason message (?reason=...)
     const params = new URLSearchParams(location.search);
     const reason = params.get('reason');
     if (reason) {
@@ -166,7 +104,6 @@
       hero.textContent = `No charge was made. Reason: ${reason}. You can review your order and try again below.`;
     }
 
-    // Hamburger
     document.addEventListener('DOMContentLoaded', () => {
       const toggle = document.querySelector('.nav-toggle');
       const nav = document.getElementById('site-nav');
@@ -179,6 +116,19 @@
       });
       nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
       document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.animate-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
     });
   </script>
 </body>

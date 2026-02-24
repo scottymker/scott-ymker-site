@@ -3,77 +3,222 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Scott Ymker Photography • School Portraits</title>
+  <title>Scott Ymker Photography &bull; School Portraits</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="index.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
 
-  <!-- Mobile QA overrides -->
   <style>
-    /* --- Global/mobile hygiene --- */
-    * { box-sizing: border-box; }
-    html, body { overflow-x: hidden; }
-    img { max-width: 100%; height: auto; display: block; }
-    .wrap { width: min(1200px, calc(100% - 32px)); margin-inline: auto; }
+    /* --- Homepage-specific styles --- */
 
-    /* --- Header + hamburger nav --- */
-    :root { --nav-h: 64px; --border:#e6e7ea; --ink:#111; --card:#fff; }
-    .sitebar { position: relative; z-index: 10; background: var(--card); border-bottom: 1px solid var(--border); }
-    .sitebar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: var(--nav-h); }
-    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .brand img { height: 32px; width: auto; }
-
-    .nav-links { display: flex; gap: 20px; align-items: center; } /* desktop */
-    .nav-toggle{
-      display:none; border:0; background:transparent; width:40px; height:40px;
-      color:#111 !important; /* force black */
-      -webkit-appearance:none; appearance:none; padding:0; margin:0;
+    /* Hero */
+    .hero {
+      padding: 48px 0 40px;
+      position: relative;
     }
-    .nav-toggle svg{ width:28px; height:28px; display:block; }
-    @media (max-width:768px){
-      .nav-toggle{ display:inline-flex !important; align-items:center; justify-content:center; }
-      /* Closed mobile menu is fully hidden (prevents stray bar) */
-      .nav-links{
-        position:fixed; left:0; right:0; top:var(--nav-h);
-        background:var(--card); border-top:1px solid var(--border);
-        flex-direction:column; padding:12px 16px;
-        display:none; pointer-events:none;
-      }
-      .nav-links.open{ display:flex; pointer-events:auto; }
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .hero-text h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .hero-text h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+    .hero-visual {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .hero-img {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      aspect-ratio: 3/4;
+      background: var(--bg-warm);
+    }
+    .hero-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hero-img:nth-child(2) { transform: translateY(24px); }
+
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; text-align: center; }
+      .hero-text .subtitle { margin-inline: auto; }
+      .hero-text .cta { justify-content: center; }
+      .hero-visual { max-width: 400px; margin: 0 auto; }
     }
 
-    /* --- Sections/cards --- */
-    .hero .card, .promo .card, .contact .card { overflow: hidden; }
+    /* Backgrounds section */
+    .backgrounds { padding: 32px 0 48px; }
+    .bg-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .bg-header p { margin: 0; }
 
-    /* --- Background gallery --- */
-    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
-    .bg-card { border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06); overflow: hidden; }
-    .bg-card .thumb img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
-    .bg-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; font-size: 14px; }
-    @media (max-width:480px){ .bg-meta .hint{ display:none; } }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
 
-    /* --- Contact box fixes --- */
-    .kvs { display: grid; grid-template-columns: 120px 1fr; gap: 10px 12px; align-items: start; }
-    .kvs .key { color:#6b7280; }
-    .kvs a, .kvs div { min-width:0; overflow-wrap:break-word; word-break:break-word; }
-    @media (max-width:420px){
-      .kvs{ grid-template-columns:1fr; }
-      .kvs .key{ font-weight:600; margin-top:8px; }
-      .kvs .key + div{ margin-top:-4px; }
+    .bg-card {
+      border-radius: var(--radius-lg);
+      background: var(--card);
+      border: 1.5px solid var(--border-light);
+      overflow: hidden;
+      transition: all var(--transition);
+      cursor: pointer;
+      position: relative;
+    }
+    .bg-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent);
+    }
+    .bg-card .thumb {
+      aspect-ratio: 3/4;
+      background: var(--bg-warm);
+      overflow: hidden;
+    }
+    .bg-card .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+    }
+    .bg-card:hover .thumb img {
+      transform: scale(1.05);
+    }
+    .bg-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-top: 1px solid var(--border-light);
+    }
+    .bg-meta .label {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--ink);
+    }
+    .bg-meta .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 480px) { .bg-meta .hint { display: none; } }
+
+    /* Composite promo */
+    .promo { padding: 32px 0; }
+    .promo .card {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 28px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .promo-img {
+      background: var(--bg-warm);
+      min-height: 320px;
+    }
+    .promo-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .promo-body {
+      padding: 32px 32px 32px 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .promo-body ul {
+      margin: 12px 0 0 20px;
+      color: var(--ink-light);
+      line-height: 1.8;
+    }
+    .promo-body .note {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px) {
+      .promo .card { grid-template-columns: 1fr; }
+      .promo-body { padding: 24px; }
+    }
+
+    /* Contact section */
+    .home-contact { padding: 32px 0; }
+    .home-contact .card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    @media (max-width: 700px) {
+      .home-contact .card { flex-direction: column; text-align: center; }
+      .home-contact .kvs { justify-items: center; grid-template-columns: 1fr; }
+    }
+
+    /* Lightbox overlay */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(20,18,15,.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      place-items: center;
+      cursor: zoom-out;
+    }
+    .lightbox.active { display: grid; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 16px 48px rgba(0,0,0,.4);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
     }
   </style>
 </head>
 <body>
   <header class="sitebar">
-    <div class="wrap row">
-      <div class="brand">
+    <div class="wrap">
+      <a class="brand" href="index.html">
         <img src="2020Logo_black.png" alt="Scott Ymker Photography logo">
-        <div>Scott Ymker Photography</div>
-      </div>
+        <span class="brand-name">Scott Ymker Photography</span>
+      </a>
 
-      <!-- Hamburger (SVG so it's always visible & black) -->
       <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -88,130 +233,164 @@
     </div>
   </header>
 
-  <main class="wrap">
+  <main>
+    <!-- Hero -->
     <section class="hero">
-      <div class="card">
-        <h1>Welcome! Choose your student’s background</h1>
-        <p class="subtle">Preview each background below. You’ll confirm your choice on the order page—no pressure.</p>
-        <div class="cta">
-          <a class="btn primary" href="multi-order.html">Start your order</a>
-          <a class="btn" href="#backgrounds">See backgrounds</a>
+      <div class="wrap">
+        <div class="hero-inner">
+          <div class="hero-text animate-in">
+            <div class="section-label">Fall 2025 School Portraits</div>
+            <h1>Timeless portraits your family will <em>treasure</em></h1>
+            <p class="subtitle">Choose from six beautiful backgrounds, pick your package, and let us handle the rest. Professional school photos made simple.</p>
+            <div class="cta">
+              <a class="btn primary" href="multi-order.html">Start your order</a>
+              <a class="btn" href="#backgrounds">View backgrounds</a>
+            </div>
+          </div>
+          <div class="hero-visual animate-in delay-2">
+            <div class="hero-img">
+              <img src="Thomas.jpg" alt="Portrait example — Thomas" loading="eager">
+            </div>
+            <div class="hero-img">
+              <img src="Avery.jpg" alt="Portrait example — Avery" loading="eager">
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <h2 id="backgrounds" class="section-title">Background options (F1–F6)</h2>
-    <section class="gallery" aria-label="Background examples">
-      <!-- F1 -->
-      <figure class="bg-card">
-        <div class="thumb"><img src="F1_Background_Example.jpg" loading="lazy" alt="Background F1 — example 1"></div>
-        <figcaption class="bg-meta"><span class="label">F1 (Default)</span><span class="hint">Example 1</span></figcaption>
-      </figure>
-      <figure class="bg-card">
-        <div class="thumb"><img src="F1_Background_Example2.jpg" loading="lazy" alt="Background F1 — example 2"></div>
-        <figcaption class="bg-meta"><span class="label">F1 (Default)</span><span class="hint">Example 2</span></figcaption>
-      </figure>
+    <!-- Background Options -->
+    <section class="backgrounds" id="backgrounds">
+      <div class="wrap">
+        <div class="bg-header">
+          <div>
+            <div class="section-label">Choose Your Look</div>
+            <h2>Background Options</h2>
+            <p class="subtle">Click any background to see it full-size. You'll confirm your choice on the order page.</p>
+          </div>
+        </div>
 
-      <!-- F2 -->
-      <figure class="bg-card">
-        <div class="thumb"><img src="F2_Background_Example.jpg" loading="lazy" alt="Background F2 — example 1"></div>
-        <figcaption class="bg-meta"><span class="label">F2</span><span class="hint">Example 1</span></figcaption>
-      </figure>
-      <figure class="bg-card">
-        <div class="thumb"><img src="F2_Background_Example2.jpg" loading="lazy" alt="Background F2 — example 2"></div>
-        <figcaption class="bg-meta"><span class="label">F2</span><span class="hint">Example 2</span></figcaption>
-      </figure>
+        <div class="gallery" aria-label="Background examples">
+          <figure class="bg-card animate-in">
+            <div class="thumb"><img src="F1_Background_Example.jpg" loading="lazy" alt="Background F1 — example 1"></div>
+            <figcaption class="bg-meta"><span class="label">F1 (Default)</span><span class="hint">Example 1</span></figcaption>
+          </figure>
+          <figure class="bg-card animate-in delay-1">
+            <div class="thumb"><img src="F1_Background_Example2.jpg" loading="lazy" alt="Background F1 — example 2"></div>
+            <figcaption class="bg-meta"><span class="label">F1 (Default)</span><span class="hint">Example 2</span></figcaption>
+          </figure>
 
-      <!-- F3 -->
-      <figure class="bg-card">
-        <div class="thumb"><img src="F3_Background_Example.jpg" loading="lazy" alt="Background F3 — example 1"></div>
-        <figcaption class="bg-meta"><span class="label">F3</span><span class="hint">Example 1</span></figcaption>
-      </figure>
-      <figure class="bg-card">
-        <div class="thumb"><img src="F3_Background_Example2.jpg" loading="lazy" alt="Background F3 — example 2"></div>
-        <figcaption class="bg-meta"><span class="label">F3</span><span class="hint">Example 2</span></figcaption>
-      </figure>
+          <figure class="bg-card animate-in">
+            <div class="thumb"><img src="F2_Background_Example.jpg" loading="lazy" alt="Background F2 — example 1"></div>
+            <figcaption class="bg-meta"><span class="label">F2</span><span class="hint">Example 1</span></figcaption>
+          </figure>
+          <figure class="bg-card animate-in delay-1">
+            <div class="thumb"><img src="F2_Background_Example2.jpg" loading="lazy" alt="Background F2 — example 2"></div>
+            <figcaption class="bg-meta"><span class="label">F2</span><span class="hint">Example 2</span></figcaption>
+          </figure>
 
-      <!-- F4 -->
-      <figure class="bg-card">
-        <div class="thumb"><img src="F4_Background_Example.jpg" loading="lazy" alt="Background F4 — example 1"></div>
-        <figcaption class="bg-meta"><span class="label">F4</span><span class="hint">Example 1</span></figcaption>
-      </figure>
-      <figure class="bg-card">
-        <div class="thumb"><img src="F4_Background_Example2.jpg" loading="lazy" alt="Background F4 — example 2"></div>
-        <figcaption class="bg-meta"><span class="label">F4</span><span class="hint">Example 2</span></figcaption>
-      </figure>
+          <figure class="bg-card animate-in">
+            <div class="thumb"><img src="F3_Background_Example.jpg" loading="lazy" alt="Background F3 — example 1"></div>
+            <figcaption class="bg-meta"><span class="label">F3</span><span class="hint">Example 1</span></figcaption>
+          </figure>
+          <figure class="bg-card animate-in delay-1">
+            <div class="thumb"><img src="F3_Background_Example2.jpg" loading="lazy" alt="Background F3 — example 2"></div>
+            <figcaption class="bg-meta"><span class="label">F3</span><span class="hint">Example 2</span></figcaption>
+          </figure>
 
-      <!-- F5 -->
-      <figure class="bg-card">
-        <div class="thumb"><img src="F5_Background_Example.jpg" loading="lazy" alt="Background F5 — example 1"></div>
-        <figcaption class="bg-meta"><span class="label">F5</span><span class="hint">Example 1</span></figcaption>
-      </figure>
-      <figure class="bg-card">
-        <div class="thumb"><img src="F5_Background_Example2.jpg" loading="lazy" alt="Background F5 — example 2"></div>
-        <figcaption class="bg-meta"><span class="label">F5</span><span class="hint">Example 2</span></figcaption>
-      </figure>
+          <figure class="bg-card animate-in">
+            <div class="thumb"><img src="F4_Background_Example.jpg" loading="lazy" alt="Background F4 — example 1"></div>
+            <figcaption class="bg-meta"><span class="label">F4</span><span class="hint">Example 1</span></figcaption>
+          </figure>
+          <figure class="bg-card animate-in delay-1">
+            <div class="thumb"><img src="F4_Background_Example2.jpg" loading="lazy" alt="Background F4 — example 2"></div>
+            <figcaption class="bg-meta"><span class="label">F4</span><span class="hint">Example 2</span></figcaption>
+          </figure>
 
-      <!-- F6 -->
-      <figure class="bg-card">
-        <div class="thumb"><img src="F6_Background_Example.jpg" loading="lazy" alt="Background F6 — example 1"></div>
-        <figcaption class="bg-meta"><span class="label">F6</span><span class="hint">Example 1</span></figcaption>
-      </figure>
-      <figure class="bg-card">
-        <div class="thumb"><img src="F6_Background_Example2.jpg" loading="lazy" alt="Background F6 — example 2"></div>
-        <figcaption class="bg-meta"><span class="label">F6</span><span class="hint">Example 2</span></figcaption>
-      </figure>
-    </section>
+          <figure class="bg-card animate-in">
+            <div class="thumb"><img src="F5_Background_Example.jpg" loading="lazy" alt="Background F5 — example 1"></div>
+            <figcaption class="bg-meta"><span class="label">F5</span><span class="hint">Example 1</span></figcaption>
+          </figure>
+          <figure class="bg-card animate-in delay-1">
+            <div class="thumb"><img src="F5_Background_Example2.jpg" loading="lazy" alt="Background F5 — example 2"></div>
+            <figcaption class="bg-meta"><span class="label">F5</span><span class="hint">Example 2</span></figcaption>
+          </figure>
 
-    <section class="promo" aria-label="8x10 Class Composite">
-      <div class="card">
-        <div><img src="composite_example.jpg" alt="8x10 Class Composite sample" loading="lazy"></div>
-        <div>
-          <h2>8×10 Class Composite</h2>
-          <p class="subtle">A timeless keepsake featuring each student and their teacher—professionally designed and delivered as a print.</p>
-          <ul class="clean">
-            <li>Sized for standard 8×10 frames and albums</li>
-            <li>Includes school name, year and teacher</li>
-            <li>Available as an add-on (M) or inside select packages</li>
-          </ul>
-          <p class="note">Add the Composite on the order page—look for add-on <strong>M</strong>.</p>
-          <div class="cta"><a class="btn primary" href="multi-order.html">Order now</a></div>
+          <figure class="bg-card animate-in">
+            <div class="thumb"><img src="F6_Background_Example.jpg" loading="lazy" alt="Background F6 — example 1"></div>
+            <figcaption class="bg-meta"><span class="label">F6</span><span class="hint">Example 1</span></figcaption>
+          </figure>
+          <figure class="bg-card animate-in delay-1">
+            <div class="thumb"><img src="F6_Background_Example2.jpg" loading="lazy" alt="Background F6 — example 2"></div>
+            <figcaption class="bg-meta"><span class="label">F6</span><span class="hint">Example 2</span></figcaption>
+          </figure>
         </div>
       </div>
     </section>
 
-    <section class="contact">
-      <div class="card">
-        <h2 class="section-title" style="margin-top:0">Questions before you order?</h2>
-        <div class="kvs" role="list">
-          <div class="key">Email</div>
-          <div><a href="mailto:scott@scottymkerphotos.com">scott@scottymker<wbr>photos.com</a></div>
-
-          <div class="key">Phone</div>
-          <div><a href="tel:6055500828">605-550-0828</a></div>
-
-          <div class="key">Mailing</div>
-          <div>PO Box 544, Armour, SD 57313</div>
-
-          <div class="key">Website</div>
-          <div><a href="https://scottymkerphotos.com" target="_blank" rel="noopener">scottymker<wbr>photos.com</a></div>
+    <!-- Composite Promo -->
+    <section class="promo">
+      <div class="wrap">
+        <div class="card animate-in">
+          <div class="promo-img">
+            <img src="composite_example.jpg" alt="8x10 Class Composite sample" loading="lazy">
+          </div>
+          <div class="promo-body">
+            <div class="section-label">Keepsake</div>
+            <h2>8&times;10 Class Composite</h2>
+            <p class="subtle">A timeless keepsake featuring each student and their teacher &mdash; professionally designed and delivered as a print.</p>
+            <ul>
+              <li>Sized for standard 8&times;10 frames and albums</li>
+              <li>Includes school name, year, and teacher</li>
+              <li>Available as an add-on (M) or inside select packages</li>
+            </ul>
+            <p class="note">Add the Composite on the order page &mdash; look for add-on <strong>M</strong>.</p>
+            <div class="cta"><a class="btn primary" href="multi-order.html">Order now</a></div>
+          </div>
         </div>
-        <div class="cta" style="margin-top:14px">
-          <a class="btn" href="contact.html">Contact form</a>
-          <a class="btn primary" href="multi-order.html">Start your order</a>
+      </div>
+    </section>
+
+    <!-- Contact strip -->
+    <section class="home-contact">
+      <div class="wrap">
+        <div class="card animate-in">
+          <div>
+            <h2 style="margin-bottom: 4px;">Questions before you order?</h2>
+            <div class="kvs" role="list">
+              <div class="key">Email</div>
+              <div><a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a></div>
+              <div class="key">Phone</div>
+              <div><a href="tel:6055500828">605-550-0828</a></div>
+              <div class="key">Mailing</div>
+              <div>PO Box 544, Armour, SD 57313</div>
+            </div>
+          </div>
+          <div class="cta">
+            <a class="btn" href="contact.html">Contact form</a>
+            <a class="btn primary" href="multi-order.html">Start your order</a>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer>
-    © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+  <footer class="site-footer">
+    <div class="wrap">
+      &copy; <span id="yr"></span> Scott Ymker Photography &bull; All rights reserved.
+    </div>
   </footer>
 
-  <!-- Mobile QA nav script -->
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-label="Full-size background preview">
+    <button class="lightbox-close" aria-label="Close">&times;</button>
+    <img id="lightboxImg" alt="Full-size background preview" />
+  </div>
+
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
 
+    // Mobile nav
     document.addEventListener('DOMContentLoaded', () => {
       const toggle = document.querySelector('.nav-toggle');
       const nav = document.getElementById('site-nav');
@@ -227,6 +406,51 @@
 
       nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
       document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
+
+    // Lightbox
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+
+    document.querySelectorAll('.bg-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const img = card.querySelector('.thumb img');
+        if (img) {
+          lightboxImg.src = img.src;
+          lightboxImg.alt = img.alt;
+          lightbox.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    });
+
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox || e.target.classList.contains('lightbox-close')) {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+
+    // Scroll-triggered animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.animate-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
     });
   </script>
 </body>

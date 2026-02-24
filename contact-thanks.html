@@ -3,117 +3,72 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thanks — Message received • Scott Ymker Photography</title>
-
-  <!-- Inter font, same as other pages -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Thanks &mdash; Message received &bull; Scott Ymker Photography</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
 
   <style>
-    :root{
-      --bg:#f6f7f9; --card:#fff; --ink:#121212; --muted:#68707a;
-      --accent:#0ea5e9; --accent-ink:#fff; --ok:#16a34a; --border:#e8ebef;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    a{color:inherit}
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-
-    /* Header */
-    .sitebar{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 10px 12px;border-bottom:1px solid var(--border);
-      background:linear-gradient(#fbfbfc,#f6f7f9);
-      border-radius:12px;
-    }
-    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-    .brand img{height:36px;width:auto}
-    nav a{
-      text-decoration:none;color:#2d3640;margin-left:18px;font-weight:500;
-      padding:6px 8px;border-radius:8px
-    }
-    nav a[aria-current="page"]{background:#eef7ff;color:#0b77c5}
-    nav a:hover{background:#eff2f6}
-
-    /* Hero */
-    .hero{
-      margin-top:18px;background:var(--card);border:1px solid var(--border);
-      border-radius:16px;padding:22px 20px;display:flex;gap:14px;align-items:center
-    }
-    .check{
-      height:38px;width:38px;border-radius:50%;display:grid;place-items:center;
-      background:rgba(22,163,74,.12);color:var(--ok);font-weight:800;font-size:20px
-    }
-    h1{margin:0 0 4px;font-size:24px}
-    .subtle{color:var(--muted)}
-
-    /* Layout */
-    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
-
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
-    .card h2{font-size:16px;margin:0 0 12px}
-
-    .kv{display:grid;grid-template-columns:140px 1fr;column-gap:12px;row-gap:8px}
-    .label{color:var(--muted)}
-
-    .btn{
-      appearance:none;border:1px solid var(--border);background:#fff;color:var(--ink);
-      padding:11px 16px;border-radius:999px;cursor:pointer;font-weight:600;text-decoration:none;display:inline-block
-    }
-    .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-    .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-
-    footer{margin:24px 0 40px;color:var(--muted);font-size:13px}
+    .card h2 { font-family: var(--font-display); font-size: 20px; margin: 0 0 14px; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- Header -->
-    <div class="sitebar">
-      <div class="brand">
+  <header class="sitebar">
+    <div class="wrap">
+      <a class="brand" href="index.html">
         <img src="2020Logo_black.png" alt="Scott Ymker Photography logo" />
-        <span>Scott Ymker Photography</span>
-      </div>
-      <nav aria-label="Main">
+        <span class="brand-name">Scott Ymker Photography</span>
+      </a>
+
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav id="site-nav" class="nav-links" aria-label="Main">
         <a href="index.html">Home</a>
-        <a href="order.html">Order</a>
+        <a href="multi-order.html">Order</a>
         <a href="contact.html" aria-current="page">Contact</a>
       </nav>
     </div>
+  </header>
 
-    <!-- Hero -->
-    <section class="hero">
-      <div class="check">✓</div>
-      <div>
-        <h1>Thanks — your message was sent!</h1>
-        <div class="subtle" id="subline">
-          We’ve received your message and will reply as soon as possible.
+  <div class="wrap">
+    <section style="margin-top: 24px;" class="animate-in">
+      <div class="card" style="display:flex;gap:16px;align-items:center;">
+        <div class="status-icon ok">&#x2713;</div>
+        <div>
+          <h1>Thanks &mdash; your message was sent!</h1>
+          <div class="subtle" id="subline">
+            We&rsquo;ve received your message and will reply as soon as possible.
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="card">
+    <section class="grid-2" style="margin-top: 24px;">
+      <div class="card animate-in delay-1">
         <h2>What happens next</h2>
         <p class="subtle" style="margin-top:0">
-          You’ll get a confirmation email shortly. Typical response time is within one business day.
+          You&rsquo;ll get a confirmation email shortly. Typical response time is within one business day.
         </p>
 
         <div class="btn-row">
           <a class="btn primary" href="index.html">Back to Home</a>
-          <a class="btn" href="order.html">Start an Order</a>
+          <a class="btn" href="multi-order.html">Start an Order</a>
           <a class="btn" href="contact.html">Send another message</a>
-          <button class='btn' type='button' id='copyEmail'>Copy email address</button>
+          <button class="btn" type="button" id="copyEmail">Copy email address</button>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card animate-in delay-2">
         <h2>Contact information</h2>
         <div class="kv">
           <div class="label">Email</div>
-          <div><a href="mailto:scott@scottymkerphotos.com">scott@scottymkerphotos.com</a></div>
+          <div><a href="mailto:scott@scottymkerphotos.com" style="color:var(--accent);">scott@scottymkerphotos.com</a></div>
 
           <div class="label">Phone / SMS</div>
           <div><a href="tel:+16055500828">+1 (605) 550-0828</a></div>
@@ -122,27 +77,42 @@
           <div>
             Scott Ymker Photography<br>
             PO Box 544<br>
-            Armour, SD 57313<br>
+            Armour, SD 57313
           </div>
         </div>
       </div>
     </section>
 
-    <footer>
-      © <span id="yr"></span> Scott Ymker Photography • All rights reserved.
+    <footer class="site-footer" style="border-top:none;">
+      &copy; <span id="yr"></span> Scott Ymker Photography &bull; All rights reserved.
     </footer>
   </div>
 
   <script>
-    // Year
     document.getElementById('yr').textContent = new Date().getFullYear();
 
+    // Mobile nav
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      if (!toggle || !nav) return;
+      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+      toggle.addEventListener('click', () => {
+        const open = !nav.classList.contains('open');
+        nav.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
+
+    // Copy email
     const copyBtn = document.getElementById('copyEmail');
     copyBtn?.addEventListener('click', () => {
       navigator.clipboard.writeText('scott@scottymkerphotos.com').then(() => alert('Email address copied to clipboard'));
     });
 
-    // If email/name were passed via query string, surface them in the subline (optional nicety)
+    // Personalized subline
     const q = new URLSearchParams(location.search);
     const email = q.get('email');
     const name  = q.get('name');
@@ -151,8 +121,22 @@
       if (name)  parts.push(name);
       if (email) parts.push(email);
       document.getElementById('subline').textContent =
-        `Thanks${parts.length ? ', ' + parts.join(' • ') : ''}! We’ve received your message and will follow up shortly.`;
+        `Thanks${parts.length ? ', ' + parts.join(' \u2022 ') : ''}! We\u2019ve received your message and will follow up shortly.`;
     }
+
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.animate-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
   </script>
 </body>
 </html>
