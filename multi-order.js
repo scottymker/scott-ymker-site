@@ -26,6 +26,11 @@ const BACKGROUNDS = ['F1','F2','F3','F4','F5','F6'];
 const VISIBLE_PKG_COUNT = 5;
 const MAX_STUDENTS = 6;
 
+function debounce(fn, ms) {
+  let timer;
+  return function(...args) { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+}
+
 const $  = (s)=>document.querySelector(s);
 const $$ = (s)=>Array.from(document.querySelectorAll(s));
 const fmt= (c)=> (c/100).toLocaleString(undefined,{style:'currency',currency:'USD'});
@@ -121,6 +126,46 @@ window.__copySchool = function(i){
   renderSummary();
 };
 
+// ---------- Access code toggle & lookup ----------
+window.__toggleCode = function(i) {
+  const det = studentsEl.querySelector(`details[data-i="${i}"]`);
+  if (!det) return;
+  const wrap = det.querySelector('.code-input-wrap');
+  if (wrap) wrap.hidden = !wrap.hidden;
+};
+
+window.__lookupCode = debounce(async function(i, value) {
+  const code = safeCode(value);
+  if (code.length < 6) return;
+
+  const det = studentsEl.querySelector(`details[data-i="${i}"]`);
+  if (!det) return;
+  const statusEl = det.querySelector(`[data-code-status="${i}"]`);
+
+  try {
+    const res = await fetch(`/api/public/lookup-student?code=${code}`);
+    if (res.ok) {
+      const data = await res.json();
+      const firstInput   = det.querySelector('[name$="_first"]');
+      const lastInput    = det.querySelector('[name$="_last"]');
+      const teacherInput = det.querySelector('[name$="_teacher"]');
+      const gradeInput   = det.querySelector('[name$="_grade"]');
+
+      if (data.first_name && firstInput)   firstInput.value   = data.first_name;
+      if (data.last_name  && lastInput)    lastInput.value    = data.last_name;
+      if (data.teacher    && teacherInput) teacherInput.value = data.teacher;
+      if (data.grade      && gradeInput)   gradeInput.value   = data.grade;
+
+      if (statusEl) { statusEl.textContent = '\u2713 Found'; statusEl.style.color = '#2ec4b6'; }
+      renderSummary();
+    } else {
+      if (statusEl) { statusEl.textContent = 'Not found'; statusEl.style.color = '#e63946'; }
+    }
+  } catch (err) {
+    if (statusEl) { statusEl.textContent = 'Error'; statusEl.style.color = '#e63946'; }
+  }
+}, 500);
+
 function studentTemplate(i){
   const sameSchoolLink = i > 1
     ? `<button type="button" class="btn-link same-school" onclick="window.__copySchool(${i})">Same school as Student 1?</button>`
@@ -134,6 +179,15 @@ function studentTemplate(i){
     </summary>
     <div class="content">
       <div class="section-title">Student information</div>
+      <div class="code-row" style="margin-bottom:10px">
+        <button type="button" class="btn-link code-toggle" onclick="window.__toggleCode(${i})">Have an access code?</button>
+        <div class="code-input-wrap" hidden>
+          <input type="text" name="s${i}_code" placeholder="6-letter code" maxlength="6"
+                 style="text-transform:uppercase; width:140px; font-family:monospace; letter-spacing:2px"
+                 oninput="window.__lookupCode(${i}, this.value)">
+          <span class="code-status" data-code-status="${i}"></span>
+        </div>
+      </div>
       <div class="row">
         <input type="text" name="s${i}_first"   placeholder="First name" required oninput="window.renderSummary()">
         <input type="text" name="s${i}_last"    placeholder="Last name" required oninput="window.renderSummary()">
@@ -210,6 +264,14 @@ function renumberStudents(){
     if (showMoreBtn) {
       showMoreBtn.setAttribute('onclick', `window.__showMorePkgs(${i})`);
     }
+
+    // Update code toggle button and lookup handler
+    const codeToggle = det.querySelector('.code-toggle');
+    if (codeToggle) codeToggle.setAttribute('onclick', `window.__toggleCode(${i})`);
+    const codeInput = det.querySelector('[name$="_code"]');
+    if (codeInput) codeInput.setAttribute('oninput', `window.__lookupCode(${i}, this.value)`);
+    const codeStatus = det.querySelector('[data-code-status]');
+    if (codeStatus) codeStatus.setAttribute('data-code-status', i);
 
     // Update same-school link
     const sameSchool = det.querySelector('.same-school');
@@ -355,7 +417,8 @@ function collect(){
       grade:   det.querySelector('[name$="_grade"]')?.value.trim()   || '',
       pkg:     safeCode(pkgInput?.value),
       bg:      safeCode(bgInput?.value) || 'F1',
-      addons
+      addons,
+      code:    safeCode(det.querySelector('[name$="_code"]')?.value || '')
     };
   });
 
@@ -480,6 +543,7 @@ function buildMetadata(parent, students) {
     metadata[`s${k}_bg`] = s.bg;
     metadata[`s${k}_pkg`] = s.pkg || '';
     metadata[`s${k}_addons`] = s.addons.join(', ');
+    if (s.code) metadata[`s${k}_code`] = s.code;
   });
   return metadata;
 }
@@ -553,7 +617,7 @@ document.getElementById('multiForm').addEventListener('submit', async (e) => {
   btn.textContent = 'Processing…';
 
   try {
-    const res = await fetch('/.netlify/functions/create-payment-intent', {
+    const res = await fetch('/api/stripe/create-payment-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ line_items, email, metadata })

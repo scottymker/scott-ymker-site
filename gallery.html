@@ -266,7 +266,7 @@
       const errMsg  = document.getElementById('errMsg');
 
       try {
-        const res = await fetch('/api/get-gallery', { credentials: 'include' });
+        const res = await fetch('/api/public/gallery', { credentials: 'include' });
         if (res.status === 401) { location.href = '/access.html?expired=1'; return; }
         if (!res.ok) throw new Error('fetch failed');
 
@@ -314,7 +314,7 @@
       checkoutErr.classList.add('hidden');
       try {
         const cart = snapshotCart();
-        const res = await fetch('/api/create-checkout-session', {
+        const res = await fetch('/api/stripe/create-checkout-session', {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           credentials:'include',

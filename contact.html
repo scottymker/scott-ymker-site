@@ -24,6 +24,29 @@
     }
     .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* Success banner (hidden by default) */
+    .form-success {
+      display: none;
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: var(--radius, 12px);
+      padding: 20px 24px;
+      margin-top: 16px;
+      color: #166534;
+    }
+    .form-success.visible { display: block; }
+    .form-error {
+      display: none;
+      background: #fff1f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: var(--radius, 12px);
+      padding: 14px 18px;
+      margin-top: 12px;
+      color: #991b1b;
+      font-size: 14px;
+    }
+    .form-error.visible { display: block; }
   </style>
 </head>
 <body>
@@ -43,6 +66,7 @@
       <nav id="site-nav" class="nav-links" aria-label="Main">
         <a href="index.html">Home</a>
         <a href="multi-order.html">Order</a>
+        <a href="access.html">Gallery</a>
         <a href="contact.html" aria-current="page">Contact</a>
       </nav>
     </div>
@@ -51,7 +75,7 @@
   <div class="wrap">
     <section class="hero animate-in">
       <div class="card">
-        <div class="status-icon info">&#x1F4AC;</div>
+        <div class="status-icon info"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/></svg></div>
         <div>
           <h1>Contact &amp; Help</h1>
           <div class="subtle">We usually respond within one business day. For urgent school-day issues, call or text.</div>
@@ -64,22 +88,16 @@
       <div class="card animate-in delay-1">
         <h2>Send us a message <span class="pill">Secure</span></h2>
 
-        <form
-          name="contact"
-          method="POST"
-          data-netlify="true"
-          netlify-honeypot="bot-field"
-          action="/contact-thanks.html"
-        >
-          <input type="hidden" name="form-name" value="contact" />
-          <p style="display:none">
-            <label>Don't fill this out: <input name="bot-field" /></label>
+        <form id="contactForm" novalidate>
+          <!-- Honeypot: hidden from real users; bots fill it in -->
+          <p style="display:none" aria-hidden="true">
+            <label>Don't fill this out: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
           </p>
 
           <div class="row">
             <div>
               <label for="name">Your name</label>
-              <input id="name" name="name" autocomplete="name" required />
+              <input id="name" name="name" type="text" autocomplete="name" required />
             </div>
             <div>
               <label for="email">Email</label>
@@ -111,12 +129,21 @@
 
           <div class="hint">By submitting, you agree to receive a reply via email (and optional SMS if you provided a number).</div>
 
+          <div id="formError" class="form-error" role="alert"></div>
+
           <div class="btn-row">
-            <button class="btn primary" type="submit">Send message</button>
+            <button class="btn primary" type="submit" id="submitBtn">Send message</button>
             <a class="btn" href="mailto:support@scottymkerphotos.com">Email instead</a>
             <a class="btn" href="index.html">Back to Home</a>
           </div>
         </form>
+
+        <div id="formSuccess" class="form-success" role="status">
+          <strong>Message sent!</strong> Thank you &mdash; we'll be in touch within one business day.
+          <div style="margin-top:10px;">
+            <a class="btn" href="index.html">Back to Home</a>
+          </div>
+        </div>
       </div>
 
       <!-- Direct Contact Info -->
@@ -153,6 +180,7 @@
   <script>
     document.getElementById('yr').textContent = new Date().getFullYear();
 
+    // Mobile nav toggle
     document.addEventListener('DOMContentLoaded', () => {
       const toggle = document.querySelector('.nav-toggle');
       const nav = document.getElementById('site-nav');
@@ -183,6 +211,61 @@
     document.querySelectorAll('.animate-in').forEach(el => {
       el.style.animationPlayState = 'paused';
       observer.observe(el);
+    });
+
+    // Contact form submit via fetch
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const formSuccess = document.getElementById('formSuccess');
+    const formError = document.getElementById('formError');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Clear previous error state
+      formError.textContent = '';
+      formError.classList.remove('visible');
+
+      // Collect values
+      const name     = form.querySelector('#name').value.trim();
+      const email    = form.querySelector('#email').value.trim();
+      const phone    = form.querySelector('#phone').value.trim();
+      const topic    = form.querySelector('#topic').value;
+      const message  = form.querySelector('#message').value.trim();
+      const botField = form.querySelector('[name="bot-field"]').value;
+
+      // Client-side guard
+      if (!name || !email || !message) {
+        formError.textContent = 'Please fill in your name, email, and message.';
+        formError.classList.add('visible');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending\u2026';
+
+      try {
+        const res = await fetch('/api/contact/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, topic, message, 'bot-field': botField }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          // Hide the form, show success banner
+          form.style.display = 'none';
+          formSuccess.classList.add('visible');
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
+      } catch (err) {
+        formError.textContent = err.message || 'Something went wrong. Please try emailing us directly.';
+        formError.classList.add('visible');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send message';
+      }
     });
   </script>
 </body>

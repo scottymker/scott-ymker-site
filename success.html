@@ -66,6 +66,7 @@
       <nav id="site-nav" class="nav-links" aria-label="main">
         <a href="index.html">Home</a>
         <a href="multi-order.html">Order</a>
+        <a href="access.html">Gallery</a>
         <a href="contact.html">Contact</a>
       </nav>
     </div>
@@ -73,7 +74,7 @@
 
   <div class="wrap">
     <section class="hero card animate-in">
-      <div class="status-icon ok">&#x2713;</div>
+      <div class="status-icon ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg></div>
       <div>
         <h1>Thank you for your purchase!</h1>
         <div class="subtle" id="orderSub">Loading your receipt&hellip;</div>
@@ -210,7 +211,7 @@
       }
 
       try {
-        const res = await fetch(`/.netlify/functions/get-session?id=${encodeURIComponent(sessionId)}`);
+        const res = await fetch(`/api/stripe/session/${encodeURIComponent(sessionId)}`);
         const data = await res.json();
         if (!res.ok) throw data;
 

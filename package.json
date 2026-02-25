@@ -7,18 +7,26 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "dev": "netlify dev",
+    "server": "node server/index.mjs",
+    "server:dev": "node --watch server/index.mjs",
     "import:one": "node scripts/import-one.mjs",
     "import:events": "node scripts/import-events.mjs",
     "set:meta": "node scripts/set-student-meta.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^10.0.8",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
     "csv-parse": "^5.5.5",
-    "pdfkit": "^0.15.0",
-    "qrcode": "^1.5.3",
-    "sharp": "^0.33.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
-    "stripe": "^14.24.0",
-    "resend": "^3.4.0"
+    "pdfkit": "^0.15.0",
+    "pg": "^8.12.0",
+    "qrcode": "^1.5.3",
+    "resend": "^3.4.0",
+    "sharp": "^0.33.3",
+    "stripe": "^14.24.0"
   }
 }

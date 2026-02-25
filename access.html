@@ -1,100 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Access My Event • Scott Ymker Photography</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Access My Gallery &bull; Scott Ymker Photography</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+
   <style>
-    /* Scoped extras only for this page */
-    .center-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100svh - 140px);padding:24px;}
-    .card{max-width:560px;width:100%;background:var(--card,#fff);border:1px solid var(--border,#e6e7ea);border-radius:16px;box-shadow:var(--shadow,0 1px 2px rgba(0,0,0,.06));padding:28px;}
-    .eyebrow{font-weight:700;font-size:28px;line-height:1.2;margin:0 0 16px;color:var(--ink,#111);}
-    .muted{color:var(--muted,#6b7280);}
-    .field{margin:16px 0 10px;}
-    .input{width:100%;padding:14px 16px;border:1px solid var(--border,#e6e7ea);border-radius:12px;font:inherit;letter-spacing:.08em;text-transform:uppercase}
-    .help{font-size:.9rem;color:var(--muted,#6b7280);margin-top:6px}
-    .actions{display:flex;gap:12px;margin-top:18px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;border:1px solid transparent;background:var(--accent,#0ea5e9);color:var(--accent-ink,#fff);font-weight:600;cursor:pointer}
-    .btn.secondary{background:transparent;border-color:var(--border,#e6e7ea);color:var(--ink,#111)}
-    .error{margin-top:12px;color:#b42318;font-weight:600;display:none}
+    .gallery-hero {
+      padding: 48px 0 56px;
+    }
+    .gallery-hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .gallery-text .section-label { margin-bottom: 10px; }
+    .gallery-text h1 {
+      font-size: clamp(28px, 5vw, 44px);
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .gallery-text h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+    .gallery-text .subtitle {
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+
+    /* Code input card */
+    .code-card {
+      background: var(--card);
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+    }
+    .code-input {
+      font-size: 24px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-align: center;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .form-error {
+      display: none;
+      color: #991b1b;
+      background: #fff1f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-top: 14px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .form-error.visible { display: block; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .hint { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+    /* Photo mosaic on right */
+    .photo-mosaic {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .photo-mosaic .photo {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+      background: var(--bg-warm);
+      aspect-ratio: 3/4;
+    }
+    .photo-mosaic .photo:nth-child(2) {
+      transform: translateY(28px);
+    }
+    .photo-mosaic .photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Features strip */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      padding: 40px 0;
+    }
+    .feature-card {
+      text-align: center;
+      padding: 24px 20px;
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .feature-icon svg { width: 22px; height: 22px; }
+    .feature-card h3 { font-size: 16px; margin-bottom: 6px; }
+    .feature-card p { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+
+    @media (max-width: 900px) {
+      .gallery-hero-inner {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .photo-mosaic { max-width: 400px; margin: 0 auto; }
+      .gallery-text { text-align: center; }
+      .gallery-text .btn-row { justify-content: center; }
+    }
+    @media (max-width: 600px) {
+      .features { grid-template-columns: 1fr; gap: 12px; }
+    }
   </style>
 </head>
 <body>
-  <!-- Header: reuse the same markup as index/order/success -->
-  <header class="site-header">
-    <div class="container">
-      <a class="brand" href="/"><img src="/assets/logo.svg" alt="Scott Ymker Photography" height="36"></a>
-      <nav class="site-nav">
-        <a href="/order.html">Order Forms</a>
-        <a class="active" href="/access.html">Access Event</a>
+  <header class="sitebar">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="2020Logo_black.png" alt="Scott Ymker Photography logo" />
+        <span class="brand-name">Scott Ymker Photography</span>
+      </a>
+
+      <button class="nav-toggle" aria-label="Open menu" aria-controls="site-nav" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <nav id="site-nav" class="nav-links" aria-label="Main">
+        <a href="index.html">Home</a>
+        <a href="multi-order.html">Order</a>
+        <a href="access.html" aria-current="page">Gallery</a>
+        <a href="contact.html">Contact</a>
       </nav>
     </div>
   </header>
 
-  <main class="center-wrap">
-    <section class="card" aria-labelledby="access-title">
-      <h1 id="access-title" class="eyebrow">Access My Event</h1>
-      <p class="muted">Enter your 6-character event code from the card that was sent home.</p>
+  <main>
+    <section class="gallery-hero">
+      <div class="wrap">
+        <div class="gallery-hero-inner">
 
-      <form id="access-form" class="form" novalidate>
-        <div class="field">
-          <label for="code" class="muted">Event code</label>
-          <input id="code" name="code" class="input" inputmode="latin" maxlength="6" minlength="6"
-                 pattern="[A-HJ-NP-Z2-9]{6}" placeholder="ABC123" autocomplete="one-time-code" required />
-          <div class="help">Letters & numbers only. Avoid O/0 and I/1.</div>
-        </div>
+          <!-- Left: text + code input -->
+          <div class="gallery-text animate-in">
+            <div class="section-label">Your Photos Are Ready</div>
+            <h1>View Your Child's <em>School Portraits</em></h1>
+            <p class="subtitle">Enter the 6-character access code from the card sent home with your student to view, share, and download your photos.</p>
 
-        <div class="actions">
-          <button id="nextBtn" class="btn" type="submit">Next</button>
-          <a class="btn secondary" href="/">Cancel</a>
+            <div class="code-card">
+              <form id="access-form" novalidate>
+                <label for="code">Event code</label>
+                <input
+                  id="code"
+                  name="code"
+                  type="text"
+                  class="code-input"
+                  inputmode="latin"
+                  maxlength="6"
+                  minlength="6"
+                  pattern="[A-HJ-NP-Z2-9]{6}"
+                  placeholder="ABC123"
+                  autocomplete="one-time-code"
+                  required
+                />
+                <div class="hint">Letters &amp; numbers only. The code avoids O/0 and I/1 to prevent confusion.</div>
+
+                <div id="accessError" class="form-error" role="alert">
+                  That code wasn't found. Please check the card and try again.
+                </div>
+
+                <div class="btn-row">
+                  <button id="nextBtn" class="btn primary" type="submit">View gallery</button>
+                  <a class="btn" href="contact.html">Need help?</a>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right: photo mosaic (two portraits only) -->
+          <div class="photo-mosaic animate-in delay-2">
+            <div class="photo"><img src="F1_Background_Example.jpg" alt="Portrait sample" /></div>
+            <div class="photo"><img src="F3_Background_Example.jpg" alt="Portrait sample" /></div>
+          </div>
+
         </div>
-        <div id="err" class="error">That code wasn’t found. Please check and try again.</div>
-      </form>
+      </div>
+    </section>
+
+    <!-- Features strip -->
+    <section class="wrap">
+      <div class="features">
+        <div class="card feature-card animate-in delay-1">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+          </div>
+          <h3>Beautiful Portraits</h3>
+          <p>Professional lighting and multiple background options make every student look their best.</p>
+        </div>
+        <div class="card feature-card animate-in delay-2">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3>Class Composites</h3>
+          <p>Every package includes an 8x10 class composite featuring all classmates and teachers.</p>
+        </div>
+        <div class="card feature-card animate-in delay-3">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <h3>Secure &amp; Private</h3>
+          <p>Your gallery is protected by a unique access code. Only your family can view your photos.</p>
+        </div>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container">
-      © <span id="y"></span> Scott Ymker Photography
+    <div class="wrap">
+      &copy; <span id="yr"></span> Scott Ymker Photography &bull; All rights reserved.
     </div>
   </footer>
 
   <script>
-    document.getElementById('y').textContent = new Date().getFullYear();
-    const input = document.getElementById('code');
-    input.addEventListener('input', () => input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+    document.getElementById('yr').textContent = new Date().getFullYear();
 
+    // Mobile nav toggle
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.querySelector('.nav-toggle');
+      const nav = document.getElementById('site-nav');
+      if (!toggle || !nav) return;
+
+      const close = () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); };
+
+      toggle.addEventListener('click', () => {
+        const open = !nav.classList.contains('open');
+        nav.classList.toggle('open', open);
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+
+      nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    });
+
+    // Scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animationPlayState = 'running';
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.animate-in').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+
+    // Code input: uppercase + strip invalid characters
+    const codeInput = document.getElementById('code');
+    codeInput.addEventListener('input', () => {
+      codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+
+    // Form submit — verify code against API
     const form = document.getElementById('access-form');
-    const err = document.getElementById('err');
+    const accessError = document.getElementById('accessError');
     const nextBtn = document.getElementById('nextBtn');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      err.style.display = 'none';
-      const code = input.value.trim().toUpperCase();
-      if (code.length !== 6) return input.focus();
+      accessError.classList.remove('visible');
+
+      const code = codeInput.value.trim().toUpperCase();
+      if (code.length !== 6) {
+        codeInput.focus();
+        return;
+      }
 
       nextBtn.disabled = true;
+      nextBtn.textContent = 'Checking\u2026';
+
       try {
-        const res = await fetch('/api/verify-code', {
+        const res = await fetch('/api/public/verify-code', {
           method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ code })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
         });
+
         if (res.ok) {
-          // Worker sets an httpOnly session cookie; gallery uses it.
           window.location.href = '/gallery.html';
         } else {
-          err.style.display = 'block';
+          accessError.classList.add('visible');
           nextBtn.disabled = false;
+          nextBtn.textContent = 'View gallery';
+          codeInput.focus();
         }
       } catch {
-        err.style.display = 'block';
+        accessError.classList.add('visible');
         nextBtn.disabled = false;
+        nextBtn.textContent = 'View gallery';
       }
     });
   </script>
